@@ -310,9 +310,11 @@ async function ingestOsm() {
       matched++;
     }
 
+    if (!dcId) continue;
+    const id: string = dcId;
     for (const s of r.sources ?? []) {
       newSourceRecords.push({
-        data_center_id: dcId,
+        data_center_id: id,
         source: s.source,
         source_id: s.source_id,
         source_url: s.source_url ?? null,
@@ -426,7 +428,7 @@ async function buildLookupMap(
       .range(from, from + 999);
     if (error) throw error;
     if (!data || data.length === 0) break;
-    for (const row of data as Array<Record<string, string>>) {
+    for (const row of data as unknown as Array<Record<string, string>>) {
       m.set(row[idColumn], row.id);
     }
     if (data.length < 1000) break;
