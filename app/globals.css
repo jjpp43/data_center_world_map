@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+.mapboxgl-ctrl-attrib {
+  font-size: 10px;
+}
+
+.dot-grid {
+  background-image: radial-gradient(circle at 1px 1px, rgb(228 228 231 / 0.4) 1px, transparent 0);
+  background-size: 28px 28px;
+}
+
+.dark .dot-grid {
+  background-image: radial-gradient(circle at 1px 1px, rgb(63 63 70 / 0.35) 1px, transparent 0);
+}
+
+@keyframes dcw-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+.live-dot {
+  animation: dcw-pulse 2.4s ease-in-out infinite;
+}

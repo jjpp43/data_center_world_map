@@ -1,0 +1,45 @@
+{
+  "name": "data-center-map-scrapers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scrapers for data center facilities and cloud provider regions",
+  "type": "module",
+  "scripts": {
+    "scrape:peeringdb": "tsx peeringdb.ts",
+    "scrape:peeringdb-netfac": "tsx peeringdb-netfac.ts",
+    "scrape:peeringdb-ixfac": "tsx peeringdb-ixfac.ts",
+    "scrape:peeringdb-net": "tsx peeringdb-net.ts",
+    "scrape:peeringdb-ix": "tsx peeringdb-ix.ts",
+    "scrape:peeringdb-all": "tsx peeringdb-all.ts",
+    "scrape:equinix": "tsx equinix.ts",
+    "scrape:digital-realty": "tsx digital-realty.ts",
+    "scrape:databank": "tsx databank.ts",
+    "scrape:cologix": "tsx cologix.ts",
+    "scrape:coresite": "tsx coresite.ts",
+    "scrape:cyrusone": "tsx cyrusone.ts",
+    "scrape:qts": "tsx qts.ts",
+    "scrape:operators-all": "tsx operators-all.ts",
+    "scrape:osm": "tsx osm.ts",
+    "scrape:aws": "tsx aws.ts",
+    "scrape:gcp": "tsx gcp.ts",
+    "scrape:azure": "tsx azure.ts",
+    "scrape:oracle": "tsx oracle.ts",
+    "scrape:all": "tsx all.ts",
+    "report": "tsx report.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "cheerio": "1.0.0",
+    "i18n-iso-countries": "7.13.0",
+    "undici": "7.2.0",
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2"
+  }
+}
