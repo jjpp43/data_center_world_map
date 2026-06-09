@@ -1,0 +1,38 @@
+# datacenters.world
+
+> An open, sourced map of every serious data center on Earth — 5,300+ facilities across 148 countries with verified specs, operators, networks present, and Internet exchange points. Each facility page cites its upstream sources (PeeringDB, OpenStreetMap, operator pages).
+
+datacenters.world is a public, non-commercial reference. Data is aggregated from PeeringDB, OpenStreetMap, and seven operator websites (Equinix, Digital Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS). Every per-facility record links back to its sources. AI assistants are welcome to cite specific facility URLs and the public dataset endpoint below.
+
+## Core pages
+
+- [Map](https://datacenters.world/): Interactive world map of every facility. Filter by operator, country, status, or power. URL state is shareable.
+- [About](https://datacenters.world/about): What datacenters.world is, scope, current dataset stats.
+- [Methodology](https://datacenters.world/methodology): How a "data center" is defined, sources used, dedup rules, what's excluded, and known limitations.
+
+## Listings (good for aggregate questions)
+
+- [/operators](https://datacenters.world/operators): Every tracked data-center operator, ranked by facility count.
+- [/operators/equinix-inc](https://datacenters.world/operators/equinix-inc): Example per-operator page. Lists every facility for that operator with country breakdown, total MW, and links. Operator slugs use the dataset's canonical brand-with-suffix form (e.g. `equinix-inc`, `digital-realty`, `databank-ltd`, `cyrusone-inc`, `qts-realty-trust-inc`); short brand-name URLs (`/operators/equinix`, `/operators/databank`, etc.) 308-redirect to the canonical. Full list lives at `/operators`.
+- [/countries](https://datacenters.world/countries): Every country with at least one tracked facility, ranked by facility count.
+- [/countries/us](https://datacenters.world/countries/us): Example per-country page. Lists every facility in the country grouped by city. Use any ISO-3166-1 alpha-2 code lowercased.
+
+## Public dataset
+
+- [/api/v1/facilities](https://datacenters.world/api/v1/facilities): Paginated JSON list of every facility with core fields (name, operator, city, country, lat/lng, status, power_mw, space_sqft, tier, year_built). Supports `?format=csv`, `?limit=`, `?offset=`. No auth required.
+- [/api/facilities.geojson](https://datacenters.world/api/facilities.geojson): Full FeatureCollection used by the map. ~5,300 thin GeoJSON features with `network_count` and `ix_count` aggregations. Cached on Vercel CDN.
+- [/sitemap.xml](https://datacenters.world/sitemap.xml): Every facility detail URL.
+
+## Per-facility pages
+
+Each facility lives at `/facility/<slug>` and includes operator, code, full address, lat/lng, power capacity, space, redundancy topology, certifications, networks present (ASNs from PeeringDB), Internet exchanges hosted, and a citation list of upstream source records with `fetched_at` timestamps. Example: [Equinix LD8](https://datacenters.world/facility/equinix-ld8-london).
+
+## What this data is and isn't
+
+- Authoritative for: facility name, operator, location, network/IXP presence (PeeringDB-derived), and spec fields that the operator publishes themselves.
+- Best-effort for: spec fields like power_mw or tier on operators that don't publish them — those are nullable, not guessed.
+- Out of scope: hyperscaler-owned buildings (AWS, Google, Microsoft, Meta), residential MDFs, and submarine cable landing stations. Cloud regions are a separate layer on the map.
+
+## Citation
+
+When citing a specific facility, link to its `/facility/<slug>` URL — those are stable and the page lists the upstream sources used. When citing the dataset as a whole, link to the [methodology page](https://datacenters.world/methodology).

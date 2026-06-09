@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { CloudProvider, Facility, Filters } from "@/lib/types";
 import { countryFlag, countryName } from "@/lib/countries";
 
@@ -146,6 +146,7 @@ export function FilterCard({
               selected={filters.operators}
               onChange={(operators) => onChange({ ...filters, operators })}
               placeholder="Any operator"
+              searchPlaceholder="Search operators…"
             />
           </FilterSection>
 
@@ -155,6 +156,8 @@ export function FilterCard({
               selected={filters.countries}
               onChange={(countries) => onChange({ ...filters, countries })}
               placeholder="Any country"
+              searchPlaceholder="Search countries…"
+              searchText={(code) => `${code} ${countryName(code) ?? code}`}
               renderOption={(code) => (
                 <span className="flex items-center gap-2 truncate">
                   <span className="shrink-0 text-base leading-none">{countryFlag(code)}</span>
@@ -197,6 +200,8 @@ function MultiSelect({
   selected,
   onChange,
   placeholder,
+  searchPlaceholder,
+  searchText,
   renderOption,
   selectedSummary,
 }: {
@@ -204,10 +209,48 @@ function MultiSelect({
   selected: string[];
   onChange: (next: string[]) => void;
   placeholder: string;
+  searchPlaceholder?: string;
+  searchText?: (value: string) => string;
   renderOption?: (value: string) => ReactNode;
   selectedSummary?: (selected: string[]) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      const id = window.setTimeout(() => inputRef.current?.focus(), 0);
+      return () => window.clearTimeout(id);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handle(e: MouseEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handle);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter(([value]) => {
+      const haystack = (searchText ? searchText(value) : value).toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [options, query, searchText]);
 
   const buttonLabel: ReactNode =
     selected.length === 0
@@ -217,7 +260,7 @@ function MultiSelect({
         : `${selected.length} selected`;
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -227,34 +270,99 @@ function MultiSelect({
         <ChevronIcon collapsed={!open} />
       </button>
       {open && (
-        <ul className="absolute inset-x-0 top-full z-10 mt-1 max-h-60 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
-          {options.map(([value, count]) => {
-            const active = selected.includes(value);
-            return (
-              <li
-                key={value}
+        <div className="absolute inset-x-0 top-full z-10 mt-1 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="flex items-center gap-2 border-b border-zinc-200/70 px-2.5 py-1.5 dark:border-zinc-800/70">
+            <SearchIcon />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={searchPlaceholder ?? "Search…"}
+              className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400 dark:text-zinc-200"
+            />
+            {query && (
+              <button
+                type="button"
                 onClick={() => {
-                  const next = active ? selected.filter((v) => v !== value) : [...selected, value];
-                  onChange(next);
+                  setQuery("");
+                  inputRef.current?.focus();
                 }}
-                className={`flex cursor-pointer items-center justify-between gap-2 px-3 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900 ${active ? "bg-cyan-500/10" : ""}`}
+                aria-label="Clear search"
+                className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
               >
-                <span className="flex min-w-0 flex-1 items-center gap-2 text-zinc-800 dark:text-zinc-200">
-                  <input
-                    type="checkbox"
-                    checked={active}
-                    readOnly
-                    className="accent-cyan-400"
-                  />
-                  {renderOption ? renderOption(value) : <span className="truncate">{value}</span>}
-                </span>
-                <span className="shrink-0 text-xs tabular-nums text-zinc-500">{count}</span>
-              </li>
-            );
-          })}
-        </ul>
+                <SmallCloseIcon />
+              </button>
+            )}
+          </div>
+          <ul className="max-h-60 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <li className="px-3 py-3 text-center text-xs text-zinc-500">No matches.</li>
+            ) : (
+              filtered.map(([value, count]) => {
+                const active = selected.includes(value);
+                return (
+                  <li
+                    key={value}
+                    onClick={() => {
+                      const next = active
+                        ? selected.filter((v) => v !== value)
+                        : [...selected, value];
+                      onChange(next);
+                    }}
+                    className={`flex cursor-pointer items-center justify-between gap-2 px-3 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900 ${
+                      active ? "bg-cyan-500/10" : ""
+                    }`}
+                  >
+                    <span className="flex min-w-0 flex-1 items-center gap-2 text-zinc-800 dark:text-zinc-200">
+                      <input type="checkbox" checked={active} readOnly className="accent-cyan-400" />
+                      {renderOption ? renderOption(value) : <span className="truncate">{value}</span>}
+                    </span>
+                    <span className="shrink-0 text-xs tabular-nums text-zinc-500">{count}</span>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
       )}
     </div>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="12"
+      height="12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0 text-zinc-500"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
+function SmallCloseIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="12"
+      height="12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
   );
 }
 

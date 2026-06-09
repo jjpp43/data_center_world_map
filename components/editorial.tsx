@@ -280,7 +280,11 @@ export function ArrowLeftIcon() {
   );
 }
 
-export function EditorialHeader({ active }: { active: "about" | "methodology" }) {
+export function EditorialHeader({
+  active,
+}: {
+  active: "about" | "methodology" | "api";
+}) {
   const link = (href: string, label: string, current: boolean) => (
     <a
       href={href}
@@ -307,6 +311,7 @@ export function EditorialHeader({ active }: { active: "about" | "methodology" })
           <nav className="flex items-center gap-5">
             {link("/about", "About", active === "about")}
             {link("/methodology", "Methodology", active === "methodology")}
+            {link("/api", "API", active === "api")}
           </nav>
         </div>
         <a href="/" className="text-sm font-semibold tracking-tight">

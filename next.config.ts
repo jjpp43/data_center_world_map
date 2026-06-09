@@ -56,6 +56,26 @@ const securityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
 ];
 
+// Brand-name aliases for /operators/<slug>. The dataset stores operators with
+// their legal-suffix form (e.g. "Equinix, Inc.", "DataBank, Ltd.", "QTS
+// Realty Trust, Inc."), but users — including AI crawlers following obvious
+// brand-name URLs — will type the short form. Redirect those to the canonical
+// flagship slug as a permanent 308 so search engines collapse them.
+const OPERATOR_ALIASES: Record<string, string> = {
+  equinix: "equinix-inc",
+  databank: "databank-ltd",
+  cologix: "cologix-inc",
+  cyrusone: "cyrusone-inc",
+  qts: "qts-realty-trust-inc",
+  "iron-mountain": "iron-mountain-data-centers",
+  edgeconnex: "edgeconnex-inc",
+  flexential: "flexential-corp",
+  lumen: "lumen-technologies-inc",
+  tierpoint: "tierpoint-llc",
+  cogent: "cogent-communications-inc",
+  "digital-realty-trust": "digital-realty",
+};
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -64,6 +84,13 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
     ];
+  },
+  async redirects() {
+    return Object.entries(OPERATOR_ALIASES).map(([from, to]) => ({
+      source: `/operators/${from}`,
+      destination: `/operators/${to}`,
+      permanent: true,
+    }));
   },
 };
 

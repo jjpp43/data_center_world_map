@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 import { supabaseServer } from "@/lib/supabase";
+import { loadOperatorSummaries } from "@/lib/operators";
+import { loadCountrySummaries } from "@/lib/countries-data";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
 
@@ -28,20 +30,46 @@ async function loadFacilitySlugs(): Promise<Row[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const rows = await loadFacilitySlugs();
+  const [facilities, operators, countries] = await Promise.all([
+    loadFacilitySlugs(),
+    loadOperatorSummaries(),
+    loadCountrySummaries(),
+  ]);
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${SITE}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: `${SITE}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE}/methodology`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE}/api`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE}/operators`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/countries`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
   ];
 
-  const facilityEntries: MetadataRoute.Sitemap = rows.map((r) => ({
+  const facilityEntries: MetadataRoute.Sitemap = facilities.map((r) => ({
     url: `${SITE}/facility/${r.slug}`,
     lastModified: r.updated_at ? new Date(r.updated_at) : now,
     changeFrequency: "weekly",
     priority: 0.6,
   }));
 
-  return [...staticEntries, ...facilityEntries];
+  // Single-facility operators don't need their own listing — their one facility
+  // page already covers it. We still render that route on demand; we just keep
+  // it out of the sitemap to avoid diluting it.
+  const operatorEntries: MetadataRoute.Sitemap = operators
+    .filter((o) => o.facility_count >= 2 && o.slug.length > 0)
+    .map((o) => ({
+      url: `${SITE}/operators/${o.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    }));
+
+  const countryEntries: MetadataRoute.Sitemap = countries.map((c) => ({
+    url: `${SITE}/countries/${c.code.toLowerCase()}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.7,
+  }));
+
+  return [...staticEntries, ...facilityEntries, ...operatorEntries, ...countryEntries];
 }

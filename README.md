@@ -18,7 +18,9 @@ An open, sourced atlas of every serious data center on Earth.
 | Networks (ASNs) | **34,732** |
 | Internet exchanges | **1,309** |
 | Cloud regions | **176** |
-| SEO-indexed detail pages | **5,351** |
+| Operator-page records (7 colos) | **714** |
+| Indexable URLs in sitemap | **6,153** |
+| JSON-LD schemas per facility | **Place + FAQPage** |
 
 ```
 Coverage by country (top 8)
@@ -165,12 +167,21 @@ npm run check:security     # RLS coverage + service-role-leak guard
 npm run build              # prod build (runs check:security first)
 ```
 
-## Performance & SEO
+## Performance, SEO, and AEO
+
+The site is built for both classic search and AI answer engines.
 
 - `/api/facilities.geojson` cached at the Vercel edge — Supabase rarely sees a query
+- `/api/v1/facilities` is a documented JSON+CSV dataset endpoint with `?format=csv`, `?limit=`, `?offset=` — designed to be crawler- and notebook-friendly
 - Mapbox **client-side clustering** with `clusterProperties.sum_networks` for density-aware glow
-- Every `/facility/[slug]` emits **JSON-LD `Place` schema** for rich snippets
-- Dynamic `sitemap.xml` with 5,354 entries (5,351 facilities + home + about + methodology)
+- Every `/facility/[slug]` ships **two JSON-LD blocks**: a `Place` schema with `geo`, `address`, and every spec as `additionalProperty`, plus a `FAQPage` with 3–10 templated Q&A pairs ("Who operates X?", "How many networks at X?") — exactly the shape AI answer engines extract verbatim
+- Every facility page also renders a visible 1–2 sentence TL;DR paragraph under the H1, generated from the same row data — same prose lives in `<meta description>`
+- `/operators` and `/operators/[slug]` server-rendered listings — every operator with 2+ facilities gets a sitemap entry; each detail page ships `CollectionPage` + `ItemList` JSON-LD with every facility
+- `/countries` and `/countries/[code]` server-rendered listings — same shape, grouped by city — answers "how many data centers are in Germany?" with one citable page
+- `public/llms.txt` (the emerging answer-engine convention) lists the canonical entry points and the dataset endpoint
+- `robots.ts` explicitly allows GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot-Extended, and 6 others; allows the public dataset endpoints under `/api/`
+- Brand-name URLs (`/operators/equinix`, `/operators/databank`, …) 308-redirect to canonical slugs (`equinix-inc`, `databank-ltd`, …) via `next.config.ts`, so the obvious URLs always serve the flagship pages
+- Dynamic `sitemap.xml` with **6,153 entries**: 5,351 facilities + 648 operator pages + 148 country pages + 6 statics
 
 ## Security
 
@@ -182,10 +193,12 @@ npm run build              # prod build (runs check:security first)
 ## Roadmap
 
 ```
+Operator-page orphans (geocode + insert as canonical)   +234       next up
+Iron Mountain via Playwright (Vercel-checkpoint guarded) +25        next up
 Hyperscale buildings (MSFT, GOOG, META, AWS, Apple)     +300–500   researching
-Operator-page orphans (geocode + insert as canonical)   +200–300   next up
-More colos (Iron Mountain, Aligned, Stack, T5, …)       +150–250   tractable
+More colos (Aligned, Stack, T5, EdgeConneX, …)          +150–250   tractable
 Bundled facilities split (Equinix CH1/CH2/CH4 → 3 rows)  +50–100   cheap
+Operator-name canonicalization (Equinix vs Equinix Inc.) DB hygiene small
 Single-tenant enterprise (banks, retail, gov)           +500–800   multi-year
 ```
 

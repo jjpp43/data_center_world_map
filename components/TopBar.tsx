@@ -37,6 +37,12 @@ export function TopBar({ facilities, onSelect, theme, onToggleTheme }: Props) {
         >
           Methodology
         </Link>
+        <Link
+          href="/api"
+          className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+        >
+          API
+        </Link>
       </nav>
 
       <div className="pointer-events-auto flex-1 max-w-xl">

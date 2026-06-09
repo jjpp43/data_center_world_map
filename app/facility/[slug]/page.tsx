@@ -129,6 +129,31 @@ const STATUS_PIN_COLOR: Record<string, string> = {
   decommissioned: "ef4444",
 };
 
+function buildSummary(args: {
+  name: string;
+  operator: string | null;
+  city: string | null;
+  country: string;
+  power_mw: number | null;
+  space_sqft: number | null;
+  tier: string | null;
+  networkCount?: number;
+  ixCount?: number;
+}): string {
+  const where = [args.city, countryName(args.country)].filter(Boolean).join(", ");
+  const op = args.operator ?? "an unknown operator";
+  const specBits: string[] = [];
+  if (args.power_mw) specBits.push(`${args.power_mw} MW`);
+  if (args.space_sqft) specBits.push(`${args.space_sqft.toLocaleString()} sqft`);
+  if (args.tier) specBits.push(`Tier ${args.tier}`);
+  const specBlurb = specBits.length ? ` Published specs: ${specBits.join(" · ")}.` : "";
+  const presenceBits: string[] = [];
+  if (args.networkCount) presenceBits.push(`${args.networkCount.toLocaleString()} network${args.networkCount === 1 ? "" : "s"}`);
+  if (args.ixCount) presenceBits.push(`${args.ixCount.toLocaleString()} Internet exchange${args.ixCount === 1 ? "" : "s"}`);
+  const presenceBlurb = presenceBits.length ? ` Hosts ${presenceBits.join(" and ")}.` : "";
+  return `${args.name} is a data center operated by ${op}${where ? ` in ${where}` : ""}.${specBlurb}${presenceBlurb}`;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const sb = supabaseServer();
@@ -138,17 +163,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq("slug", slug)
     .maybeSingle();
   if (!data) return { title: "Facility not found" };
-  const where = [data.city, countryName(data.country)].filter(Boolean).join(", ");
   const op = data.operator ?? "Unknown operator";
   const title = `${data.name} · ${op}`;
-  const specBits: string[] = [];
-  if (data.power_mw) specBits.push(`${data.power_mw} MW`);
-  if (data.space_sqft) specBits.push(`${data.space_sqft.toLocaleString()} sqft`);
-  if (data.tier) specBits.push(`Tier ${data.tier}`);
-  const specBlurb = specBits.length ? ` Specs: ${specBits.join(" · ")}.` : "";
-  const description = `${data.name}, a data center operated by ${op}${
-    where ? ` in ${where}` : ""
-  }.${specBlurb} Networks, IXPs, sources, and operator details.`;
+  const description = buildSummary({
+    name: data.name,
+    operator: data.operator,
+    city: data.city,
+    country: data.country,
+    power_mw: data.power_mw,
+    space_sqft: data.space_sqft,
+    tier: data.tier,
+  });
   const canonical = `/facility/${slug}`;
   return {
     title,
@@ -224,6 +249,7 @@ export default async function FacilityPage({ params }: Props) {
     : null;
 
   const jsonLd = buildPlaceJsonLd(dc, networks.length, ixes.length);
+  const faqJsonLd = buildFaqJsonLd(dc, networks.length, ixes, sources ?? []);
   const theme = await getTheme();
 
   return (
@@ -234,6 +260,12 @@ export default async function FacilityPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
       <header className="sticky top-0 z-10 border-b border-zinc-200/70 bg-white/80 backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">
           <Link
@@ -268,6 +300,19 @@ export default async function FacilityPage({ params }: Props) {
             </span>
           </div>
         </div>
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+          {buildSummary({
+            name: dc.name,
+            operator: dc.operator,
+            city: dc.city,
+            country: dc.country,
+            power_mw: dc.power_mw,
+            space_sqft: dc.space_sqft,
+            tier: dc.tier,
+            networkCount: networks.length,
+            ixCount: ixes.length,
+          })}
+        </p>
 
         <section className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-5">
           <div className="md:col-span-3">
@@ -623,6 +668,113 @@ function buildPlaceJsonLd(dc: DataCenter, networkCount: number, ixCount: number)
         }
       : {}),
     sameAs: dc.website ? [dc.website] : undefined,
+  };
+}
+
+function buildFaqJsonLd(
+  dc: DataCenter,
+  networkCount: number,
+  ixes: Array<{ ix_id: string; name: string }>,
+  sources: SourceRecord[],
+) {
+  type Ix = { name: string };
+  const qa: Array<{ q: string; a: string }> = [];
+  const where = [dc.city, countryName(dc.country)].filter(Boolean).join(", ");
+
+  // Location — always present (we have country at minimum)
+  if (dc.address || where) {
+    const locParts = [dc.address, where].filter(Boolean).join(", ");
+    qa.push({
+      q: `Where is ${dc.name} located?`,
+      a: `${dc.name} is located at ${locParts}.`,
+    });
+  }
+
+  if (dc.operator) {
+    qa.push({
+      q: `Who operates ${dc.name}?`,
+      a: `${dc.name} is operated by ${dc.operator}.`,
+    });
+  }
+
+  qa.push({
+    q: `What is the status of ${dc.name}?`,
+    a: dc.status === "operational"
+      ? `${dc.name} is operational.`
+      : dc.status === "under_construction"
+        ? `${dc.name} is under construction.`
+        : dc.status === "planned"
+          ? `${dc.name} is planned but not yet operational.`
+          : `${dc.name} has been decommissioned.`,
+  });
+
+  if (dc.power_mw) {
+    qa.push({
+      q: `What is the power capacity of ${dc.name}?`,
+      a: `${dc.name} has a published power capacity of ${dc.power_mw} MW${dc.power_redundancy ? ` with ${dc.power_redundancy} redundancy` : ""}.`,
+    });
+  }
+
+  if (dc.space_sqft || dc.space_sqm) {
+    const space = dc.space_sqft
+      ? `${dc.space_sqft.toLocaleString()} square feet${dc.space_sqm ? ` (${dc.space_sqm.toLocaleString()} sqm)` : ""}`
+      : `${dc.space_sqm!.toLocaleString()} square meters`;
+    qa.push({
+      q: `How large is ${dc.name}?`,
+      a: `${dc.name} has ${space} of facility space.`,
+    });
+  }
+
+  if (dc.tier) {
+    qa.push({
+      q: `What Uptime tier is ${dc.name}?`,
+      a: `${dc.name} is rated to Uptime Institute Tier ${dc.tier} standards.`,
+    });
+  }
+
+  if (networkCount > 0) {
+    qa.push({
+      q: `How many networks are present at ${dc.name}?`,
+      a: `${networkCount.toLocaleString()} network${networkCount === 1 ? " is" : "s are"} present at ${dc.name} according to PeeringDB, including carriers, ISPs, and content networks.`,
+    });
+  }
+
+  if (ixes.length > 0) {
+    const named = ixes.slice(0, 3).map((x: Ix) => x.name).join(", ");
+    qa.push({
+      q: `What Internet exchanges does ${dc.name} host?`,
+      a: `${dc.name} hosts ${ixes.length} Internet exchange${ixes.length === 1 ? "" : "s"}${named ? `, including ${named}` : ""}.`,
+    });
+  }
+
+  if (dc.certifications && dc.certifications.length > 0) {
+    qa.push({
+      q: `What certifications does ${dc.name} hold?`,
+      a: `${dc.name} holds the following published certifications: ${dc.certifications.join(", ")}.`,
+    });
+  }
+
+  if (sources.length > 0) {
+    const sourceLabels = [
+      ...new Set(sources.map((s) => SOURCE_LABEL[s.source] ?? s.source)),
+    ].join(", ");
+    qa.push({
+      q: `Where does the data on ${dc.name} come from?`,
+      a: `Information about ${dc.name} is aggregated from ${sources.length} source${sources.length === 1 ? "" : "s"}: ${sourceLabels}. Each source record is linked at the bottom of the page.`,
+    });
+  }
+
+  if (qa.length < 3) return null; // Don't ship a near-empty FAQPage.
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "@id": `/facility/${dc.slug}#faq`,
+    mainEntity: qa.map(({ q, a }) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
   };
 }
 
