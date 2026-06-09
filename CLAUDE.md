@@ -9,7 +9,7 @@ Phases 1–5a shipped. Next: Phase 5b (API keys + Stripe).
 - **5,351** facilities (5,256 PeeringDB + 95 OSM-only after dedup); **34,732** networks; **1,309** IXPs; **176** cloud regions; **57,206** network↔fac + **4,134** IX↔fac relations
 - **714** operator-page records across 7 colos (Equinix, Digital Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS) → **480 enriched, 234 orphans**. Iron Mountain blocked by Vercel checkpoint, needs Playwright.
 - Migrations 0001–0006 applied. RLS public-read-only on every table.
-- Routes: map at `/`, `/facility/[slug]` (SSR + Place+FAQPage JSON-LD), `/about`, `/methodology`, `/api` (docs), `/operators/[slug]`, `/countries/[code]`, `/metros[/slug]`, `/ixps[/slug]`, `/networks/[asn]`, `/density[/tier]`, `/insights[/slug]`, public dataset API at `/api/v1/{facilities,operators,countries,cloud-regions}` (JSON + CSV, open CORS, no auth in v1)
+- Routes: map at `/`, `/facility/[slug]` (SSR + Place+FAQPage JSON-LD), `/about`, `/methodology`, `/api` (docs), `/operators/[slug]`, `/countries/[code]`, `/metros[/slug]`, `/ixps[/slug]`, `/networks/[asn]`, `/density[/tier]`, `/insights[/slug]`, auth + dashboard at `/login`, `/auth/{callback,signout}`, `/dashboard/keys`, public dataset API at `/api/v1/{facilities,operators,countries,cloud-regions}` (JSON + CSV, open CORS, bearer-token auth optional with `X-RateLimit-*` headers)
 - Mobile: `<MobileHome>` search-first list below `md` breakpoint. Theme cookie-persisted across all server pages.
 - SEO/AEO: sitemap 6,153 URLs, `robots.ts` allows GPTBot/ClaudeBot/PerplexityBot/etc, `public/llms.txt`, brand-name 308 redirects in `next.config.ts` (`/operators/equinix` → `/operators/equinix-inc`)
 
@@ -148,7 +148,10 @@ scrapers/                               separate Node 22 subproject (out/ and ca
    - 10e ✅ (folded into 10f) — Regional rankings exist as cross-pivot sections on `/metros/[slug]`, `/countries/[code]`, `/ixps/[slug]`, `/networks/[asn]`. Dedicated `/rankings/*` pages judged redundant with these.
    - 10f ✅ **Insight pages** — `/insights` hub + 3 evergreen articles: `most-network-dense-facilities` (top 50), `largest-ixps-globally` (top 25), `peering-hub-metros` (top 20 by aggregate density). Article JSON-LD; same editorial design language as `/about` and `/methodology`.
    - **Deferred polish** — cloud-adjacency classification (needs PostGIS proximity join `data_centers × cloud_regions`); facility type heuristic; FilterCard density chips on the live map.
-8. ⏸ **Monetization (5b)** — API keys + Stripe + tiered limits via Supabase Auth + Vercel KV/Upstash, self-serve dashboard at `/dashboard/keys` (~8h MVP). Now the next active phase. Add Upstash IP rate-limit in middleware as interim insurance.
+8. 🟡 **Monetization (5b)** — split into 5b.1 (foundation, done) and 5b.2 (Polar.sh wiring, next).
+   - 5b.1 ✅ **Auth + API keys + middleware + rate limits**: Supabase Auth (GitHub OAuth), `/login`, `/auth/callback`, `/dashboard/keys` (create/revoke + per-key monthly quota gauges), root `middleware.ts` on `/api/v1/*` doing bearer validation via `validate_and_charge_api_key` RPC and anonymous IP throttle via `charge_anonymous` RPC. Postgres-based rate limiting (no Upstash dependency). `X-RateLimit-Tier`/`-Limit`/`-Remaining` headers on every response. Tiers in `lib/api-keys.ts`: anonymous 1k/day per IP · free 10k/mo · pro 100k/mo · team 1M/mo · enterprise 100M/mo.
+   - 5b.2 ⏸ **Polar.sh wiring** — Checkout button on `/dashboard/keys`, `/api/webhooks/polar` to flip `api_keys.tier` on subscription events. Polar.sh chosen over Stripe for Korean-bank payout + merchant-of-record VAT/sales tax handling.
+   - **Manual ops** before 5b.1 goes live in prod: (1) apply migration `0007_monetization.sql` to Supabase, (2) enable GitHub provider in Supabase Auth, (3) register a GitHub OAuth app with callback URL `https://datacenters.world/auth/callback`, (4) set `NEXT_PUBLIC_SITE_URL` env in Vercel.
 9. ⏸ Orphan canonicalization + Iron Mountain (Playwright)
 10. ⏸ Hyperscale buildings (scrape Microsoft + Google ESG pages, +300–500 facilities)
 11. ⏸ User submissions + admin UI

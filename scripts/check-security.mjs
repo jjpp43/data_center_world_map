@@ -26,6 +26,12 @@ const FORBIDDEN_PATTERNS = [/supabaseAdmin\b/, /SUPABASE_SERVICE_ROLE_KEY/];
 
 const SCAN_DIRS = ["app", "components", "lib"];
 
+// Extension-owned tables that we can't alter as the project owner. PostGIS
+// installs spatial_ref_sys in the public schema. Migration 0007 also updates
+// the SQL-side helper to skip extension deps; this guards against the case
+// where 0007 hasn't been applied to the live DB yet.
+const RLS_ALLOWLIST = new Set(["spatial_ref_sys"]);
+
 const errors = [];
 
 function walk(dir, onFile) {
@@ -108,7 +114,7 @@ if (!URL || !SERVICE_KEY) {
       if (res.ok) {
         const list = await res.json();
         for (const t of list ?? []) {
-          if (t.rowsecurity === false) {
+          if (t.rowsecurity === false && !RLS_ALLOWLIST.has(t.tablename)) {
             errors.push(`Supabase: public.${t.tablename} has RLS disabled`);
           }
         }

@@ -36,20 +36,23 @@ export default async function ApiDocsPage() {
 
         <div className="max-w-3xl">
           <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-            v1 · free · no auth required
+            v1 · free tier · bearer-token auth
           </div>
           <h1 className="mt-4 text-5xl font-semibold leading-[1.05] tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-6xl">
             API.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-300">
             Read access to every data center, operator, country, and cloud region in the atlas.
-            JSON or CSV, open CORS, edge-cached. Free in v1 — designed to be cited by humans and
-            answer engines alike.
+            JSON or CSV, open CORS, edge-cached. Anonymous access is rate-limited per IP;{" "}
+            <Link href="/dashboard/keys" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+              create a free key
+            </Link>{" "}
+            for 10× the quota.
           </p>
 
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Pill label="Base URL" value="/api/v1" />
-            <Pill label="Auth" value="none in v1" />
+            <Pill label="Auth" value="bearer (optional)" />
             <Pill label="Formats" value="json · csv" />
             <Pill label="CORS" value="open (any origin)" />
           </div>
@@ -239,7 +242,57 @@ export default async function ApiDocsPage() {
         </section>
 
         <section className="mt-16">
-          <SectionHeader number={4}>Versioning and stability</SectionHeader>
+          <SectionHeader number={4}>Authentication</SectionHeader>
+          <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
+            Anonymous access works at a rate-limited tier — useful for casual probing and
+            citation. For sustained or programmatic use, pass an API key via the{" "}
+            <Inline>Authorization</Inline> header. Keys are issued from the{" "}
+            <Link href="/dashboard/keys" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+              dashboard
+            </Link>{" "}
+            after signing in with GitHub. Free tier is 10,000 requests/month, no card required.
+          </p>
+          <Code
+            label="Authenticated request"
+            content={`curl '${BASE}/facilities?country=DE&limit=5' \\
+     -H 'Authorization: Bearer dcw_…'`}
+          />
+          <p className="mt-4 max-w-2xl text-sm text-zinc-500">
+            Every response sets <Inline>X-RateLimit-Tier</Inline>,{" "}
+            <Inline>X-RateLimit-Limit</Inline>, and <Inline>X-RateLimit-Remaining</Inline>. When you
+            exceed the quota, the API returns <Inline>429 Too Many Requests</Inline> with a JSON
+            error body. Keys are sha256-hashed at rest; we never store the plaintext.
+          </p>
+        </section>
+
+        <section className="mt-16">
+          <SectionHeader number={5}>Pricing</SectionHeader>
+          <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/40 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-900/30">
+            <table className="w-full text-sm">
+              <thead className="border-b border-zinc-200/70 bg-zinc-50/60 font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500 dark:border-zinc-800/70 dark:bg-zinc-900/40">
+                <tr>
+                  <th className="px-4 py-2.5 text-left font-medium">Tier</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Quota</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Price</th>
+                  <th className="px-4 py-2.5 text-left font-medium">For</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                <PricingRow tier="Anonymous" quota="1,000 / day per IP" price="—" forWho="Casual probing, citations." />
+                <PricingRow tier="Free" quota="10,000 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
+                <PricingRow tier="Pro" quota="100,000 / month" price="coming soon" forWho="Production services, dashboards, internal tools." />
+                <PricingRow tier="Team" quota="1,000,000 / month" price="coming soon" forWho="Bulk analytics, market research, embedded data." />
+                <PricingRow tier="Enterprise" quota="custom" price="contact" forWho="SLA, custom exports, on-prem mirror." />
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-4 max-w-2xl text-sm text-zinc-500">
+            Pro and Team tiers ship next via Polar.sh. Existing keys upgrade in place — no migration.
+          </p>
+        </section>
+
+        <section className="mt-16">
+          <SectionHeader number={6}>Versioning and stability</SectionHeader>
           <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
             All endpoints live under <Inline>/api/v1/</Inline>. Breaking changes ship under a new
             major (<Inline>/api/v2/</Inline>) — never inside <Inline>v1</Inline>. Additive changes
@@ -248,11 +301,11 @@ export default async function ApiDocsPage() {
         </section>
 
         <section className="mt-16">
-          <SectionHeader number={5}>Roadmap (post-v1)</SectionHeader>
+          <SectionHeader number={7}>Roadmap (post-v1)</SectionHeader>
           <ul className="mt-5 max-w-2xl space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
             <li>
-              <strong className="text-zinc-900 dark:text-zinc-100">API keys + tiered limits</strong>{" "}
-              — Pro tier with higher throughput, CSV bulk exports, webhook alerts on new builds.
+              <strong className="text-zinc-900 dark:text-zinc-100">Paid tier checkout</strong> —
+              Pro and Team subscriptions via Polar.sh, with the same key flipping in place.
             </li>
             <li>
               <strong className="text-zinc-900 dark:text-zinc-100">More filters</strong> —{" "}
@@ -272,7 +325,7 @@ export default async function ApiDocsPage() {
 
         <section className="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <SectionHeader number={6}>Get in touch</SectionHeader>
+            <SectionHeader number={8}>Get in touch</SectionHeader>
             <p className="mt-5 max-w-xl text-zinc-600 dark:text-zinc-300">
               Building something with this? Tell us — we&rsquo;ll prioritize the filters and exports
               you need. Need higher limits, an SLA, or a one-off bulk export today? Get in touch.
@@ -401,5 +454,30 @@ function Inline({ children }: { children: React.ReactNode }) {
     <code className="rounded bg-zinc-100 px-1 py-0.5 font-mono text-[11px] text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
       {children}
     </code>
+  );
+}
+
+function PricingRow({
+  tier,
+  quota,
+  price,
+  forWho,
+}: {
+  tier: string;
+  quota: string;
+  price: string;
+  forWho: string;
+}) {
+  return (
+    <tr className="transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
+      <td className="px-4 py-3 align-top font-medium text-zinc-900 dark:text-zinc-100">{tier}</td>
+      <td className="px-4 py-3 align-top font-mono text-xs tabular-nums text-zinc-700 dark:text-zinc-300">
+        {quota}
+      </td>
+      <td className="px-4 py-3 align-top font-mono text-xs tabular-nums text-zinc-700 dark:text-zinc-300">
+        {price}
+      </td>
+      <td className="px-4 py-3 align-top text-sm text-zinc-600 dark:text-zinc-400">{forWho}</td>
+    </tr>
   );
 }
