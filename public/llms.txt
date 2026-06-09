@@ -18,6 +18,8 @@ datacenters.world is a public, non-commercial reference. Data is aggregated from
 - [/countries/us](https://datacenters.world/countries/us): Example per-country page. Lists every facility in the country grouped by city. Use any ISO-3166-1 alpha-2 code lowercased.
 - [/metros](https://datacenters.world/metros): Every canonical data-center metro worldwide (Northern Virginia, Frankfurt, Singapore, Tokyo, FLAP-D, etc.), ranked by facility count. A metro is the industry-standard unit — finer than a country, coarser than a city — for describing colocation capacity and latency neighborhoods.
 - [/metros/northern-virginia](https://datacenters.world/metros/northern-virginia): Example per-metro page. Lists every facility in the metro ranked by network density, top operators, total MW, and network/IXP presence. Metro slugs are kebab-case names (e.g. `frankfurt`, `silicon-valley`, `sao-paulo`).
+- [/ixps](https://datacenters.world/ixps): Every tracked Internet Exchange Point worldwide (DE-CIX Frankfurt, AMS-IX, LINX, IX.br, etc.), ranked by member-network count. An IXP is a neutral switching fabric where networks peer directly; each one operates inside one or more colocation facilities.
+- [/ixps/de-cix-frankfurt](https://datacenters.world/ixps/de-cix-frankfurt): Example per-IXP page. Lists every facility where the IXP has a presence, ranked by network density, plus member-network count and top hosting operators. Slugs derive from the PeeringDB IXP name (e.g. `ams-ix`, `linx-lon1`, `seattle-internet-exchange`).
 
 ## Public dataset
 

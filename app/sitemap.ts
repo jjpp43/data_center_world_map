@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase";
 import { loadOperatorSummaries } from "@/lib/operators";
 import { loadCountrySummaries } from "@/lib/countries-data";
 import { loadMetroSummaries } from "@/lib/metros-data";
+import { loadIxpSummaries } from "@/lib/ixps-data";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
 
@@ -31,11 +32,12 @@ async function loadFacilitySlugs(): Promise<Row[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const [facilities, operators, countries, metros] = await Promise.all([
+  const [facilities, operators, countries, metros, ixps] = await Promise.all([
     loadFacilitySlugs(),
     loadOperatorSummaries(),
     loadCountrySummaries(),
     loadMetroSummaries(),
+    loadIxpSummaries(),
   ]);
 
   const staticEntries: MetadataRoute.Sitemap = [
@@ -46,6 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/operators`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE}/countries`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE}/metros`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/ixps`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
   ];
 
   const facilityEntries: MetadataRoute.Sitemap = facilities.map((r) => ({
@@ -81,11 +84,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.75,
   }));
 
+  const ixpEntries: MetadataRoute.Sitemap = ixps
+    .filter((i) => i.facility_count > 0)
+    .map((i) => ({
+      url: `${SITE}/ixps/${i.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.65,
+    }));
+
   return [
     ...staticEntries,
     ...facilityEntries,
     ...operatorEntries,
     ...countryEntries,
     ...metroEntries,
+    ...ixpEntries,
   ];
 }
