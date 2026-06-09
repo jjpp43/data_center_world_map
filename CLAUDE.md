@@ -143,7 +143,7 @@ scrapers/                               separate Node 22 subproject (out/ and ca
 7. 🟡 **Pivots & taxonomy expansion (Phase 10)** — multiply data value through additional lenses, zero new ingest. Inspired by cleanview.co's multi-pivot categorization.
    - 10a ✅ **Metros** — `/metros` + `/metros/[slug]` for ~60 canonical metros (NoVA, FLAP-D, Singapore, Tokyo…). Industry-standard unit; matches how operators/customers think.
    - 10b ✅ **IXP entity pages** — `/ixps` + `/ixps/[slug]` for all 1,309 IXPs with member-facility lists, ranked by `net_count`
-   - 10c ⏸ Network entity pages — `/networks/[asn]` for PeeringDB ASNs present in ≥2 facilities (~5k URLs)
+   - 10c ✅ **Network entity pages** — `/networks` + `/networks/[asn]` for PeeringDB ASNs (URL = integer ASN); sitemap filters to ≥2 facility presences
    - 10d ⏸ Derived classifications — density tier · cloud-adjacency · facility type, as filter chips + facet pages
    - 10e ⏸ Regional rankings — "Top operators in [country/metro]" auto-generated pages
    - 10f ⏸ Insight pages — `/insights/[slug]`, 3–5 evergreen long-form pieces

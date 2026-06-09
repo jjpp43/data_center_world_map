@@ -20,6 +20,8 @@ datacenters.world is a public, non-commercial reference. Data is aggregated from
 - [/metros/northern-virginia](https://datacenters.world/metros/northern-virginia): Example per-metro page. Lists every facility in the metro ranked by network density, top operators, total MW, and network/IXP presence. Metro slugs are kebab-case names (e.g. `frankfurt`, `silicon-valley`, `sao-paulo`).
 - [/ixps](https://datacenters.world/ixps): Every tracked Internet Exchange Point worldwide (DE-CIX Frankfurt, AMS-IX, LINX, IX.br, etc.), ranked by member-network count. An IXP is a neutral switching fabric where networks peer directly; each one operates inside one or more colocation facilities.
 - [/ixps/de-cix-frankfurt](https://datacenters.world/ixps/de-cix-frankfurt): Example per-IXP page. Lists every facility where the IXP has a presence, ranked by network density, plus member-network count and top hosting operators. Slugs derive from the PeeringDB IXP name (e.g. `ams-ix`, `linx-lon1`, `seattle-internet-exchange`).
+- [/networks](https://datacenters.world/networks): Every PeeringDB network (Autonomous System) present in at least one tracked facility, ranked by data-center footprint. The full set is 30,000+; the index page shows the top 500.
+- [/networks/15169](https://datacenters.world/networks/15169): Example per-network page (Google, AS15169). Lists every facility where the network has a presence, plus country footprint, top hosting operators, peering policy, and PeeringDB metadata (info_type, info_scope, info_traffic, IPv6 support). URL path is the integer ASN — e.g. `/networks/16509` (AWS), `/networks/13335` (Cloudflare), `/networks/8075` (Microsoft).
 
 ## Public dataset
 

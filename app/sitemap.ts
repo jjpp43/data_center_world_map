@@ -4,6 +4,7 @@ import { loadOperatorSummaries } from "@/lib/operators";
 import { loadCountrySummaries } from "@/lib/countries-data";
 import { loadMetroSummaries } from "@/lib/metros-data";
 import { loadIxpSummaries } from "@/lib/ixps-data";
+import { loadNetworkSummaries } from "@/lib/networks-data";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
 
@@ -32,12 +33,13 @@ async function loadFacilitySlugs(): Promise<Row[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const [facilities, operators, countries, metros, ixps] = await Promise.all([
+  const [facilities, operators, countries, metros, ixps, networks] = await Promise.all([
     loadFacilitySlugs(),
     loadOperatorSummaries(),
     loadCountrySummaries(),
     loadMetroSummaries(),
     loadIxpSummaries(),
+    loadNetworkSummaries(),
   ]);
 
   const staticEntries: MetadataRoute.Sitemap = [
@@ -49,6 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/countries`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE}/metros`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE}/ixps`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/networks`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
   ];
 
   const facilityEntries: MetadataRoute.Sitemap = facilities.map((r) => ({
@@ -93,6 +96,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.65,
     }));
 
+  // Networks: only list ASNs present in ≥2 facilities. Single-facility ASNs
+  // make for thin pages and bloat the sitemap.
+  const networkEntries: MetadataRoute.Sitemap = networks
+    .filter((n) => n.facility_count >= 2)
+    .map((n) => ({
+      url: `${SITE}/networks/${n.asn}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.6,
+    }));
+
   return [
     ...staticEntries,
     ...facilityEntries,
@@ -100,5 +114,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...countryEntries,
     ...metroEntries,
     ...ixpEntries,
+    ...networkEntries,
   ];
 }
