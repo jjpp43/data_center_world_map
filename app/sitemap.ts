@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { loadOperatorSummaries } from "@/lib/operators";
 import { loadCountrySummaries } from "@/lib/countries-data";
+import { loadMetroSummaries } from "@/lib/metros-data";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
 
@@ -30,10 +31,11 @@ async function loadFacilitySlugs(): Promise<Row[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const [facilities, operators, countries] = await Promise.all([
+  const [facilities, operators, countries, metros] = await Promise.all([
     loadFacilitySlugs(),
     loadOperatorSummaries(),
     loadCountrySummaries(),
+    loadMetroSummaries(),
   ]);
 
   const staticEntries: MetadataRoute.Sitemap = [
@@ -43,6 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/api`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE}/operators`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE}/countries`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/metros`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
   ];
 
   const facilityEntries: MetadataRoute.Sitemap = facilities.map((r) => ({
@@ -71,5 +74,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticEntries, ...facilityEntries, ...operatorEntries, ...countryEntries];
+  const metroEntries: MetadataRoute.Sitemap = metros.map((m) => ({
+    url: `${SITE}/metros/${m.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.75,
+  }));
+
+  return [
+    ...staticEntries,
+    ...facilityEntries,
+    ...operatorEntries,
+    ...countryEntries,
+    ...metroEntries,
+  ];
 }

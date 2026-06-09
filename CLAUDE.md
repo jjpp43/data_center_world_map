@@ -139,10 +139,18 @@ scrapers/                               separate Node 22 subproject (out/ and ca
 3. ✅ More sources (OSM, AWS/GCP/Azure/Oracle, PeeringDB networks/IXes)
 4. ✅ Operator-page spec enrichment (480 matched, 234 orphans)
 5. ✅ AEO/SEO surfaces — `/operators`, `/countries`, FAQ JSON-LD, llms.txt, 6,153 sitemap URLs, AI-bot allowlist
-6. 🟡 **Monetization**: v1 API + docs done (5a). Next: API keys + Stripe + tiered limits via Supabase Auth + Vercel KV/Upstash, self-serve dashboard at `/dashboard/keys` (~8h MVP)
-7. ⏸ Orphan canonicalization + Iron Mountain (Playwright)
-8. ⏸ Hyperscale buildings (scrape Microsoft + Google ESG pages, +300–500 facilities)
-9. ⏸ User submissions + admin UI
+6. ✅ v1 public API + docs (5a)
+7. 🟡 **Pivots & taxonomy expansion (Phase 10)** — multiply data value through additional lenses, zero new ingest. Inspired by cleanview.co's multi-pivot categorization.
+   - 10a 🟡 **Metros** — `/metros` + `/metros/[slug]` for ~40 canonical metros (NoVA, FLAP-D, Singapore, Tokyo…). Industry-standard unit; matches how operators/customers think.
+   - 10b ⏸ IXP entity pages — `/ixps/[slug]` for all 1,309 IXPs with member-facility lists
+   - 10c ⏸ Network entity pages — `/networks/[asn]` for PeeringDB ASNs present in ≥2 facilities (~5k URLs)
+   - 10d ⏸ Derived classifications — density tier · cloud-adjacency · facility type, as filter chips + facet pages
+   - 10e ⏸ Regional rankings — "Top operators in [country/metro]" auto-generated pages
+   - 10f ⏸ Insight pages — `/insights/[slug]`, 3–5 evergreen long-form pieces
+8. ⏸ **Monetization (5b)** — API keys + Stripe + tiered limits via Supabase Auth + Vercel KV/Upstash, self-serve dashboard at `/dashboard/keys` (~8h MVP). Sequenced *after* Phase 10 so gating reflects a larger SEO-traffic surface; add Upstash IP rate-limit in middleware as interim insurance.
+9. ⏸ Orphan canonicalization + Iron Mountain (Playwright)
+10. ⏸ Hyperscale buildings (scrape Microsoft + Google ESG pages, +300–500 facilities)
+11. ⏸ User submissions + admin UI
 
 ## Workflow
 

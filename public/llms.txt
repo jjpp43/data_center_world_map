@@ -16,6 +16,8 @@ datacenters.world is a public, non-commercial reference. Data is aggregated from
 - [/operators/equinix-inc](https://datacenters.world/operators/equinix-inc): Example per-operator page. Lists every facility for that operator with country breakdown, total MW, and links. Operator slugs use the dataset's canonical brand-with-suffix form (e.g. `equinix-inc`, `digital-realty`, `databank-ltd`, `cyrusone-inc`, `qts-realty-trust-inc`); short brand-name URLs (`/operators/equinix`, `/operators/databank`, etc.) 308-redirect to the canonical. Full list lives at `/operators`.
 - [/countries](https://datacenters.world/countries): Every country with at least one tracked facility, ranked by facility count.
 - [/countries/us](https://datacenters.world/countries/us): Example per-country page. Lists every facility in the country grouped by city. Use any ISO-3166-1 alpha-2 code lowercased.
+- [/metros](https://datacenters.world/metros): Every canonical data-center metro worldwide (Northern Virginia, Frankfurt, Singapore, Tokyo, FLAP-D, etc.), ranked by facility count. A metro is the industry-standard unit — finer than a country, coarser than a city — for describing colocation capacity and latency neighborhoods.
+- [/metros/northern-virginia](https://datacenters.world/metros/northern-virginia): Example per-metro page. Lists every facility in the metro ranked by network density, top operators, total MW, and network/IXP presence. Metro slugs are kebab-case names (e.g. `frankfurt`, `silicon-valley`, `sao-paulo`).
 
 ## Public dataset
 
