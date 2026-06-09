@@ -20,6 +20,9 @@ const ROOT = process.cwd();
 const ALLOWED_SERVICE_ROLE_PATHS = [
   "lib/supabase.ts",
   "scripts/",
+  // Webhook handlers need elevated privileges to update state in response to
+  // verified external events (Polar signature already checked).
+  "app/api/webhooks/",
 ];
 
 const FORBIDDEN_PATTERNS = [/supabaseAdmin\b/, /SUPABASE_SERVICE_ROLE_KEY/];

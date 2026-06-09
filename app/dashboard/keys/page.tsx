@@ -90,7 +90,13 @@ export default async function KeysPage({
         <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
           {TIER_LIMITS.free.toLocaleString()}
         </span>{" "}
-        requests/month.
+        requests/month. Need more?{" "}
+        <a
+          href="/dashboard/billing"
+          className="text-blue-600 hover:text-blue-500 dark:text-blue-400"
+        >
+          Upgrade to Pro or Team →
+        </a>
       </p>
 
       <KeysClient reveal={reveal ?? null} />

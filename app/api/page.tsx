@@ -280,14 +280,20 @@ export default async function ApiDocsPage() {
               <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
                 <PricingRow tier="Anonymous" quota="1,000 / day per IP" price="—" forWho="Casual probing, citations." />
                 <PricingRow tier="Free" quota="10,000 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
-                <PricingRow tier="Pro" quota="100,000 / month" price="coming soon" forWho="Production services, dashboards, internal tools." />
-                <PricingRow tier="Team" quota="1,000,000 / month" price="coming soon" forWho="Bulk analytics, market research, embedded data." />
+                <PricingRow tier="Pro" quota="100,000 / month" price="$39 / mo" forWho="Production services, dashboards, internal tools." />
+                <PricingRow tier="Team" quota="1,000,000 / month" price="$399 / mo" forWho="Bulk analytics, market research, embedded data." />
                 <PricingRow tier="Enterprise" quota="custom" price="contact" forWho="SLA, custom exports, on-prem mirror." />
               </tbody>
             </table>
           </div>
           <p className="mt-4 max-w-2xl text-sm text-zinc-500">
-            Pro and Team tiers ship next via Polar.sh. Existing keys upgrade in place — no migration.
+            Pro and Team subscriptions ship via Polar.sh. Upgrades take effect immediately and
+            every active key under your account inherits the new tier — no key rotation or
+            migration. Manage from{" "}
+            <Link href="/dashboard/billing" className="text-blue-600 hover:underline dark:text-blue-400">
+              /dashboard/billing
+            </Link>
+            .
           </p>
         </section>
 
