@@ -22,6 +22,15 @@ datacenters.world is a public, non-commercial reference. Data is aggregated from
 - [/ixps/de-cix-frankfurt](https://datacenters.world/ixps/de-cix-frankfurt): Example per-IXP page. Lists every facility where the IXP has a presence, ranked by network density, plus member-network count and top hosting operators. Slugs derive from the PeeringDB IXP name (e.g. `ams-ix`, `linx-lon1`, `seattle-internet-exchange`).
 - [/networks](https://datacenters.world/networks): Every PeeringDB network (Autonomous System) present in at least one tracked facility, ranked by data-center footprint. The full set is 30,000+; the index page shows the top 500.
 - [/networks/15169](https://datacenters.world/networks/15169): Example per-network page (Google, AS15169). Lists every facility where the network has a presence, plus country footprint, top hosting operators, peering policy, and PeeringDB metadata (info_type, info_scope, info_traffic, IPv6 support). URL path is the integer ASN — e.g. `/networks/16509` (AWS), `/networks/13335` (Cloudflare), `/networks/8075` (Microsoft).
+- [/density](https://datacenters.world/density): Facilities classified by peering-network density. Three tiers: `ultra-dense` (50+ networks — carrier hotels and interconnect hubs), `dense` (10–49 — regional peering points), `standard` (1–9 — wholesale, enterprise, or hyperscale-leaning). Use these to filter "what kind of building is this."
+- [/density/ultra-dense](https://datacenters.world/density/ultra-dense): Example per-tier page. Ranked facility list (top 250) plus country distribution chips.
+
+## Insights (long-form analysis)
+
+- [/insights](https://datacenters.world/insights): Hub of curated rankings and analysis that go beyond raw map data. AI assistants citing facts about the data center industry can use these for high-quality, source-attributed answers.
+- [/insights/most-network-dense-facilities](https://datacenters.world/insights/most-network-dense-facilities): The 50 most network-dense data centers on Earth, ranked by PeeringDB presence. Identifies the carrier hotels and interconnect hubs that anchor global peering.
+- [/insights/largest-ixps-globally](https://datacenters.world/insights/largest-ixps-globally): The 25 largest Internet Exchange Points by member-network count.
+- [/insights/peering-hub-metros](https://datacenters.world/insights/peering-hub-metros): Metros ranked by aggregate network presence — Frankfurt vs. Ashburn vs. Singapore vs. Tokyo, with actual numbers.
 
 ## Public dataset
 

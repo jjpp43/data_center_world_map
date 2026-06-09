@@ -5,6 +5,8 @@ import { loadCountrySummaries } from "@/lib/countries-data";
 import { loadMetroSummaries } from "@/lib/metros-data";
 import { loadIxpSummaries } from "@/lib/ixps-data";
 import { loadNetworkSummaries } from "@/lib/networks-data";
+import { TIERS } from "@/lib/density";
+import { INSIGHTS } from "@/lib/insights-data";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
 
@@ -52,6 +54,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/metros`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE}/ixps`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE}/networks`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/density`, lastModified: now, changeFrequency: "weekly", priority: 0.75 },
+    { url: `${SITE}/insights`, lastModified: now, changeFrequency: "weekly", priority: 0.75 },
+    ...TIERS.map((t) => ({
+      url: `${SITE}/density/${t.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
+    ...INSIGHTS.map((i) => ({
+      url: `${SITE}/insights/${i.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
   ];
 
   const facilityEntries: MetadataRoute.Sitemap = facilities.map((r) => ({
