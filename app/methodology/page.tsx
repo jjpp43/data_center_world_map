@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import {
   EditorialHeader,
   MatrixRow,
+  SectionHeader,
   Source,
   Test,
 } from "@/components/editorial";
@@ -54,10 +55,8 @@ export default async function MethodologyPage() {
         </div>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            §2 · What we map
-          </h2>
-          <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-300">
+          <SectionHeader number={2}>What we map</SectionHeader>
+          <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
             A facility makes the map only if it passes all five tests.
           </p>
           <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
@@ -86,10 +85,8 @@ export default async function MethodologyPage() {
         </section>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            §3 · Inclusion matrix
-          </h2>
-          <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/40 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-900/30">
+          <SectionHeader number={3}>Inclusion matrix</SectionHeader>
+          <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/40 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-900/30">
             <table className="w-full text-sm">
               <thead className="border-b border-zinc-200/70 bg-zinc-50/60 font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500 dark:border-zinc-800/70 dark:bg-zinc-900/40">
                 <tr>
@@ -119,9 +116,7 @@ export default async function MethodologyPage() {
         </section>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            §4 · Where the data comes from
-          </h2>
+          <SectionHeader number={4}>Where the data comes from</SectionHeader>
           <div className="mt-5 divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
             <Source
               name="PeeringDB"
@@ -155,10 +150,8 @@ export default async function MethodologyPage() {
         </section>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            §5 · How we match and dedupe
-          </h2>
-          <div className="mt-3 max-w-2xl space-y-3 text-zinc-600 dark:text-zinc-300">
+          <SectionHeader number={5}>How we match and dedupe</SectionHeader>
+          <div className="mt-5 max-w-2xl space-y-3 text-zinc-600 dark:text-zinc-300">
             <p>
               Each canonical facility row in the database can have many{" "}
               <em>source records</em> linked to it — one for every directory or page where we
@@ -183,10 +176,8 @@ export default async function MethodologyPage() {
 
         <section className="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-              §6 · Corrections and submissions
-            </h2>
-            <p className="mt-3 max-w-xl text-zinc-600 dark:text-zinc-300">
+            <SectionHeader number={6}>Corrections and submissions</SectionHeader>
+            <p className="mt-5 max-w-xl text-zinc-600 dark:text-zinc-300">
               Find an error? Know about a facility we&rsquo;re missing? Send the details —
               building name, operator, address, and a verifiable source — and we&rsquo;ll add
               it.

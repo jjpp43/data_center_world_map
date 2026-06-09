@@ -57,6 +57,38 @@ export function Stat({
   );
 }
 
+export function SectionHeader({
+  number,
+  children,
+  caption,
+}: {
+  number?: number | string;
+  children: ReactNode;
+  caption?: ReactNode;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-t border-zinc-200/70 pt-5 dark:border-zinc-800/60">
+      <h2 className="flex items-center gap-3 font-mono text-sm font-semibold uppercase tracking-[0.16em] text-zinc-900 dark:text-zinc-50">
+        <span
+          aria-hidden
+          className="inline-block h-4 w-[3px] rounded-sm bg-indigo-500/90 dark:bg-indigo-400/90"
+        />
+        {number != null && (
+          <span className="font-mono text-xs tabular-nums text-indigo-600 dark:text-indigo-400">
+            §{number}
+          </span>
+        )}
+        <span>{children}</span>
+      </h2>
+      {caption && (
+        <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-400">
+          {caption}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function InlineStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline gap-2">

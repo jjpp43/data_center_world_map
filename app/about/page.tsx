@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
-import { EditorialHeader, Gap, RankedRow, Stat } from "@/components/editorial";
+import { EditorialHeader, Gap, RankedRow, SectionHeader, Stat } from "@/components/editorial";
 import { getTheme } from "@/lib/theme";
 
 export const revalidate = 3600;
@@ -124,13 +124,8 @@ export default async function AboutPage() {
         </div>
 
         <section className="mt-16">
-          <div className="flex items-baseline justify-between">
-            <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-              By the numbers
-            </h2>
-            <span className="font-mono text-[10px] text-zinc-400">updated hourly</span>
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <SectionHeader caption="updated hourly">By the numbers</SectionHeader>
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Stat
               size="hero"
               live
@@ -150,10 +145,8 @@ export default async function AboutPage() {
 
         <section className="mt-16 grid grid-cols-1 gap-10 lg:grid-cols-2">
           <div>
-            <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-              Top countries
-            </h2>
-            <ul className="mt-3 divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+            <SectionHeader>Top countries</SectionHeader>
+            <ul className="mt-5 divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
               {stats.topCountries.map(([cc, n], i) => (
                 <RankedRow
                   key={cc}
@@ -168,10 +161,8 @@ export default async function AboutPage() {
             </ul>
           </div>
           <div>
-            <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-              Top US operators
-            </h2>
-            <ul className="mt-3 divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+            <SectionHeader>Top US operators</SectionHeader>
+            <ul className="mt-5 divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
               {stats.topUsOperators.map(([op, n], i) => (
                 <RankedRow
                   key={op}
@@ -187,10 +178,8 @@ export default async function AboutPage() {
         </section>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            What&rsquo;s not here yet
-          </h2>
-          <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-300">
+          <SectionHeader>What&rsquo;s not here yet</SectionHeader>
+          <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
             We track{" "}
             <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
               {stats.facilitiesTotal.toLocaleString()}
@@ -222,10 +211,8 @@ export default async function AboutPage() {
         </section>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            Corrections
-          </h2>
-          <p className="mt-3 max-w-xl text-zinc-600 dark:text-zinc-300">
+          <SectionHeader>Corrections</SectionHeader>
+          <p className="mt-5 max-w-xl text-zinc-600 dark:text-zinc-300">
             Find an error? Know a facility we&rsquo;re missing? Send building name, operator,
             address, and a verifiable source — we&rsquo;ll add it.
           </p>

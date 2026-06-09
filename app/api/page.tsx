@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EditorialHeader } from "@/components/editorial";
+import { EditorialHeader, SectionHeader } from "@/components/editorial";
 import { getTheme } from "@/lib/theme";
 
 export const metadata: Metadata = {
@@ -56,19 +56,17 @@ export default async function ApiDocsPage() {
         </div>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            §1 · Quick start
-          </h2>
-          <Code
-            label="List the 5 largest German facilities by Equinix"
-            content={`curl '${BASE}/facilities?country=DE&operator=Equinix&limit=5'`}
-          />
+          <SectionHeader number={1}>Quick start</SectionHeader>
+          <div className="mt-5">
+            <Code
+              label="List the 5 largest German facilities by Equinix"
+              content={`curl '${BASE}/facilities?country=DE&operator=Equinix&limit=5'`}
+            />
+          </div>
         </section>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            §2 · Endpoints
-          </h2>
+          <SectionHeader number={2}>Endpoints</SectionHeader>
 
           <Endpoint
             method="GET"
@@ -211,10 +209,8 @@ export default async function ApiDocsPage() {
         </section>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            §3 · Conventions
-          </h2>
-          <div className="mt-3 grid grid-cols-1 gap-x-10 gap-y-6 sm:grid-cols-2">
+          <SectionHeader number={3}>Conventions</SectionHeader>
+          <div className="mt-5 grid grid-cols-1 gap-x-10 gap-y-6 sm:grid-cols-2">
             <Convention title="Response envelope">
               All JSON responses are{" "}
               <Inline>{`{ data, meta }`}</Inline>. <Inline>data</Inline> is the result; <Inline>meta</Inline>{" "}
@@ -243,10 +239,8 @@ export default async function ApiDocsPage() {
         </section>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            §4 · Versioning and stability
-          </h2>
-          <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-300">
+          <SectionHeader number={4}>Versioning and stability</SectionHeader>
+          <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
             All endpoints live under <Inline>/api/v1/</Inline>. Breaking changes ship under a new
             major (<Inline>/api/v2/</Inline>) — never inside <Inline>v1</Inline>. Additive changes
             (new optional query params, new response fields) ship without version bump.
@@ -254,10 +248,8 @@ export default async function ApiDocsPage() {
         </section>
 
         <section className="mt-16">
-          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-            §5 · Roadmap (post-v1)
-          </h2>
-          <ul className="mt-3 max-w-2xl space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+          <SectionHeader number={5}>Roadmap (post-v1)</SectionHeader>
+          <ul className="mt-5 max-w-2xl space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
             <li>
               <strong className="text-zinc-900 dark:text-zinc-100">API keys + tiered limits</strong>{" "}
               — Pro tier with higher throughput, CSV bulk exports, webhook alerts on new builds.
@@ -280,10 +272,8 @@ export default async function ApiDocsPage() {
 
         <section className="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
-              §6 · Get in touch
-            </h2>
-            <p className="mt-3 max-w-xl text-zinc-600 dark:text-zinc-300">
+            <SectionHeader number={6}>Get in touch</SectionHeader>
+            <p className="mt-5 max-w-xl text-zinc-600 dark:text-zinc-300">
               Building something with this? Tell us — we&rsquo;ll prioritize the filters and exports
               you need. Need higher limits, an SLA, or a one-off bulk export today? Get in touch.
             </p>
