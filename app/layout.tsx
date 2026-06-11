@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
+import { SessionProvider } from "@/components/SessionProvider";
 import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -89,11 +91,23 @@ const SITE_JSON_LD = {
   ],
 };
 
-export default function RootLayout({
+async function detectInitialSession(): Promise<boolean> {
+  // Synchronous cookie check — no Supabase API call. Supabase Auth stores the
+  // session as one or more cookies named `sb-<project-ref>-auth-token[.N]`.
+  // Presence is good enough for an initial UI hint; the browser client
+  // verifies authoritatively.
+  const c = await cookies();
+  return c.getAll().some(
+    (x) => x.name.startsWith("sb-") && x.name.includes("-auth-token"),
+  );
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialSignedIn = await detectInitialSession();
   return (
     <html
       lang="en"
@@ -104,7 +118,9 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}
         />
-        {children}
+        <SessionProvider initialSignedIn={initialSignedIn}>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );
