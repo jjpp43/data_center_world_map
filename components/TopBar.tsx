@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { SearchBox } from "./SearchBox";
+import { AccountPill } from "./AccountPill";
 import type { Facility } from "@/lib/types";
 
 type Props = {
@@ -48,6 +49,8 @@ export function TopBar({ facilities, onSelect, theme, onToggleTheme }: Props) {
       <div className="pointer-events-auto flex-1 max-w-xl">
         <SearchBox facilities={facilities} onSelect={onSelect} />
       </div>
+
+      <AccountPill />
 
       <button
         type="button"

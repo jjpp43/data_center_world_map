@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { supabaseAuthServer } from "@/lib/supabase";
+import { supabaseAuthServer } from "@/lib/supabase-server";
 import { getTheme } from "@/lib/theme";
 
 export const metadata: Metadata = {

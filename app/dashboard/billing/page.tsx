@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { supabaseAuthServer } from "@/lib/supabase";
+import { supabaseAuthServer } from "@/lib/supabase-server";
 import { POLAR_PRO_PRODUCT_ID, POLAR_TEAM_PRODUCT_ID } from "@/lib/polar";
 import { TIER_LIMITS, tierLabel } from "@/lib/api-keys";
 

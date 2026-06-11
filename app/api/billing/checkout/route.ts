@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseAuthServer } from "@/lib/supabase";
+import { supabaseAuthServer } from "@/lib/supabase-server";
 import { createCheckoutSession, productIdForTier, type PaidTier } from "@/lib/polar";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";

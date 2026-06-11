@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { revalidatePath } from "next/cache";
-import { supabaseAuthServer } from "@/lib/supabase";
+import { supabaseAuthServer } from "@/lib/supabase-server";
 import { TIER_LIMITS, generateApiKey, tierLabel } from "@/lib/api-keys";
 import { KeysClient } from "./KeysClient";
 

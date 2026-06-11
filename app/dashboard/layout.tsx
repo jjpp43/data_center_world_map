@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { supabaseAuthServer } from "@/lib/supabase";
+import { supabaseAuthServer } from "@/lib/supabase-server";
 import { getTheme } from "@/lib/theme";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
