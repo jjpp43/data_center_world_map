@@ -112,10 +112,9 @@ export default async function DashboardPage({
   const active = subsRes.data?.[0] ?? null;
   const isActive = active && ["active", "trialing"].includes(active.status);
   const currentTier = isActive && active ? active.tier : "free";
-  const showPro = currentTier !== "pro" && currentTier !== "team" && currentTier !== "enterprise";
-  const showTeam = currentTier !== "team" && currentTier !== "enterprise";
   const proConfigured = !!POLAR_PRO_PRODUCT_ID;
   const teamConfigured = !!POLAR_TEAM_PRODUCT_ID;
+  const anyUnconfigured = !proConfigured || !teamConfigured;
 
   const activeKeys = keys.filter((k) => !k.revoked_at);
   const totalUsage = activeKeys.reduce((sum, k) => sum + (k.current_month_usage ?? 0), 0);
@@ -159,65 +158,52 @@ export default async function DashboardPage({
 
       <section className="mt-10">
         <h2 className="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">Plan</h2>
-        <div className="rounded-2xl border border-zinc-200/70 bg-white/60 p-5 dark:border-zinc-800/60 dark:bg-zinc-900/40">
-          <div className="flex flex-wrap items-center gap-3">
-            <span
-              className={`rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide ${
-                isActive
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-300"
-              }`}
-            >
-              {tierLabel(currentTier)}
-            </span>
-            <span className="font-mono text-sm tabular-nums text-zinc-700 dark:text-zinc-300">
-              {TIER_LIMITS[currentTier]?.toLocaleString() ?? "—"} requests per key / month
-            </span>
-          </div>
-          {isActive && active?.current_period_end && (
-            <p className="mt-2 text-xs text-zinc-500">
-              Renews {new Date(active.current_period_end).toLocaleDateString()} · Manage payment,
-              invoices, or cancel from the{" "}
-              <a
-                href="https://polar.sh/portal"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                Polar customer portal ↗
-              </a>
-            </p>
-          )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <PlanCard
+            tier="free"
+            name="Free"
+            price="Free"
+            quota="500 requests/month"
+            description="Hobby projects, evaluation, indie tools."
+            state={planState("free", currentTier)}
+            configured
+          />
+          <PlanCard
+            tier="pro"
+            name="Pro"
+            price="$10.99 / mo"
+            quota="10,000 requests/month"
+            description="Production services, dashboards, internal tools."
+            state={planState("pro", currentTier)}
+            configured={proConfigured}
+          />
+          <PlanCard
+            tier="team"
+            name="Team"
+            price="$49.99 / mo"
+            quota="50,000 requests/month"
+            description="Bulk analytics, market research, embedded data."
+            state={planState("team", currentTier)}
+            configured={teamConfigured}
+          />
         </div>
 
-        {(showPro || showTeam) && (
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {showPro && (
-              <PlanCard
-                tier="pro"
-                name="Pro"
-                price="$10.99 / mo"
-                quota="10,000 requests/month"
-                description="Production services, dashboards, internal tools."
-                disabled={!proConfigured}
-                ctaLabel={proConfigured ? "Upgrade to Pro" : "Coming soon"}
-              />
-            )}
-            {showTeam && (
-              <PlanCard
-                tier="team"
-                name="Team"
-                price="$49.99 / mo"
-                quota="50,000 requests/month"
-                description="Bulk analytics, market research, embedded data."
-                disabled={!teamConfigured}
-                ctaLabel={teamConfigured ? "Upgrade to Team" : "Coming soon"}
-              />
-            )}
-          </div>
+        {isActive && active?.current_period_end && (
+          <p className="mt-3 text-xs text-zinc-500">
+            Renews {new Date(active.current_period_end).toLocaleDateString()} · Manage payment,
+            invoices, or cancel from the{" "}
+            <a
+              href="https://polar.sh/portal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Polar customer portal ↗
+            </a>
+          </p>
         )}
 
-        {(!proConfigured || !teamConfigured) && (showPro || showTeam) && (
+        {anyUnconfigured && (
           <p className="mt-3 text-xs text-zinc-500">
             Paid tiers are wired but waiting on Polar.sh product IDs (
             <span className="font-mono">POLAR_PRO_PRODUCT_ID</span> /{" "}
@@ -346,25 +332,52 @@ export default async function DashboardPage({
   );
 }
 
+const TIER_ORDER = ["free", "pro", "team", "enterprise"] as const;
+type PlanState = "below" | "current" | "above";
+
+function planState(plan: string, current: string): PlanState {
+  const p = TIER_ORDER.indexOf(plan as (typeof TIER_ORDER)[number]);
+  const c = TIER_ORDER.indexOf(current as (typeof TIER_ORDER)[number]);
+  if (p === c) return "current";
+  return p > c ? "above" : "below";
+}
+
 function PlanCard({
   tier,
   name,
   price,
   quota,
   description,
-  disabled,
-  ctaLabel,
+  state,
+  configured,
 }: {
-  tier: "pro" | "team";
+  tier: "free" | "pro" | "team";
   name: string;
   price: string;
   quota: string;
   description: string;
-  disabled: boolean;
-  ctaLabel: string;
+  state: PlanState;
+  configured: boolean;
 }) {
+  const isCurrent = state === "current";
+  const isBelow = state === "below";
+  const isPaidUpgrade = state === "above" && tier !== "free";
+
+  const cardClasses = [
+    "relative flex flex-col rounded-2xl border p-5 transition-colors",
+    isCurrent
+      ? "border-emerald-400/70 bg-emerald-50/60 ring-1 ring-emerald-400/40 dark:border-emerald-700/60 dark:bg-emerald-950/20 dark:ring-emerald-500/30"
+      : "border-zinc-200/70 bg-white/60 dark:border-zinc-800/60 dark:bg-zinc-900/40",
+    isBelow ? "opacity-60" : "",
+  ].join(" ");
+
   return (
-    <div className="rounded-2xl border border-zinc-200/70 bg-white/60 p-5 dark:border-zinc-800/60 dark:bg-zinc-900/40">
+    <div className={cardClasses}>
+      {isCurrent && (
+        <span className="absolute -top-2.5 left-4 rounded bg-emerald-500 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-white shadow-sm dark:bg-emerald-600">
+          Current plan
+        </span>
+      )}
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{name}</h3>
         <div className="font-mono text-sm tabular-nums text-zinc-700 dark:text-zinc-300">
@@ -372,17 +385,36 @@ function PlanCard({
         </div>
       </div>
       <p className="mt-1 font-mono text-xs tabular-nums text-zinc-500">{quota}</p>
-      <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{description}</p>
-      <form action="/api/billing/checkout" method="post" className="mt-5">
-        <input type="hidden" name="tier" value={tier} />
-        <button
-          type="submit"
-          disabled={disabled}
-          className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
-        >
-          {ctaLabel}
-        </button>
-      </form>
+      <p className="mt-3 flex-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+        {description}
+      </p>
+
+      {isPaidUpgrade && (
+        <form action="/api/billing/checkout" method="post" className="mt-5">
+          <input type="hidden" name="tier" value={tier} />
+          <button
+            type="submit"
+            disabled={!configured}
+            className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
+          >
+            {configured ? `Upgrade to ${name}` : "Coming soon"}
+          </button>
+        </form>
+      )}
+
+      {isCurrent && (
+        <div className="mt-5 rounded-lg border border-emerald-400/30 bg-emerald-100/40 px-3 py-2 text-center font-mono text-[11px] uppercase tracking-[0.12em] text-emerald-700 dark:border-emerald-700/30 dark:bg-emerald-950/30 dark:text-emerald-300">
+          Your plan
+        </div>
+      )}
+
+      {isBelow && (
+        <div className="mt-5 text-center text-xs text-zinc-500">
+          {tier === "free"
+            ? "Cancel in Polar portal to downgrade"
+            : "Lower than your current plan"}
+        </div>
+      )}
     </div>
   );
 }
