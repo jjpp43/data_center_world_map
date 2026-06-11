@@ -50,8 +50,6 @@ export function TopBar({ facilities, onSelect, theme, onToggleTheme }: Props) {
         <SearchBox facilities={facilities} onSelect={onSelect} />
       </div>
 
-      <AccountPill />
-
       <button
         type="button"
         onClick={onToggleTheme}
@@ -60,6 +58,8 @@ export function TopBar({ facilities, onSelect, theme, onToggleTheme }: Props) {
       >
         {theme === "dark" ? <SunIcon /> : <MoonIcon />}
       </button>
+
+      <AccountPill />
     </header>
   );
 }
