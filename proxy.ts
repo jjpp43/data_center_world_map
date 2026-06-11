@@ -62,7 +62,7 @@ function jsonError(status: number, message: string, extra?: Record<string, unkno
   );
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   // Preflight still bypasses everything — route handlers reply OPTIONS.
   if (req.method === "OPTIONS") return NextResponse.next();
 

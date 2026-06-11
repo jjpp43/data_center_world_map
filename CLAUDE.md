@@ -9,7 +9,7 @@ Phases 1–10 + 5b (monetization) shipped. Next active: Phase 9 (orphan canonica
 - **5,351** facilities (5,256 PeeringDB + 95 OSM-only after dedup); **34,732** networks; **1,309** IXPs; **176** cloud regions; **57,206** network↔fac + **4,134** IX↔fac relations
 - **714** operator-page records across 7 colos (Equinix, Digital Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS) → **480 enriched, 234 orphans**. Iron Mountain blocked by Vercel checkpoint, needs Playwright.
 - Migrations **0001–0010** applied. RLS public-read-only on every data table; auth-scoped on `api_keys` + `subscriptions`.
-- Routes: map at `/`, `/facility/[slug]`, `/about`, `/methodology`, `/api` (docs), `/operators/[slug]`, `/countries/[code]`, `/metros[/slug]`, `/ixps[/slug]`, `/networks/[asn]`, `/density[/tier]`, `/insights[/slug]`. Auth + dashboard at `/login`, `/auth/{callback,signout}`, `/dashboard/{keys,billing}`. Billing wiring at `/api/billing/checkout` + `/api/webhooks/polar`. **Auth-gated dataset API** at `/api/v1/{facilities,operators,countries,cloud-regions}` (JSON + CSV, open CORS, Bearer token required, per-key monthly quota via root `middleware.ts`).
+- Routes: map at `/`, `/facility/[slug]`, `/about`, `/methodology`, `/api` (docs), `/operators/[slug]`, `/countries/[code]`, `/metros[/slug]`, `/ixps[/slug]`, `/networks/[asn]`, `/density[/tier]`, `/insights[/slug]`. Auth + dashboard at `/login`, `/auth/{callback,signout}`, `/dashboard/{keys,billing}`. Billing wiring at `/api/billing/checkout` + `/api/webhooks/polar`. **Auth-gated dataset API** at `/api/v1/{facilities,operators,countries,cloud-regions}` (JSON + CSV, open CORS, Bearer token required, per-key monthly quota via root `proxy.ts` — Next.js 16 renamed the middleware convention to proxy).
 - Mobile: `<MobileHome>` search-first list below `md` breakpoint. Theme cookie-persisted across all server pages.
 - SEO/AEO: sitemap ~14k URLs (facilities + operators + countries + metros + IXPs + networks + density tiers + insights). `robots.ts` allows GPTBot/ClaudeBot/PerplexityBot/etc. `public/llms.txt` updated to note the API is gated; HTML pages stay fully public for citation. Brand-name 308 redirects in `next.config.ts`.
 
@@ -93,7 +93,7 @@ Read-only, **Bearer-token auth required**, open CORS, edge-cached. Docs at `/api
 
 Helpers in `lib/api.ts`: `jsonResponse`, `csvResponse`, `errorResponse`, `preflight`. Cache budgets: list=5min, detail/aggregate=1hr, all with `stale-while-revalidate`.
 
-**Auth gate**: root `middleware.ts` matches `/api/v1/:path*`. No Bearer → 401 with hint to `/login`. Valid Bearer → calls `validate_and_charge_api_key` RPC (SECURITY DEFINER, atomic month-rollover + charge), sets `X-RateLimit-{Tier,Limit,Remaining}` headers. Over quota → 429. Web Crypto SHA-256 in middleware so it works in either Edge or Node runtime.
+**Auth gate**: root `proxy.ts` matches `/api/v1/:path*` (exports `proxy()` + a `config` with `matcher`). No Bearer → 401 with hint to `/login`. Valid Bearer → calls `validate_and_charge_api_key` RPC (SECURITY DEFINER, atomic month-rollover + charge), sets `X-RateLimit-{Tier,Limit,Remaining}` headers. Over quota → 429. Web Crypto SHA-256 so it works in either Edge or Node runtime.
 
 **Tiers (monthly)**: free 500 · pro 10,000 ($10.99/mo) · team 50,000 ($49.99/mo) · enterprise 5,000,000 (contact). Quotas defined in `lib/api-keys.ts` AND in migration 0009's `validate_and_charge_api_key` CASE — keep both in sync.
 
@@ -124,7 +124,7 @@ app/
 ├── sitemap.ts                          ~14k URLs
 └── robots.ts                           AI-crawler allowlist
 
-middleware.ts                           root — bearer auth on /api/v1/* (Web Crypto)
+proxy.ts                                root — bearer auth on /api/v1/* (Web Crypto). Next.js 16 renamed `middleware.ts` → `proxy.ts` + the export is `proxy()`.
 
 components/
 ├── Map.tsx, TopBar.tsx, SearchBox.tsx, FilterCard.tsx, MapToggle.tsx, Legend.tsx
@@ -170,7 +170,7 @@ scrapers/                               separate Node 22 subproject (out/ and ca
    - **Deferred polish** — cloud-adjacency classification (needs PostGIS proximity join `data_centers × cloud_regions`); facility type heuristic; FilterCard density chips on the live map.
 8. ✅ **Monetization (5b)** — Supabase Auth (GitHub OAuth) + per-key monthly quotas + Polar.sh subscriptions.
    - **Auth + keys**: `/login` (GitHub OAuth via server action), `/auth/{callback,signout}`, `/dashboard/keys` (create/revoke + per-key usage gauges). Cookie-scoped Supabase client (`lib/supabase-server.ts`) reads/writes RLS-protected `api_keys`. Browser client (`lib/supabase.ts` → `supabaseBrowser`) drives the AccountPill state.
-   - **Middleware**: root `middleware.ts` gates `/api/v1/*`. No Bearer → 401 (no DB call). Valid Bearer → `validate_and_charge_api_key` RPC atomically rolls over monthly bucket, charges +1, returns `(tier, remaining, monthly_limit)`. `X-RateLimit-*` headers on every response. Web Crypto SHA-256 so it works in Edge or Node runtime.
+   - **Proxy gate** (Next.js 16 — was middleware): root `proxy.ts` gates `/api/v1/*`. No Bearer → 401 (no DB call). Valid Bearer → `validate_and_charge_api_key` RPC atomically rolls over monthly bucket, charges +1, returns `(tier, remaining, monthly_limit)`. `X-RateLimit-*` headers on every response. Web Crypto SHA-256 so it works in Edge or Node runtime.
    - **Billing**: `/dashboard/billing` shows current sub + Pro/Team upgrade buttons. `POST /api/billing/checkout` creates a Polar Checkout session (raw fetch, no SDK) with `metadata={user_id,tier}`, redirects to hosted page. `POST /api/webhooks/polar` verifies Standard-Webhooks signature (HMAC-SHA256), parses event, calls `upsert_subscription_and_apply_tier` RPC which writes `subscriptions` AND propagates tier to every non-revoked `api_keys` row the user owns. Webhook handler is the ONE runtime spot using `supabaseAdmin` — `app/api/webhooks/` allowlisted in `scripts/check-security.mjs`.
    - **Polar.sh chosen over Stripe** for Korean-bank payout + merchant-of-record VAT/sales-tax handling. Fees ~4% + 40¢ vs Stripe's 2.9% + 30¢.
    - **First-time deployment checklist** (one-time, when standing up a fresh env):
