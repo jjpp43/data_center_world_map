@@ -2,16 +2,16 @@
 
 Public map of every known data center in the world, viewable on a single Mapbox map with 2D ↔ 3D globe toggle. Personal/portfolio project by Junna Park. Default view focuses on the United States.
 
-## Current status (2026-06-08)
+## Current status (2026-06-11)
 
-Phases 1–5a shipped. Next: Phase 5b (API keys + Stripe).
+Phases 1–10 + 5b (monetization) shipped. Next active: Phase 9 (orphan canonicalization) or Phase 11 (hyperscale buildings).
 
 - **5,351** facilities (5,256 PeeringDB + 95 OSM-only after dedup); **34,732** networks; **1,309** IXPs; **176** cloud regions; **57,206** network↔fac + **4,134** IX↔fac relations
 - **714** operator-page records across 7 colos (Equinix, Digital Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS) → **480 enriched, 234 orphans**. Iron Mountain blocked by Vercel checkpoint, needs Playwright.
-- Migrations 0001–0006 applied. RLS public-read-only on every table.
-- Routes: map at `/`, `/facility/[slug]` (SSR + Place+FAQPage JSON-LD), `/about`, `/methodology`, `/api` (docs), `/operators/[slug]`, `/countries/[code]`, `/metros[/slug]`, `/ixps[/slug]`, `/networks/[asn]`, `/density[/tier]`, `/insights[/slug]`, auth + dashboard at `/login`, `/auth/{callback,signout}`, `/dashboard/{keys,billing}`, billing routes `/api/billing/checkout` + `/api/webhooks/polar`, public dataset API at `/api/v1/{facilities,operators,countries,cloud-regions}` (JSON + CSV, open CORS, bearer-token auth optional with `X-RateLimit-*` headers)
+- Migrations **0001–0010** applied. RLS public-read-only on every data table; auth-scoped on `api_keys` + `subscriptions`.
+- Routes: map at `/`, `/facility/[slug]`, `/about`, `/methodology`, `/api` (docs), `/operators/[slug]`, `/countries/[code]`, `/metros[/slug]`, `/ixps[/slug]`, `/networks/[asn]`, `/density[/tier]`, `/insights[/slug]`. Auth + dashboard at `/login`, `/auth/{callback,signout}`, `/dashboard/{keys,billing}`. Billing wiring at `/api/billing/checkout` + `/api/webhooks/polar`. **Auth-gated dataset API** at `/api/v1/{facilities,operators,countries,cloud-regions}` (JSON + CSV, open CORS, Bearer token required, per-key monthly quota via root `middleware.ts`).
 - Mobile: `<MobileHome>` search-first list below `md` breakpoint. Theme cookie-persisted across all server pages.
-- SEO/AEO: sitemap 6,153 URLs, `robots.ts` allows GPTBot/ClaudeBot/PerplexityBot/etc, `public/llms.txt`, brand-name 308 redirects in `next.config.ts` (`/operators/equinix` → `/operators/equinix-inc`)
+- SEO/AEO: sitemap ~14k URLs (facilities + operators + countries + metros + IXPs + networks + density tiers + insights). `robots.ts` allows GPTBot/ClaudeBot/PerplexityBot/etc. `public/llms.txt` updated to note the API is gated; HTML pages stay fully public for citation. Brand-name 308 redirects in `next.config.ts`.
 
 ## Stack
 
@@ -50,7 +50,7 @@ campuses                      ← unused
 
 Full-bleed map (desktop). Below `md`: `<MobileHome>` search-first list. Dark default, light theme persists via `dcw-theme` cookie.
 
-- **TopBar**: `[brand pill]` `[nav pill: About · Methodology · API]` `[search]` `[theme toggle]`
+- **TopBar**: `[brand pill]` `[nav pill: About · Methodology · API]` `[search]` `[theme toggle]` `[AccountPill]` — pill is far-right via `ml-auto` on theme toggle. AccountPill renders solid-white "Sign in →" CTA when signed out, glass "Account ▾" dropdown (API keys · Billing · Sign out) when signed in. Initial state seeded from `SessionProvider` (cookie presence read in root layout) to avoid flash.
 - **FilterCard** (top-left, collapsible): visible/total count in header · quick operator chips · cloud chips (focus mode) · searchable operator + country multi-selects
 - **MapToggle** top-right · **Legend** bottom-left (collapsed pill, click to expand) · **FirstRunHint** fades in once (localStorage)
 - **Marker click** → 400px right-slide `FacilityPanel` with info icons + "View full page" → `/facility/[slug]`
@@ -81,7 +81,7 @@ Default: `country=US`, dark, globe, clouds on, no focus. **Do not** add per-pan 
 
 ## Public API (v1)
 
-Read-only, no auth, open CORS, edge-cached. Docs at `/api`.
+Read-only, **Bearer-token auth required**, open CORS, edge-cached. Docs at `/api`. HTML pages stay fully public — only JSON/CSV endpoints are gated.
 
 | Endpoint | Returns |
 |---|---|
@@ -93,41 +93,61 @@ Read-only, no auth, open CORS, edge-cached. Docs at `/api`.
 
 Helpers in `lib/api.ts`: `jsonResponse`, `csvResponse`, `errorResponse`, `preflight`. Cache budgets: list=5min, detail/aggregate=1hr, all with `stale-while-revalidate`.
 
+**Auth gate**: root `middleware.ts` matches `/api/v1/:path*`. No Bearer → 401 with hint to `/login`. Valid Bearer → calls `validate_and_charge_api_key` RPC (SECURITY DEFINER, atomic month-rollover + charge), sets `X-RateLimit-{Tier,Limit,Remaining}` headers. Over quota → 429. Web Crypto SHA-256 in middleware so it works in either Edge or Node runtime.
+
+**Tiers (monthly)**: free 500 · pro 10,000 ($10.99/mo) · team 50,000 ($49.99/mo) · enterprise 5,000,000 (contact). Quotas defined in `lib/api-keys.ts` AND in migration 0009's `validate_and_charge_api_key` CASE — keep both in sync.
+
 ## Project layout
 
 ```
 app/
 ├── page.tsx                            map (client) + <MobileHome>
+├── layout.tsx                          Geist + Geist Mono + WebSite/Organization JSON-LD + SessionProvider
 ├── facility/[slug]/page.tsx            SSR detail; buildSummary/buildFaqJsonLd/buildPlaceJsonLd
-├── about/page.tsx                      slim intro
-├── methodology/page.tsx                long-form spec
-├── api/page.tsx                        API docs
-├── api/v1/{facilities,operators,countries,cloud-regions}/route.ts
-├── api/{facilities,cloud-regions}.geojson/route.ts   map-internal
+├── about/page.tsx, methodology/page.tsx, api/page.tsx
 ├── operators/[slug]/page.tsx           landing pages, CollectionPage+ItemList JSON-LD
 ├── countries/[code]/page.tsx           landing pages
-├── sitemap.ts                          6,153 URLs
-├── robots.ts                           AI-crawler allowlist
-└── layout.tsx                          Geist + Geist Mono + WebSite/Organization JSON-LD
+├── metros/{page,[slug]/page}.tsx       Phase 10a — ~60 canonical metros
+├── ixps/{page,[slug]/page}.tsx         Phase 10b — 1,309 IXPs
+├── networks/{page,[asn]/page}.tsx      Phase 10c — PeeringDB ASNs
+├── density/{page,[tier]/page}.tsx      Phase 10d — ultra-dense/dense/standard facets
+├── insights/{page,…/page}.tsx          Phase 10f — hub + 3 evergreen articles
+├── login/page.tsx                      GitHub OAuth start
+├── auth/{callback,signout}/route.ts    OAuth code exchange + signOut
+├── dashboard/layout.tsx                auth guard + top nav
+├── dashboard/keys/{page,KeysClient}.tsx  create/revoke + per-key quota gauges
+├── dashboard/billing/page.tsx          Polar Checkout buttons + current sub
+├── api/v1/{facilities,operators,countries,cloud-regions}/route.ts
+├── api/{facilities,cloud-regions}.geojson/route.ts   map-internal
+├── api/billing/checkout/route.ts       Polar Checkout session creator
+├── api/webhooks/polar/route.ts         Polar webhook receiver (signature-verified)
+├── sitemap.ts                          ~14k URLs
+└── robots.ts                           AI-crawler allowlist
+
+middleware.ts                           root — bearer auth on /api/v1/* (Web Crypto)
 
 components/
 ├── Map.tsx, TopBar.tsx, SearchBox.tsx, FilterCard.tsx, MapToggle.tsx, Legend.tsx
 ├── FacilityPanel.tsx, MobileHome.tsx, FirstRunHint.tsx, InfoToggle.tsx, NoTokenBanner.tsx
-└── editorial.tsx                       shared editorial primitives
+├── AccountPill.tsx                     Sign in / Account dropdown
+├── SessionProvider.tsx                 cookie-hint context to avoid auth flash
+└── editorial.tsx                       shared editorial primitives (Stat, RankedRow, SectionHeader, …)
 
 lib/
-├── supabase.ts                         supabaseServer (anon) + supabaseAdmin (service)
-├── theme.ts                            getTheme() — cookie persistence
-├── api.ts                              response helpers
+├── supabase.ts                         supabaseServer (anon) + supabaseAdmin (service) + supabaseBrowser
+├── supabase-server.ts                  supabaseAuthServer — cookie-aware, server-only
+├── theme.ts, api.ts, types.ts, url-state.ts, countries.ts
 ├── operators.ts, countries-data.ts     loaders for landing pages + sitemap
-└── types.ts, url-state.ts, countries.ts
+├── metros-data.ts, ixps-data.ts, networks-data.ts, density.ts, insights-data.ts
+├── api-keys.ts                         generateApiKey, hashApiKey, TIER_LIMITS, tierLabel
+└── polar.ts                            createCheckoutSession + Standard-Webhooks verifyWebhook (raw fetch, no SDK)
 
 scripts/
 ├── ingest.ts                           reads scrapers/out/*.jsonl → upserts
-└── check-security.mjs                  prebuild guard
+└── check-security.mjs                  prebuild guard (allowlists lib/supabase.ts, scripts/, app/api/webhooks/)
 
-supabase/migrations/0001–0006.sql
-public/llms.txt                         AEO entry points for AI crawlers
+supabase/migrations/0001–0010.sql       0007 monetization · 0008 subscriptions · 0009 tier quotas (monthly) · 0010 drop anonymous
+public/llms.txt                         AEO entry points; notes API is auth-gated
 next.config.ts                          headers + OPERATOR_ALIASES 308 redirects
 scrapers/                               separate Node 22 subproject (out/ and cache/ gitignored)
 ```
@@ -148,17 +168,19 @@ scrapers/                               separate Node 22 subproject (out/ and ca
    - 10e ✅ (folded into 10f) — Regional rankings exist as cross-pivot sections on `/metros/[slug]`, `/countries/[code]`, `/ixps/[slug]`, `/networks/[asn]`. Dedicated `/rankings/*` pages judged redundant with these.
    - 10f ✅ **Insight pages** — `/insights` hub + 3 evergreen articles: `most-network-dense-facilities` (top 50), `largest-ixps-globally` (top 25), `peering-hub-metros` (top 20 by aggregate density). Article JSON-LD; same editorial design language as `/about` and `/methodology`.
    - **Deferred polish** — cloud-adjacency classification (needs PostGIS proximity join `data_centers × cloud_regions`); facility type heuristic; FilterCard density chips on the live map.
-8. ✅ **Monetization (5b)** — split into 5b.1 (auth foundation) and 5b.2 (Polar.sh wiring).
-   - 5b.1 ✅ **Auth + API keys + middleware + rate limits**: Supabase Auth (GitHub OAuth), `/login`, `/auth/callback`, `/dashboard/keys` (create/revoke + per-key monthly quota gauges), root `middleware.ts` on `/api/v1/*` doing bearer validation via `validate_and_charge_api_key` RPC and anonymous IP throttle via `charge_anonymous` RPC. Postgres-based rate limiting (no Upstash dependency). `X-RateLimit-Tier`/`-Limit`/`-Remaining` headers on every response. **Tiers (all monthly)**: free 500/mo · pro 10k/mo ($10.99) · team 50k/mo ($49.99) · enterprise 5M/mo. API is auth-only as of migration 0010 — every `/api/v1/*` request needs a Bearer token, no anonymous fallback. HTML pages stay fully public.
-   - 5b.2 ✅ **Polar.sh wiring** — `/dashboard/billing` shows current subscription + Pro/Team upgrade buttons. `POST /api/billing/checkout` creates a Polar Checkout session (server-side, no SDK), redirects to hosted checkout. `POST /api/webhooks/polar` verifies Standard-Webhooks signature (HMAC-SHA256), then calls `upsert_subscription_and_apply_tier` RPC which writes to `subscriptions` AND propagates the tier to every active `api_keys` row the user owns. Webhook handler is the ONE runtime spot using `supabaseAdmin` — `app/api/webhooks/` allowlisted in `scripts/check-security.mjs`.
-   - **Manual ops** before 5b goes live in prod:
-     (1) apply migrations `0007_monetization.sql` and `0008_subscriptions.sql` to Supabase
-     (2) enable GitHub provider in Supabase Auth
-     (3) register a GitHub OAuth app with callback URL `https://datacenters.world/auth/callback`
-     (4) set `NEXT_PUBLIC_SITE_URL` env in Vercel
-     (5) create Pro + Team products in Polar.sh; set `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_PRO_PRODUCT_ID`, `POLAR_TEAM_PRODUCT_ID` env vars
-     (6) register webhook endpoint `https://datacenters.world/api/webhooks/polar` in Polar dashboard
-   - Polar.sh chosen over Stripe for Korean-bank payout + merchant-of-record VAT/sales-tax handling. Fees ~4% + 40¢ vs Stripe's 2.9% + 30¢.
+8. ✅ **Monetization (5b)** — Supabase Auth (GitHub OAuth) + per-key monthly quotas + Polar.sh subscriptions.
+   - **Auth + keys**: `/login` (GitHub OAuth via server action), `/auth/{callback,signout}`, `/dashboard/keys` (create/revoke + per-key usage gauges). Cookie-scoped Supabase client (`lib/supabase-server.ts`) reads/writes RLS-protected `api_keys`. Browser client (`lib/supabase.ts` → `supabaseBrowser`) drives the AccountPill state.
+   - **Middleware**: root `middleware.ts` gates `/api/v1/*`. No Bearer → 401 (no DB call). Valid Bearer → `validate_and_charge_api_key` RPC atomically rolls over monthly bucket, charges +1, returns `(tier, remaining, monthly_limit)`. `X-RateLimit-*` headers on every response. Web Crypto SHA-256 so it works in Edge or Node runtime.
+   - **Billing**: `/dashboard/billing` shows current sub + Pro/Team upgrade buttons. `POST /api/billing/checkout` creates a Polar Checkout session (raw fetch, no SDK) with `metadata={user_id,tier}`, redirects to hosted page. `POST /api/webhooks/polar` verifies Standard-Webhooks signature (HMAC-SHA256), parses event, calls `upsert_subscription_and_apply_tier` RPC which writes `subscriptions` AND propagates tier to every non-revoked `api_keys` row the user owns. Webhook handler is the ONE runtime spot using `supabaseAdmin` — `app/api/webhooks/` allowlisted in `scripts/check-security.mjs`.
+   - **Polar.sh chosen over Stripe** for Korean-bank payout + merchant-of-record VAT/sales-tax handling. Fees ~4% + 40¢ vs Stripe's 2.9% + 30¢.
+   - **First-time deployment checklist** (one-time, when standing up a fresh env):
+     1. Apply migrations `0007`–`0010` to Supabase
+     2. Enable GitHub provider in Supabase Auth
+     3. Register a GitHub OAuth app with callback URL set to **Supabase's** `https://<project-ref>.supabase.co/auth/v1/callback` (NOT our app's `/auth/callback` — Supabase is the OAuth relay)
+     4. Set `NEXT_PUBLIC_SITE_URL=https://datacenters.world` in Vercel env
+     5. Create Pro + Team subscription products in Polar.sh
+     6. Set `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_PRO_PRODUCT_ID`, `POLAR_TEAM_PRODUCT_ID` in Vercel env, redeploy
+     7. Register webhook endpoint `https://datacenters.world/api/webhooks/polar` in Polar dashboard with format=Raw, events=subscription.{created,updated,active,canceled,revoked}
 9. ⏸ Orphan canonicalization + Iron Mountain (Playwright)
 10. ⏸ Hyperscale buildings (scrape Microsoft + Google ESG pages, +300–500 facilities)
 11. ⏸ User submissions + admin UI
@@ -200,23 +222,33 @@ Ingest order in `main()`: cloud regions → PeeringDB facilities → OSM → ope
 ## Env vars
 
 ```
+# Mapbox + Supabase (always required)
 NEXT_PUBLIC_MAPBOX_TOKEN=pk....
 NEXT_PUBLIC_SUPABASE_URL=https://...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...        # ingest only — NEVER in Vercel runtime
-NEXT_PUBLIC_SITE_URL=https://...        # optional, defaults to https://datacenters.world
+SUPABASE_SERVICE_ROLE_KEY=eyJ...        # ingest + webhook handler only — runtime allowlist in check-security.mjs
+NEXT_PUBLIC_SITE_URL=https://...        # used by OAuth redirect + Polar success_url; defaults to https://datacenters.world
+
+# Monetization (Phase 5b)
+POLAR_ACCESS_TOKEN=polar_oat_...        # scopes: checkouts:write (+ read/products/customers optional)
+POLAR_WEBHOOK_SECRET=whsec_...          # from Polar webhook endpoint config
+POLAR_PRO_PRODUCT_ID=<prod_id>          # if unset, /dashboard/billing shows "Coming soon"
+POLAR_TEAM_PRODUCT_ID=<prod_id>         # same
+POLAR_API_BASE=https://api.polar.sh     # optional override (sandbox: https://sandbox-api.polar.sh)
 ```
 
 ## Security
 
-RLS public-read-only on every table · CSP/HSTS/X-Frame from `next.config.ts` · CORS open on `/api/v1/*` only · `scripts/check-security.mjs` (also `prebuild`) blocks: any `supabaseAdmin`/`SUPABASE_SERVICE_ROLE_KEY` reference in runtime code, any `NEXT_PUBLIC_*SERVICE_ROLE*` env, any public table without RLS. Service-role key must not exist in Vercel production.
+RLS on every public table (public-read on data tables; auth-scoped via `auth.uid()` on `api_keys` + `subscriptions`) · CSP/HSTS/X-Frame from `next.config.ts` · CORS open on `/api/v1/*` only (but Bearer required) · API keys hashed sha256 at rest, never stored plaintext · Polar webhooks signature-verified (Standard Webhooks HMAC-SHA256, 5-min timestamp tolerance, timing-safe compare).
+
+`scripts/check-security.mjs` (also `prebuild`) blocks: any `supabaseAdmin`/`SUPABASE_SERVICE_ROLE_KEY` reference in runtime code outside the allowlist (`lib/supabase.ts`, `scripts/`, `app/api/webhooks/`), any `NEXT_PUBLIC_*SERVICE_ROLE*` env, any non-extension public table without RLS. `SUPABASE_SERVICE_ROLE_KEY` is needed in Vercel runtime now (the Polar webhook handler uses it) — that's the one intentional exception, gated by the path allowlist.
 
 ## Monetization
 
-- **5a (done)**: free public API + docs → validates demand
-- **5b (next)**: API keys + Stripe + tiers (Free / Pro $30–50 / Team $300–500 / Enterprise $5K)
-- **5c (parallel)**: newsletter capture on `/about`, paywall deeper analysis $20–30/mo
-- **5d**: sponsored operator profiles ($50–200/facility/year) — verified badge + enhanced page. Inclusion is *never* paid.
+- **5a ✅**: free public API + docs validated demand
+- **5b ✅**: GitHub-OAuth-gated API keys + per-key monthly quotas + Polar.sh subscriptions. Tiers: Free 500/mo · Pro 10k/mo $10.99 · Team 50k/mo $49.99 · Enterprise 5M/mo contact. API is auth-only (migration 0010) — every `/api/v1/*` request needs a Bearer token. HTML pages stay fully public for citation.
+- **5c (parallel, future)**: newsletter capture on `/about`, paywall deeper analysis $20–30/mo
+- **5d (future)**: sponsored operator profiles ($50–200/facility/year) — verified badge + enhanced page. Inclusion is *never* paid.
 
 **Avoid**: pay-to-list, hard paywall on public map, aggressive lead-gen forms.
 
