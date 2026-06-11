@@ -45,7 +45,7 @@ export default async function LoginPage() {
         <div className="text-xs uppercase tracking-wider text-zinc-500">Account</div>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">Sign in</h1>
         <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-          Create and manage API keys for the public dataset. Free tier is 1,000 requests/month —
+          Create and manage API keys for the public dataset. Free tier is 500 requests/month —
           no card required.
         </p>
 

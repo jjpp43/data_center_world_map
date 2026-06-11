@@ -92,7 +92,7 @@ export default async function BillingPage({
           </div>
         ) : (
           <div className="rounded-2xl border border-zinc-200/70 bg-white/60 p-5 text-sm text-zinc-600 dark:border-zinc-800/60 dark:bg-zinc-900/40 dark:text-zinc-400">
-            You&rsquo;re on the <span className="font-medium text-zinc-900 dark:text-zinc-100">Free</span> tier — 1,000 requests/month.
+            You&rsquo;re on the <span className="font-medium text-zinc-900 dark:text-zinc-100">Free</span> tier — 500 requests/month.
           </div>
         )}
       </section>
@@ -105,7 +105,7 @@ export default async function BillingPage({
           <PlanCard
             tier="pro"
             name="Pro"
-            price="$9.99 / mo"
+            price="$10.99 / mo"
             quota="10,000 requests/month"
             description="Production services, dashboards, internal tools."
             disabled={!proConfigured || active?.tier === "pro"}

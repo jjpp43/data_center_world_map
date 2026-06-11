@@ -279,8 +279,8 @@ export default async function ApiDocsPage() {
               </thead>
               <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
                 <PricingRow tier="Anonymous" quota="500 / month per IP" price="—" forWho="Casual probing, citations." />
-                <PricingRow tier="Free" quota="1,000 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
-                <PricingRow tier="Pro" quota="10,000 / month" price="$9.99 / mo" forWho="Production services, dashboards, internal tools." />
+                <PricingRow tier="Free" quota="500 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
+                <PricingRow tier="Pro" quota="10,000 / month" price="$10.99 / mo" forWho="Production services, dashboards, internal tools." />
                 <PricingRow tier="Team" quota="50,000 / month" price="$49.99 / mo" forWho="Bulk analytics, market research, embedded data." />
                 <PricingRow tier="Enterprise" quota="custom" price="contact" forWho="SLA, custom exports, on-prem mirror." />
               </tbody>

@@ -57,11 +57,11 @@ begin
   end if;
 
   this_limit := case k.tier
-    when 'free'       then 1000
+    when 'free'       then 500
     when 'pro'        then 10000
     when 'team'       then 50000
     when 'enterprise' then 5000000
-    else 1000
+    else 500
   end;
 
   if k.current_month_start < this_month_start then
