@@ -36,12 +36,12 @@ export function AccountPill() {
   const href = signedIn ? "/dashboard/keys" : "/login";
   const label = signedIn ? "Dashboard" : "Sign in";
 
-  // Signed-out state is the conversion CTA — solid filled pill. Signed-in
-  // state shifts to the same glass treatment as the rest of the TopBar so it
-  // doesn't keep pulling the user's eye after they've already converted.
+  // Signed-out state is the conversion CTA — solid opaque white pill that
+  // contrasts against the translucent glass pills around it. Signed-in state
+  // shifts to the same glass treatment as the rest of the TopBar.
   const className = signedIn
     ? "pointer-events-auto flex h-10 items-center rounded-full border border-zinc-200/60 bg-white/80 px-4 text-sm font-medium text-zinc-700 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
-    : "pointer-events-auto flex h-10 items-center gap-1.5 rounded-full bg-blue-600 px-4 text-sm font-medium text-white shadow-lg shadow-blue-600/20 ring-1 ring-blue-500/40 transition-colors hover:bg-blue-500 dark:bg-blue-500 dark:shadow-blue-500/20 dark:ring-blue-400/40 dark:hover:bg-blue-400";
+    : "pointer-events-auto flex h-10 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-semibold text-zinc-900 shadow-lg ring-1 ring-zinc-900/10 transition-colors hover:bg-zinc-50";
 
   return (
     <Link href={href} className={className}>
