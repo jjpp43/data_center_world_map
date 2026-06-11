@@ -4,8 +4,6 @@ export const config = {
   matcher: ["/api/v1/:path*"],
 };
 
-const ANONYMOUS_MONTHLY_LIMIT = 500;
-
 async function sha256Hex(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
   const buf = await crypto.subtle.digest("SHA-256", data);
@@ -37,12 +35,6 @@ async function rpc<T>(fn: string, body: Record<string, unknown>): Promise<T | nu
   });
   if (!res.ok) return null;
   return res.json() as Promise<T>;
-}
-
-function clientIp(req: NextRequest): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]!.trim();
-  return req.headers.get("x-real-ip") ?? "unknown";
 }
 
 function applyRateHeaders(
@@ -79,38 +71,26 @@ export async function middleware(req: NextRequest) {
     ? auth.slice(7).trim()
     : null;
 
-  if (bearer) {
-    const hash = await sha256Hex(bearer);
-    const rows = await rpc<ValidateRow[]>("validate_and_charge_api_key", { p_hash: hash });
-    const row = rows?.[0];
-    if (!row) {
-      return jsonError(401, "Invalid or revoked API key");
-    }
-    if (row.remaining <= 0) {
-      const res = jsonError(429, "Monthly quota exceeded for this key", {
-        tier: row.tier,
-        monthly_limit: row.monthly_limit,
-      });
-      return applyRateHeaders(res, 0, row.monthly_limit, row.tier);
-    }
-    const res = NextResponse.next();
-    return applyRateHeaders(res, row.remaining, row.monthly_limit, row.tier);
+  if (!bearer) {
+    return jsonError(401, "API key required — sign in at /login and create one from /dashboard/keys", {
+      docs: "/api",
+    });
   }
 
-  // Anonymous: monthly per-IP bucket. The atlas isn't live data, so a daily
-  // window adds friction without protective value — edge cache catches the
-  // bulk of repeat traffic.
-  const ip = clientIp(req);
-  const count = (await rpc<number>("charge_anonymous", { p_ip: ip })) ?? 0;
-  const remaining = ANONYMOUS_MONTHLY_LIMIT - count;
-  if (count > ANONYMOUS_MONTHLY_LIMIT) {
-    const res = jsonError(429, "Anonymous monthly limit reached — sign in for a free API key (2x the quota, no per-IP cap)", {
-      tier: "anonymous",
-      monthly_limit: ANONYMOUS_MONTHLY_LIMIT,
+  const hash = await sha256Hex(bearer);
+  const rows = await rpc<ValidateRow[]>("validate_and_charge_api_key", { p_hash: hash });
+  const row = rows?.[0];
+  if (!row) {
+    return jsonError(401, "Invalid or revoked API key");
+  }
+  if (row.remaining <= 0) {
+    const res = jsonError(429, "Monthly quota exceeded for this key", {
+      tier: row.tier,
+      monthly_limit: row.monthly_limit,
     });
-    return applyRateHeaders(res, 0, ANONYMOUS_MONTHLY_LIMIT, "anonymous");
+    return applyRateHeaders(res, 0, row.monthly_limit, row.tier);
   }
   const res = NextResponse.next();
-  return applyRateHeaders(res, remaining, ANONYMOUS_MONTHLY_LIMIT, "anonymous");
+  return applyRateHeaders(res, row.remaining, row.monthly_limit, row.tier);
 }
 

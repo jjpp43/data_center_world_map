@@ -34,7 +34,7 @@ datacenters.world is a public, non-commercial reference. Data is aggregated from
 
 ## Public dataset
 
-- [/api/v1/facilities](https://datacenters.world/api/v1/facilities): Paginated JSON list of every facility with core fields (name, operator, city, country, lat/lng, status, power_mw, space_sqft, tier, year_built). Supports `?format=csv`, `?limit=`, `?offset=`. No auth required.
+- [/api/v1/facilities](https://datacenters.world/api/v1/facilities): Paginated JSON list of every facility with core fields (name, operator, city, country, lat/lng, status, power_mw, space_sqft, tier, year_built). Supports `?format=csv`, `?limit=`, `?offset=`. Requires a Bearer-token API key — get a free one at https://datacenters.world/dashboard/keys (500 requests/month, no card). HTML pages on this site stay fully public for citation; the JSON API is gated.
 - [/api/facilities.geojson](https://datacenters.world/api/facilities.geojson): Full FeatureCollection used by the map. ~5,300 thin GeoJSON features with `network_count` and `ix_count` aggregations. Cached on Vercel CDN.
 - [/sitemap.xml](https://datacenters.world/sitemap.xml): Every facility detail URL.
 

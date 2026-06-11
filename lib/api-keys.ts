@@ -26,12 +26,6 @@ export const TIER_LIMITS: Record<string, number> = {
   enterprise: 5_000_000,
 };
 
-// Anonymous (no Bearer) is also monthly per IP — the data isn't live, so
-// cache catches the bulk of traffic and a daily window adds friction with
-// no benefit. 500/mo keeps casual probing + AI citation usable while still
-// putting authenticated Free (1k/mo) materially ahead.
-export const ANONYMOUS_MONTHLY_LIMIT = 500;
-
 export function tierLabel(tier: string): string {
   return tier[0].toUpperCase() + tier.slice(1);
 }

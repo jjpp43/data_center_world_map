@@ -36,23 +36,23 @@ export default async function ApiDocsPage() {
 
         <div className="max-w-3xl">
           <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-            v1 · free tier · bearer-token auth
+            v1 · free tier available · bearer-token auth required
           </div>
           <h1 className="mt-4 text-5xl font-semibold leading-[1.05] tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-6xl">
             API.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-300">
             Read access to every data center, operator, country, and cloud region in the atlas.
-            JSON or CSV, open CORS, edge-cached. Anonymous access is rate-limited per IP;{" "}
+            JSON or CSV, open CORS, edge-cached. Every request needs an API key —{" "}
             <Link href="/dashboard/keys" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
-              create a free key
+              create a free one
             </Link>{" "}
-            for double the quota and no per-IP cap.
+            (no card) and you&rsquo;re in.
           </p>
 
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Pill label="Base URL" value="/api/v1" />
-            <Pill label="Auth" value="bearer (optional)" />
+            <Pill label="Auth" value="bearer (required)" />
             <Pill label="Formats" value="json · csv" />
             <Pill label="CORS" value="open (any origin)" />
           </div>
@@ -63,9 +63,17 @@ export default async function ApiDocsPage() {
           <div className="mt-5">
             <Code
               label="List the 5 largest German facilities by Equinix"
-              content={`curl '${BASE}/facilities?country=DE&operator=Equinix&limit=5'`}
+              content={`curl '${BASE}/facilities?country=DE&operator=Equinix&limit=5' \\
+     -H 'Authorization: Bearer dcw_…'`}
             />
           </div>
+          <p className="mt-3 max-w-2xl text-sm text-zinc-500">
+            Get your key at{" "}
+            <Link href="/dashboard/keys" className="text-blue-600 hover:underline dark:text-blue-400">
+              /dashboard/keys
+            </Link>
+            . Free tier is 500 requests/month — no card required.
+          </p>
         </section>
 
         <section className="mt-16">
@@ -244,13 +252,17 @@ export default async function ApiDocsPage() {
         <section className="mt-16">
           <SectionHeader number={4}>Authentication</SectionHeader>
           <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
-            Anonymous access works at a rate-limited tier — useful for casual probing and
-            citation. For sustained or programmatic use, pass an API key via the{" "}
-            <Inline>Authorization</Inline> header. Keys are issued from the{" "}
+            Every request needs an API key passed in the{" "}
+            <Inline>Authorization</Inline> header. Sign in with GitHub at{" "}
+            <Link href="/login" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+              /login
+            </Link>
+            , then create a key from the{" "}
             <Link href="/dashboard/keys" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
               dashboard
-            </Link>{" "}
-            after signing in with GitHub. Free tier is 10,000 requests/month, no card required.
+            </Link>
+            . Free tier is 500 requests/month, no card required. Unauthenticated requests get{" "}
+            <Inline>401 Unauthorized</Inline>.
           </p>
           <Code
             label="Authenticated request"
@@ -278,7 +290,6 @@ export default async function ApiDocsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
-                <PricingRow tier="Anonymous" quota="500 / month per IP" price="—" forWho="Casual probing, citations." />
                 <PricingRow tier="Free" quota="500 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
                 <PricingRow tier="Pro" quota="10,000 / month" price="$10.99 / mo" forWho="Production services, dashboards, internal tools." />
                 <PricingRow tier="Team" quota="50,000 / month" price="$49.99 / mo" forWho="Bulk analytics, market research, embedded data." />
