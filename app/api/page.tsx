@@ -47,7 +47,7 @@ export default async function ApiDocsPage() {
             <Link href="/dashboard/keys" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
               create a free key
             </Link>{" "}
-            for 10× the quota.
+            for double the quota and no per-IP cap.
           </p>
 
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -278,10 +278,10 @@ export default async function ApiDocsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
-                <PricingRow tier="Anonymous" quota="1,000 / day per IP" price="—" forWho="Casual probing, citations." />
-                <PricingRow tier="Free" quota="10,000 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
-                <PricingRow tier="Pro" quota="100,000 / month" price="$39 / mo" forWho="Production services, dashboards, internal tools." />
-                <PricingRow tier="Team" quota="1,000,000 / month" price="$399 / mo" forWho="Bulk analytics, market research, embedded data." />
+                <PricingRow tier="Anonymous" quota="500 / month per IP" price="—" forWho="Casual probing, citations." />
+                <PricingRow tier="Free" quota="1,000 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
+                <PricingRow tier="Pro" quota="10,000 / month" price="$9.99 / mo" forWho="Production services, dashboards, internal tools." />
+                <PricingRow tier="Team" quota="50,000 / month" price="$49.99 / mo" forWho="Bulk analytics, market research, embedded data." />
                 <PricingRow tier="Enterprise" quota="custom" price="contact" forWho="SLA, custom exports, on-prem mirror." />
               </tbody>
             </table>

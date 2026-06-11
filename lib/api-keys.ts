@@ -20,13 +20,17 @@ export function hashApiKey(plaintext: string): string {
 }
 
 export const TIER_LIMITS: Record<string, number> = {
-  free: 10_000,
-  pro: 100_000,
-  team: 1_000_000,
-  enterprise: 100_000_000,
+  free: 1_000,
+  pro: 10_000,
+  team: 50_000,
+  enterprise: 5_000_000,
 };
 
-export const ANONYMOUS_DAILY_LIMIT = 1000;
+// Anonymous (no Bearer) is also monthly per IP — the data isn't live, so
+// cache catches the bulk of traffic and a daily window adds friction with
+// no benefit. 500/mo keeps casual probing + AI citation usable while still
+// putting authenticated Free (1k/mo) materially ahead.
+export const ANONYMOUS_MONTHLY_LIMIT = 500;
 
 export function tierLabel(tier: string): string {
   return tier[0].toUpperCase() + tier.slice(1);

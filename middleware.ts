@@ -4,7 +4,7 @@ export const config = {
   matcher: ["/api/v1/:path*"],
 };
 
-const ANONYMOUS_DAILY_LIMIT = 1000;
+const ANONYMOUS_MONTHLY_LIMIT = 500;
 
 async function sha256Hex(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
@@ -97,18 +97,20 @@ export async function middleware(req: NextRequest) {
     return applyRateHeaders(res, row.remaining, row.monthly_limit, row.tier);
   }
 
-  // Anonymous: IP-based daily soft limit. Cheap, racy, fine for v1.
+  // Anonymous: monthly per-IP bucket. The atlas isn't live data, so a daily
+  // window adds friction without protective value — edge cache catches the
+  // bulk of repeat traffic.
   const ip = clientIp(req);
   const count = (await rpc<number>("charge_anonymous", { p_ip: ip })) ?? 0;
-  const remaining = ANONYMOUS_DAILY_LIMIT - count;
-  if (count > ANONYMOUS_DAILY_LIMIT) {
-    const res = jsonError(429, "Anonymous daily limit reached — create a free API key for 10x the quota", {
+  const remaining = ANONYMOUS_MONTHLY_LIMIT - count;
+  if (count > ANONYMOUS_MONTHLY_LIMIT) {
+    const res = jsonError(429, "Anonymous monthly limit reached — sign in for a free API key (2x the quota, no per-IP cap)", {
       tier: "anonymous",
-      daily_limit: ANONYMOUS_DAILY_LIMIT,
+      monthly_limit: ANONYMOUS_MONTHLY_LIMIT,
     });
-    return applyRateHeaders(res, 0, ANONYMOUS_DAILY_LIMIT, "anonymous");
+    return applyRateHeaders(res, 0, ANONYMOUS_MONTHLY_LIMIT, "anonymous");
   }
   const res = NextResponse.next();
-  return applyRateHeaders(res, remaining, ANONYMOUS_DAILY_LIMIT, "anonymous");
+  return applyRateHeaders(res, remaining, ANONYMOUS_MONTHLY_LIMIT, "anonymous");
 }
 
