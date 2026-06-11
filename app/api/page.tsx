@@ -44,7 +44,7 @@ export default async function ApiDocsPage() {
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-300">
             Read access to every data center, operator, country, and cloud region in the atlas.
             JSON or CSV, open CORS, edge-cached. Every request needs an API key —{" "}
-            <Link href="/dashboard/keys" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+            <Link href="/dashboard" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
               create a free one
             </Link>{" "}
             (no card) and you&rsquo;re in.
@@ -69,8 +69,8 @@ export default async function ApiDocsPage() {
           </div>
           <p className="mt-3 max-w-2xl text-sm text-zinc-500">
             Get your key at{" "}
-            <Link href="/dashboard/keys" className="text-blue-600 hover:underline dark:text-blue-400">
-              /dashboard/keys
+            <Link href="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
+              /dashboard
             </Link>
             . Free tier is 500 requests/month — no card required.
           </p>
@@ -258,7 +258,7 @@ export default async function ApiDocsPage() {
               /login
             </Link>
             , then create a key from the{" "}
-            <Link href="/dashboard/keys" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+            <Link href="/dashboard" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
               dashboard
             </Link>
             . Free tier is 500 requests/month, no card required. Unauthenticated requests get{" "}
@@ -301,8 +301,8 @@ export default async function ApiDocsPage() {
             Pro and Team subscriptions ship via Polar.sh. Upgrades take effect immediately and
             every active key under your account inherits the new tier — no key rotation or
             migration. Manage from{" "}
-            <Link href="/dashboard/billing" className="text-blue-600 hover:underline dark:text-blue-400">
-              /dashboard/billing
+            <Link href="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
+              /dashboard
             </Link>
             .
           </p>

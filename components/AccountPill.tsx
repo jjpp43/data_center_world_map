@@ -84,11 +84,8 @@ export function AccountPill() {
           role="menu"
           className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/90 shadow-lg backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-950/90"
         >
-          <MenuLink href="/dashboard/keys" onClick={() => setOpen(false)}>
-            API keys
-          </MenuLink>
-          <MenuLink href="/dashboard/billing" onClick={() => setOpen(false)}>
-            Billing
+          <MenuLink href="/dashboard" onClick={() => setOpen(false)}>
+            Dashboard
           </MenuLink>
           <div className="border-t border-zinc-200/70 dark:border-zinc-800/70" />
           <form action="/auth/signout" method="post">

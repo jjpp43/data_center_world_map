@@ -26,22 +26,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             </Link>
             <nav className="flex items-center gap-4 text-sm">
               <Link
-                href="/dashboard/keys"
-                className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-              >
-                API keys
-              </Link>
-              <Link
-                href="/dashboard/billing"
-                className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-              >
-                Billing
-              </Link>
-              <Link
                 href="/api"
                 className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
               >
-                Docs
+                API docs
               </Link>
             </nav>
           </div>

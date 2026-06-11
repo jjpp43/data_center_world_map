@@ -72,7 +72,7 @@ export async function proxy(req: NextRequest) {
     : null;
 
   if (!bearer) {
-    return jsonError(401, "API key required — sign in at /login and create one from /dashboard/keys", {
+    return jsonError(401, "API key required — sign in at /login and create one from /dashboard", {
       docs: "/api",
     });
   }

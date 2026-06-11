@@ -18,7 +18,7 @@ async function startGithubLogin() {
   const sb = await supabaseAuthServer();
   const { data, error } = await sb.auth.signInWithOAuth({
     provider: "github",
-    options: { redirectTo: `${SITE}/auth/callback?next=/dashboard/keys` },
+    options: { redirectTo: `${SITE}/auth/callback?next=/dashboard` },
   });
   if (error) throw error;
   if (data.url) redirect(data.url);
@@ -27,7 +27,7 @@ async function startGithubLogin() {
 export default async function LoginPage() {
   const [sb, theme] = await Promise.all([supabaseAuthServer(), getTheme()]);
   const { data: { user } } = await sb.auth.getUser();
-  if (user) redirect("/dashboard/keys");
+  if (user) redirect("/dashboard");
 
   return (
     <div className={`${theme === "dark" ? "dark" : ""} min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}>

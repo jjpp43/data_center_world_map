@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const session = await createCheckoutSession({
       productId,
       customerEmail: user.email,
-      successUrl: `${SITE}/dashboard/billing?status=success`,
+      successUrl: `${SITE}/dashboard?status=success`,
       metadata: {
         user_id: user.id,
         tier,
