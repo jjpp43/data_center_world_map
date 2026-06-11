@@ -54,7 +54,7 @@ export function TopBar({ facilities, onSelect, theme, onToggleTheme }: Props) {
         type="button"
         onClick={onToggleTheme}
         aria-label="Toggle theme"
-        className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200/60 bg-white/80 text-zinc-700 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
+        className="pointer-events-auto ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200/60 bg-white/80 text-zinc-700 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
       >
         {theme === "dark" ? <SunIcon /> : <MoonIcon />}
       </button>
