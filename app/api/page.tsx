@@ -291,16 +291,16 @@ export default async function ApiDocsPage() {
               </thead>
               <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
                 <PricingRow tier="Free" quota="1,000 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
-                <PricingRow tier="Pro" quota="10,000 / month" price="$10.99 / mo" forWho="Production services, dashboards, internal tools." />
-                <PricingRow tier="Team" quota="50,000 / month" price="$49.99 / mo" forWho="Bulk analytics, market research, embedded data." />
+                <PricingRow tier="Pro" quota="10,000 / month" price="$9.99 / mo" forWho="Production services, dashboards, internal tools." />
+                <PricingRow tier="Team" quota="50,000 / month" price="$39.99 / mo" forWho="Bulk analytics, market research, embedded data." />
                 <PricingRow tier="Enterprise" quota="custom" price="contact" forWho="SLA, custom exports, on-prem mirror." />
               </tbody>
             </table>
           </div>
           <p className="mt-4 max-w-2xl text-sm text-zinc-500">
-            Pro and Team subscriptions ship via Polar.sh. Upgrades take effect immediately and
-            every active key under your account inherits the new tier — no key rotation or
-            migration. Manage from{" "}
+            Pro and Team subscriptions ship via Polar.sh with a 3-day free trial — no charge until
+            day 4, cancel anytime. Upgrades take effect immediately and every active key under your
+            account inherits the new tier — no key rotation or migration. Manage from{" "}
             <Link href="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
               /dashboard
             </Link>

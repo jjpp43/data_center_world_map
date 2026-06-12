@@ -95,7 +95,7 @@ Helpers in `lib/api.ts`: `jsonResponse`, `csvResponse`, `errorResponse`, `prefli
 
 **Auth gate**: root `proxy.ts` matches `/api/v1/:path*` (exports `proxy()` + a `config` with `matcher`). No Bearer → 401 with hint to `/login`. Valid Bearer → calls `validate_and_charge_api_key` RPC (SECURITY DEFINER, atomic month-rollover + charge), sets `X-RateLimit-{Tier,Limit,Remaining}` headers. Over quota → 429. Web Crypto SHA-256 so it works in either Edge or Node runtime.
 
-**Tiers (monthly)**: free 1,000 · pro 10,000 ($10.99/mo) · team 50,000 ($49.99/mo) · enterprise 5,000,000 (contact). Quotas defined in `lib/api-keys.ts` AND in migration 0012's `validate_and_charge_api_key` CASE — keep both in sync.
+**Tiers (monthly)**: free 1,000 · pro 10,000 ($9.99/mo, 3-day trial) · team 50,000 ($39.99/mo, 3-day trial) · enterprise 5,000,000 (contact). Quotas defined in `lib/api-keys.ts` AND in migration 0012's `validate_and_charge_api_key` CASE — keep both in sync.
 
 ## Project layout
 
@@ -246,7 +246,7 @@ RLS on every public table (public-read on data tables; auth-scoped via `auth.uid
 ## Monetization
 
 - **5a ✅**: free public API + docs validated demand
-- **5b ✅**: GitHub-OAuth-gated API keys + per-key monthly quotas + Polar.sh subscriptions. Tiers: Free 1k/mo · Pro 10k/mo $10.99 · Team 50k/mo $49.99 · Enterprise 5M/mo contact. API is auth-only (migration 0010) — every `/api/v1/*` request needs a Bearer token. HTML pages stay fully public for citation.
+- **5b ✅**: GitHub-OAuth-gated API keys + per-key monthly quotas + Polar.sh subscriptions. Tiers: Free 1k/mo · Pro 10k/mo $9.99 (3-day trial) · Team 50k/mo $39.99 (3-day trial) · Enterprise 5M/mo contact. API is auth-only (migration 0010) — every `/api/v1/*` request needs a Bearer token. HTML pages stay fully public for citation.
 - **5c (parallel, future)**: newsletter capture on `/about`, paywall deeper analysis $20–30/mo
 - **5d (future)**: sponsored operator profiles ($50–200/facility/year) — verified badge + enhanced page. Inclusion is *never* paid.
 

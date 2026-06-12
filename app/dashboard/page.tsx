@@ -198,20 +198,22 @@ export default async function DashboardPage({
           <PlanCard
             tier="pro"
             name="Pro"
-            price="$10.99 / mo"
+            price="$9.99 / mo"
             quota="10,000 requests/month"
             description="Production services, dashboards, internal tools."
             state={planState("pro", currentTier)}
             configured={proConfigured}
+            trialDays={3}
           />
           <PlanCard
             tier="team"
             name="Team"
-            price="$49.99 / mo"
+            price="$39.99 / mo"
             quota="50,000 requests/month"
             description="Bulk analytics, market research, embedded data."
             state={planState("team", currentTier)}
             configured={teamConfigured}
+            trialDays={3}
           />
         </div>
 
@@ -468,6 +470,7 @@ function PlanCard({
   description,
   state,
   configured,
+  trialDays,
 }: {
   tier: "free" | "pro" | "team";
   name: string;
@@ -476,6 +479,7 @@ function PlanCard({
   description: string;
   state: PlanState;
   configured: boolean;
+  trialDays?: number;
 }) {
   const isCurrent = state === "current";
   const isBelow = state === "below";
@@ -503,6 +507,12 @@ function PlanCard({
         </div>
       </div>
       <p className="mt-1 font-mono text-xs tabular-nums text-zinc-500">{quota}</p>
+      {trialDays && isPaidUpgrade && configured && (
+        <div className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-indigo-100/70 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+          <span aria-hidden>✦</span>
+          {trialDays}-day free trial
+        </div>
+      )}
       <p className="mt-3 flex-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
         {description}
       </p>
@@ -515,7 +525,11 @@ function PlanCard({
             disabled={!configured}
             className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500"
           >
-            {configured ? `Upgrade to ${name}` : "Coming soon"}
+            {!configured
+              ? "Coming soon"
+              : trialDays
+              ? `Start ${trialDays}-day trial`
+              : `Upgrade to ${name}`}
           </button>
         </form>
       )}
