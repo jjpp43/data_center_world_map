@@ -20,6 +20,7 @@ export function PostHogProvider({ children }: { children: ReactNode }) {
       posthog.init(POSTHOG_KEY, {
         api_host: "/ingest",
         ui_host: POSTHOG_UI_HOST,
+        defaults: "2026-05-30",
         person_profiles: "identified_only",
         capture_pageview: false,
         autocapture: true,
