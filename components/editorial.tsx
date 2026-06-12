@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AccountPill } from "./AccountPill";
 
 export function Stat({
   label,
@@ -346,9 +347,12 @@ export function EditorialHeader({
             {link("/api", "API", active === "api")}
           </nav>
         </div>
-        <a href="/" className="text-sm font-semibold tracking-tight">
-          datacenters<span className="text-blue-500 dark:text-blue-400">.world</span>
-        </a>
+        <div className="flex items-center gap-5">
+          <a href="/" className="text-sm font-semibold tracking-tight">
+            datacenters<span className="text-blue-500 dark:text-blue-400">.world</span>
+          </a>
+          <AccountPill />
+        </div>
       </div>
     </header>
   );
