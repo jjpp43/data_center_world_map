@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { supabaseAuthServer } from "@/lib/supabase-server";
 import { TIER_LIMITS, generateApiKey, tierLabel } from "@/lib/api-keys";
 import { POLAR_PRO_PRODUCT_ID, POLAR_TEAM_PRODUCT_ID } from "@/lib/polar";
-import { Stat } from "@/components/editorial";
 import { KeysClient } from "./KeysClient";
 
 const INACTIVE_THRESHOLD_DAYS = 14;
@@ -46,12 +45,39 @@ interface SubscriptionRow {
   polar_subscription_id: string;
 }
 
-async function createKey(formData: FormData) {
+interface DailyUsageRow {
+  usage_date: string;
+  request_count: number;
+}
+
+function buildMonthlyUsageSeries(rows: DailyUsageRow[], now = new Date()): { date: string; count: number }[] {
+  const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const totals = new Map<string, number>();
+  for (const r of rows) {
+    totals.set(r.usage_date, (totals.get(r.usage_date) ?? 0) + r.request_count);
+  }
+  const series: { date: string; count: number }[] = [];
+  const cursor = new Date(monthStart);
+  while (cursor.getTime() <= todayUtc.getTime()) {
+    const iso = cursor.toISOString().slice(0, 10);
+    series.push({ date: iso, count: totals.get(iso) ?? 0 });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return series;
+}
+
+async function createKey() {
   "use server";
-  const name = String(formData.get("name") ?? "").trim() || "Untitled key";
   const sb = await supabaseAuthServer();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect("/login");
+
+  const { count } = await sb
+    .from("api_keys")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  const name = `Key ${(count ?? 0) + 1}`;
 
   const { plaintext, hash, display_prefix } = generateApiKey();
   const { error } = await sb.from("api_keys").insert({
@@ -92,7 +118,11 @@ export default async function DashboardPage({
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect("/login");
 
-  const [keysRes, subsRes] = await Promise.all([
+  const monthStartIso = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1))
+    .toISOString()
+    .slice(0, 10);
+
+  const [keysRes, subsRes, dailyRes] = await Promise.all([
     sb
       .from("api_keys")
       .select("id, name, key_prefix, tier, created_at, last_used_at, revoked_at, current_month_usage")
@@ -106,9 +136,16 @@ export default async function DashboardPage({
       .order("created_at", { ascending: false })
       .limit(1)
       .returns<SubscriptionRow[]>(),
+    sb
+      .from("api_key_usage_daily")
+      .select("usage_date, request_count")
+      .eq("user_id", user.id)
+      .gte("usage_date", monthStartIso)
+      .returns<DailyUsageRow[]>(),
   ]);
 
   const keys = keysRes.data ?? [];
+  const usageSeries = buildMonthlyUsageSeries(dailyRes.data ?? []);
   const active = subsRes.data?.[0] ?? null;
   const isActive = active && ["active", "trialing"].includes(active.status);
   const currentTier = isActive && active ? active.tier : "free";
@@ -137,22 +174,12 @@ export default async function DashboardPage({
 
       <KeysClient reveal={reveal ?? null} />
 
-      <section className="mt-8 grid grid-cols-3 gap-3">
-        <Stat
-          label="Usage this month"
-          value={totalUsage.toLocaleString()}
-          size="sm"
-          live={totalUsage > 0}
-        />
-        <Stat
-          label="Active keys"
-          value={activeKeys.length.toLocaleString()}
-          size="sm"
-        />
-        <Stat
-          label="Quota resets in"
-          value={`${daysToReset}d`}
-          size="sm"
+      <section className="mt-8">
+        <UsageChart
+          series={usageSeries}
+          total={totalUsage}
+          activeKeys={activeKeys.length}
+          daysToReset={daysToReset}
         />
       </section>
 
@@ -214,31 +241,28 @@ export default async function DashboardPage({
       </section>
 
       <section className="mt-10">
-        <h2 className="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          {keys.length === 0 ? "API keys" : `API keys (${keys.length})`}
-        </h2>
-        <form
-          action={createKey}
-          className="flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200/70 bg-white/60 p-4 dark:border-zinc-800/60 dark:bg-zinc-900/40"
-        >
-          <label className="flex-1 min-w-[200px] text-xs">
-            <div className="mb-1 font-mono uppercase tracking-wider text-zinc-500">Name</div>
-            <input
-              name="name"
-              type="text"
-              placeholder="e.g. production"
-              className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder-zinc-600"
-              required
-              maxLength={64}
-            />
-          </label>
-          <button
-            type="submit"
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-          >
-            Create key
-          </button>
-        </form>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            {keys.length === 0 ? "API keys" : `API keys (${keys.length})`}
+          </h2>
+          <form action={createKey}>
+            <button
+              type="submit"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+            >
+              Generate API key
+            </button>
+          </form>
+        </div>
+
+        {keys.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-zinc-300/70 bg-white/40 px-6 py-10 text-center dark:border-zinc-700/60 dark:bg-zinc-900/30">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              No keys yet. Generate one to start hitting{" "}
+              <span className="font-mono">/api/v1/*</span>.
+            </p>
+          </div>
+        )}
 
         {keys.length > 0 && (
           <ul className="mt-4 divide-y divide-zinc-200/70 rounded-2xl border border-zinc-200/70 bg-white/60 dark:divide-zinc-800/60 dark:border-zinc-800/60 dark:bg-zinc-900/40">
@@ -329,6 +353,100 @@ export default async function DashboardPage({
         </p>
       </section>
     </main>
+  );
+}
+
+function UsageChart({
+  series,
+  total,
+  activeKeys,
+  daysToReset,
+}: {
+  series: { date: string; count: number }[];
+  total: number;
+  activeKeys: number;
+  daysToReset: number;
+}) {
+  const max = Math.max(1, ...series.map((d) => d.count));
+  const monthLabel = series.length
+    ? new Date(series[0].date + "T00:00:00Z").toLocaleString(undefined, {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      })
+    : "";
+  const todayIdx = series.length - 1;
+
+  return (
+    <div className="rounded-2xl border border-zinc-200/70 bg-white/60 p-5 dark:border-zinc-800/60 dark:bg-zinc-900/40">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+            Requests · {monthLabel}
+          </div>
+          <div className="mt-1 font-mono text-3xl tabular-nums leading-none text-zinc-900 dark:text-zinc-50">
+            {total.toLocaleString()}
+          </div>
+        </div>
+        <div className="flex items-center gap-4 font-mono text-xs tabular-nums text-zinc-500">
+          <span>
+            <span className="text-zinc-400">keys</span>{" "}
+            <span className="text-zinc-700 dark:text-zinc-300">{activeKeys}</span>
+          </span>
+          <span>
+            <span className="text-zinc-400">resets in</span>{" "}
+            <span className="text-zinc-700 dark:text-zinc-300">{daysToReset}d</span>
+          </span>
+        </div>
+      </div>
+
+      <svg
+        viewBox="0 0 100 32"
+        preserveAspectRatio="none"
+        className="mt-4 h-24 w-full"
+        role="img"
+        aria-label={`Daily API requests for ${monthLabel}`}
+      >
+        {series.map((d, i) => {
+          const barW = 100 / series.length;
+          const h = d.count === 0 ? 0 : Math.max(0.6, (d.count / max) * 30);
+          const isToday = i === todayIdx;
+          return (
+            <rect
+              key={d.date}
+              x={i * barW + barW * 0.12}
+              y={32 - h}
+              width={barW * 0.76}
+              height={h}
+              rx={0.4}
+              className={
+                isToday
+                  ? "fill-indigo-500 dark:fill-indigo-400"
+                  : "fill-indigo-500/60 dark:fill-indigo-400/55"
+              }
+            >
+              <title>{`${d.date} — ${d.count.toLocaleString()} requests`}</title>
+            </rect>
+          );
+        })}
+        <line
+          x1="0"
+          x2="100"
+          y1="32"
+          y2="32"
+          className="stroke-zinc-200 dark:stroke-zinc-800"
+          strokeWidth="0.25"
+        />
+      </svg>
+
+      <div className="mt-2 flex justify-between font-mono text-[10px] tabular-nums text-zinc-500">
+        <span>{series[0]?.date.slice(8) ?? ""}</span>
+        <span>
+          {series[Math.floor(series.length / 2)]?.date.slice(8) ?? ""}
+        </span>
+        <span>{series[series.length - 1]?.date.slice(8) ?? ""}</span>
+      </div>
+    </div>
   );
 }
 

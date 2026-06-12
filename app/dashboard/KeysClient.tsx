@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-/**
- * Renders the one-shot plaintext reveal banner after key creation.
- * The plaintext arrives via ?reveal=... query param; we strip it from the URL
- * on mount so it doesn't survive a refresh or get bookmarked.
- */
 export function KeysClient({ reveal }: { reveal: string | null }) {
   const [shown, setShown] = useState(reveal);
+  const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -19,6 +15,8 @@ export function KeysClient({ reveal }: { reveal: string | null }) {
   }, [reveal]);
 
   if (!shown) return null;
+
+  const masked = maskKey(shown);
 
   async function copy() {
     if (!shown) return;
@@ -46,8 +44,17 @@ export function KeysClient({ reveal }: { reveal: string | null }) {
       </p>
       <div className="mt-3 flex items-stretch gap-2">
         <code className="flex-1 truncate rounded-lg bg-white px-3 py-2 font-mono text-sm text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-          {shown}
+          {visible ? shown : masked}
         </code>
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? "Hide key" : "Reveal key"}
+          aria-pressed={visible}
+          className="rounded-lg border border-emerald-300/60 bg-white px-3 py-2 text-emerald-700 transition-colors hover:bg-emerald-50 dark:border-emerald-800/40 dark:bg-zinc-950 dark:text-emerald-300 dark:hover:bg-zinc-900"
+        >
+          {visible ? <EyeOffIcon /> : <EyeIcon />}
+        </button>
         <button
           type="button"
           onClick={copy}
@@ -57,5 +64,51 @@ export function KeysClient({ reveal }: { reveal: string | null }) {
         </button>
       </div>
     </div>
+  );
+}
+
+function maskKey(key: string): string {
+  if (key.length <= 12) return key;
+  return `${key.slice(0, 8)}${"•".repeat(Math.max(8, key.length - 12))}${key.slice(-4)}`;
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-6.5 0-10-7-10-7a18.5 18.5 0 0 1 4.21-5.36" />
+      <path d="M22 12s-1.18 2.39-3.36 4.36" />
+      <path d="M9.88 5.09A10.94 10.94 0 0 1 12 5c6.5 0 10 7 10 7" />
+      <path d="m1 1 22 22" />
+      <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88" />
+    </svg>
   );
 }
