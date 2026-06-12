@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import { SessionProvider } from "@/components/SessionProvider";
+import { PostHogProvider, PostHogPageView } from "@/components/PostHog";
 import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -118,9 +119,12 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}
         />
-        <SessionProvider initialSignedIn={initialSignedIn}>
-          {children}
-        </SessionProvider>
+        <PostHogProvider>
+          <PostHogPageView />
+          <SessionProvider initialSignedIn={initialSignedIn}>
+            {children}
+          </SessionProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

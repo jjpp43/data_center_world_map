@@ -235,7 +235,13 @@ POLAR_WEBHOOK_SECRET=whsec_...          # from Polar webhook endpoint config
 POLAR_PRO_PRODUCT_ID=<prod_id>          # if unset, /dashboard/billing shows "Coming soon"
 POLAR_TEAM_PRODUCT_ID=<prod_id>         # same
 POLAR_API_BASE=https://api.polar.sh     # optional override (sandbox: https://sandbox-api.polar.sh)
+
+# Analytics (optional — site works without)
+NEXT_PUBLIC_POSTHOG_KEY=phc_...         # PostHog Cloud project API key (public). If unset, PostHogProvider noops.
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com   # optional; eu.i.posthog.com for EU region
 ```
+
+**PostHog wiring**: client-only via `components/PostHog.tsx`. `PostHogProvider` initializes on mount, identifies signed-in users (`posthog.identify(user.id, { email })` via supabaseBrowser onAuthStateChange), and resets on sign-out. `PostHogPageView` fires `$pageview` on App Router route change (App Router doesn't fire automatically). Autocapture is on (catches clicks/form submits) so most analysis works without custom events; only one named event today: `key_generated` in `KeysClient`. CSP allows `https://*.i.posthog.com` for both script-src and connect-src — covers US + EU regions. `person_profiles: "identified_only"` so anonymous traffic doesn't burn the 1M-events/month free quota on unidentified profiles.
 
 ## Security
 
