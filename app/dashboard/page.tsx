@@ -190,7 +190,7 @@ export default async function DashboardPage({
             tier="free"
             name="Free"
             price="Free"
-            quota="500 requests/month"
+            quota="1,000 requests/month"
             description="Hobby projects, evaluation, indie tools."
             state={planState("free", currentTier)}
             configured

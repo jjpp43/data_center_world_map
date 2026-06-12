@@ -20,7 +20,7 @@ export function hashApiKey(plaintext: string): string {
 }
 
 export const TIER_LIMITS: Record<string, number> = {
-  free: 500,
+  free: 1_000,
   pro: 10_000,
   team: 50_000,
   enterprise: 5_000_000,

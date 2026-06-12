@@ -72,7 +72,7 @@ export default async function ApiDocsPage() {
             <Link href="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
               /dashboard
             </Link>
-            . Free tier is 500 requests/month — no card required.
+            . Free tier is 1,000 requests/month — no card required.
           </p>
         </section>
 
@@ -261,7 +261,7 @@ export default async function ApiDocsPage() {
             <Link href="/dashboard" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
               dashboard
             </Link>
-            . Free tier is 500 requests/month, no card required. Unauthenticated requests get{" "}
+            . Free tier is 1,000 requests/month, no card required. Unauthenticated requests get{" "}
             <Inline>401 Unauthorized</Inline>.
           </p>
           <Code
@@ -290,7 +290,7 @@ export default async function ApiDocsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
-                <PricingRow tier="Free" quota="500 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
+                <PricingRow tier="Free" quota="1,000 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
                 <PricingRow tier="Pro" quota="10,000 / month" price="$10.99 / mo" forWho="Production services, dashboards, internal tools." />
                 <PricingRow tier="Team" quota="50,000 / month" price="$49.99 / mo" forWho="Bulk analytics, market research, embedded data." />
                 <PricingRow tier="Enterprise" quota="custom" price="contact" forWho="SLA, custom exports, on-prem mirror." />
