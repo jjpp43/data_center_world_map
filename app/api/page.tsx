@@ -71,8 +71,14 @@ export default async function ApiDocsPage() {
           </div>
         </details>
 
-        {/* Grid: content + right sidebar */}
-        <div className="mt-10 grid gap-x-12 gap-y-16 lg:grid-cols-[1fr_240px]">
+        {/* Grid: left sidebar + content */}
+        <div className="mt-10 grid gap-x-12 gap-y-16 lg:grid-cols-[240px_1fr]">
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-8">
+              <ApiNav />
+            </div>
+          </aside>
+
           <article className="min-w-0 space-y-16">
             {/* ─────────── Overview ─────────── */}
             <Section id="overview" number={1} title="Overview">
@@ -620,12 +626,6 @@ if not res.ok:
               </div>
             </Section>
           </article>
-
-          <aside className="hidden lg:block">
-            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-8">
-              <ApiNav />
-            </div>
-          </aside>
         </div>
       </main>
     </div>
