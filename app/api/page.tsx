@@ -579,52 +579,13 @@ if not res.ok:
               </p>
             </Section>
 
-            {/* ─────────── Roadmap ─────────── */}
-            <Section id="roadmap" number={9} title="Roadmap">
-              <ul className="mt-5 max-w-2xl space-y-3 text-base text-zinc-600 dark:text-zinc-300">
-                <li>
-                  <strong className="text-zinc-900 dark:text-zinc-100">OpenAPI 3.1 spec</strong> at{" "}
-                  <Inline>/api/v1/openapi.json</Inline> — usable from Cursor, ChatGPT custom GPTs,
-                  Postman, and the OpenAI function-calling interface.
-                </li>
-                <li>
-                  <strong className="text-zinc-900 dark:text-zinc-100">More filters</strong> —{" "}
-                  <Inline>min_networks</Inline>, <Inline>has_pue</Inline>, geospatial{" "}
-                  <Inline>near=lat,lng&amp;radius_km=</Inline>.
-                </li>
-                <li>
-                  <strong className="text-zinc-900 dark:text-zinc-100">Search</strong> —{" "}
-                  <Inline>/api/v1/search?q=</Inline> backed by Postgres full-text + trigrams.
-                </li>
-                <li>
-                  <strong className="text-zinc-900 dark:text-zinc-100">Webhooks</strong> — push
-                  notifications when a tracked operator or country adds a facility.
-                </li>
-              </ul>
-            </Section>
-
-            {/* ─────────── Contact ─────────── */}
-            <Section id="contact" number={10} title="Contact">
-              <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
-                Building something with this? Tell us — we&rsquo;ll prioritize the filters and
-                exports you need. Higher limits, SLA, or one-off bulk export? Same address.
+            <div className="mt-12 border-t border-zinc-200/70 pt-6 text-xs text-zinc-500 dark:border-zinc-800/60">
+              <p className="font-mono">
+                Data from PeeringDB (CC-BY-SA), OpenStreetMap (ODbL), operator-published facility
+                pages, datacenters.google, and datacenters.atmeta.com · Citing the API is
+                appreciated · No usage analytics
               </p>
-              <div className="mt-5">
-                <Link
-                  href="/methodology"
-                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-zinc-200/60 bg-white/80 px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
-                >
-                  Methodology <span aria-hidden>→</span>
-                </Link>
-              </div>
-              <div className="mt-12 border-t border-zinc-200/70 pt-6 text-xs text-zinc-500 dark:border-zinc-800/60">
-                <p className="font-mono">
-                  Data from PeeringDB (CC-BY-SA), OpenStreetMap (ODbL), operator-published
-                  facility pages, datacenters.google, and datacenters.atmeta.com · Citing the API
-                  is appreciated · No usage analytics
-                </p>
-              </div>
-            </Section>
+            </div>
           </article>
         </div>
       </main>

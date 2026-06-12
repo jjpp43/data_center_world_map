@@ -27,8 +27,6 @@ export const NAV: NavItem[] = [
   { id: "errors", label: "Errors & rate limits" },
   { id: "pricing", label: "Pricing" },
   { id: "versioning", label: "Versioning" },
-  { id: "roadmap", label: "Roadmap" },
-  { id: "contact", label: "Contact" },
 ];
 
 function flatten(items: NavItem[]): string[] {
