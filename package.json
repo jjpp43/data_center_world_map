@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "ingest": "tsx --env-file=.env.local scripts/ingest.ts",
+    "audit:quality": "tsx --env-file=.env.local scripts/audit-quality.ts",
     "check:security": "node --env-file=.env.local scripts/check-security.mjs"
   },
   "dependencies": {
