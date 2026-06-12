@@ -25,6 +25,29 @@ const STYLE_URL: Record<MapStyle, string> = {
   light: "mapbox://styles/mapbox/light-v11",
 };
 
+// Soft cool-gray for the light style base — pure white blends into the
+// editorial UI and washes out the overlay buttons. Applied at style.load
+// by overriding the `background` layer plus any land/landcover fill.
+const LIGHT_BASE_TINT = "#e7eaf0";
+
+function tintLightBase(map: mapboxgl.Map) {
+  for (const layer of map.getStyle().layers ?? []) {
+    if (layer.type === "background") {
+      try {
+        map.setPaintProperty(layer.id, "background-color", LIGHT_BASE_TINT);
+      } catch {
+        /* layer missing — skip */
+      }
+    } else if (layer.type === "fill" && /^(land|landcover|landuse)/.test(layer.id)) {
+      try {
+        map.setPaintProperty(layer.id, "fill-color", LIGHT_BASE_TINT);
+      } catch {
+        /* layer missing — skip */
+      }
+    }
+  }
+}
+
 export function Map({
   facilities,
   cloudRegions,
@@ -69,6 +92,7 @@ export function Map({
       const d = dataRef.current;
       console.log("[Map] style.load — attaching layers with", d.facilities.length, "facilities");
       attachLayers(map, d.facilities, d.cloudRegions, d.cloudRegionsVisible);
+      if (d.style === "light") tintLightBase(map);
       const facilitiesSrc = map.getSource("facilities") as mapboxgl.GeoJSONSource | undefined;
       const cloudSrc = map.getSource("cloud-regions") as mapboxgl.GeoJSONSource | undefined;
       if (facilitiesSrc) facilitiesSrc.setData(toFacilityGeoJSON(d.facilities));

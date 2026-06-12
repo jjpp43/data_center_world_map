@@ -73,7 +73,7 @@ export function AccountPill() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-10 items-center gap-1.5 rounded-full border border-zinc-200/60 bg-white/80 px-4 text-sm font-medium text-zinc-700 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
+        className="flex h-10 items-center gap-1.5 rounded-full border border-zinc-300/80 bg-white/95 px-4 text-sm font-medium text-zinc-700 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
       >
         Account
         <Chevron open={open} />
