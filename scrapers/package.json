@@ -19,6 +19,8 @@
     "scrape:cyrusone": "tsx cyrusone.ts",
     "scrape:qts": "tsx qts.ts",
     "scrape:ironmountain": "tsx ironmountain.ts",
+    "scrape:google-buildings": "tsx google.ts",
+    "scrape:meta-buildings": "tsx meta.ts",
     "scrape:operators-all": "tsx operators-all.ts",
     "scrape:osm": "tsx osm.ts",
     "scrape:aws": "tsx aws.ts",

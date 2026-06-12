@@ -4,11 +4,12 @@ Public map of every known data center in the world, viewable on a single Mapbox 
 
 ## Current status (2026-06-11)
 
-Phases 1–10 + 5b (monetization) + 9 (orphan canonicalization + Iron Mountain) shipped. Next active: Phase 11 (hyperscale buildings — Microsoft Azure + Google).
+Phases 1–11 + 5b (monetization) shipped. Microsoft Azure hyperscale deferred (their per-building data is sparse; cloud_regions already covers Azure at region grain).
 
-- **5,585** facilities (5,256 PeeringDB + 95 OSM-only + 230 operator-page canonicals + 4 Iron Mountain new); **34,732** networks; **1,309** IXPs; **176** cloud regions; **57,206** network↔fac + **4,134** IX↔fac relations
+- **5,675** facilities (5,256 PeeringDB + 95 OSM-only + 230 operator-page canonicals + 4 Iron Mountain + 58 Google buildings + 32 Meta buildings); **34,732** networks; **1,309** IXPs; **176** cloud regions; **57,206** network↔fac + **4,134** IX↔fac relations
 - **714** operator-page records across 7 colos (Equinix, Digital Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS) → **480 enriched at first ingest + 230 canonicalized in Phase 9 + 4 late-linked = 714 fully landed**.
 - **Iron Mountain** scraped via Playwright (`scrapers/ironmountain.ts`) — bypasses Vercel Security Checkpoint by running real Chromium. 23 facilities → 4 new canonicals (Chicago, Chennai, Miami, Richmond) + 19 enrichments of existing PeeringDB rows with operator-page specs (MW, sqft, certifications).
+- **Phase 11 hyperscale**: Google (`scrapers/google.ts`, `scripts/ingest-google.ts`) — 59 named hyperscale buildings from datacenters.google/locations (status=planned for "in development", operational otherwise). Meta (`scrapers/meta.ts`, `scripts/ingest-meta.ts`) — 32 named facilities from datacenters.atmeta.com/all-locations, with break-ground year populated as `year_built`. Both city-only data; Mapbox forward-geocode at ingest. **Microsoft Azure deferred**: Azure publishes regions, not buildings; their building-grain data isn't on a single page.
 - Migrations **0001–0010** applied. RLS public-read-only on every data table; auth-scoped on `api_keys` + `subscriptions`.
 - Routes: map at `/`, `/facility/[slug]`, `/about`, `/methodology`, `/api` (docs), `/operators/[slug]`, `/countries/[code]`, `/metros[/slug]`, `/ixps[/slug]`, `/networks/[asn]`, `/density[/tier]`, `/insights[/slug]`. Auth + dashboard at `/login`, `/auth/{callback,signout}`, `/dashboard/{keys,billing}`. Billing wiring at `/api/billing/checkout` + `/api/webhooks/polar`. **Auth-gated dataset API** at `/api/v1/{facilities,operators,countries,cloud-regions}` (JSON + CSV, open CORS, Bearer token required, per-key monthly quota via root `proxy.ts` — Next.js 16 renamed the middleware convention to proxy).
 - Mobile: `<MobileHome>` search-first list below `md` breakpoint. Theme cookie-persisted across all server pages.
@@ -29,7 +30,7 @@ Phases 1–10 + 5b (monetization) + 9 (orphan canonicalization + Iron Mountain) 
 ## Data model
 
 ```
-data_centers (5,585)          ← canonical
+data_centers (5,675)          ← canonical
   ├→ source_records           ← N:1, raw payload kept
   ├→ networks_at_facility →   networks (34,732 ASNs)
   └→ ixes_at_facility    →    ixes (1,309 IXPs)
@@ -183,7 +184,7 @@ scrapers/                               separate Node 22 subproject (out/ and ca
      6. Set `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_PRO_PRODUCT_ID`, `POLAR_TEAM_PRODUCT_ID` in Vercel env, redeploy
      7. Register webhook endpoint `https://datacenters.world/api/webhooks/polar` in Polar dashboard with format=Raw, events=subscription.{created,updated,active,canceled,revoked}
 9. ✅ Orphan canonicalization (`scripts/canonicalize-orphans.ts`) — all 234 operator-page orphans resolved via Mapbox geocoding + strict matcher → 230 new canonicals + 4 late-linked. **Iron Mountain shipped** (`scrapers/ironmountain.ts` Playwright bypass + `scripts/ingest-ironmountain.ts`): 23 facilities → 4 new + 19 enriched.
-10. ⏸ Hyperscale buildings (scrape Microsoft + Google ESG pages, +300–500 facilities)
+10. ✅ Hyperscale buildings (Phase 11): Google +58 named buildings via `scrapers/google.ts` + `scripts/ingest-google.ts`; Meta +32 via `scrapers/meta.ts` + `scripts/ingest-meta.ts`. Microsoft Azure deferred — they only publish region-grain data, which `cloud_regions` already covers.
 11. ⏸ User submissions + admin UI
 
 ## Workflow
