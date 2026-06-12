@@ -71,14 +71,8 @@ export default async function ApiDocsPage() {
           </div>
         </details>
 
-        {/* Grid: sidebar + content */}
-        <div className="mt-10 grid gap-x-12 gap-y-16 lg:grid-cols-[220px_1fr]">
-          <aside className="hidden lg:block">
-            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-8">
-              <ApiNav />
-            </div>
-          </aside>
-
+        {/* Grid: content + right sidebar */}
+        <div className="mt-10 grid gap-x-12 gap-y-16 lg:grid-cols-[1fr_240px]">
           <article className="min-w-0 space-y-16">
             {/* ─────────── Overview ─────────── */}
             <Section id="overview" number={1} title="Overview">
@@ -626,6 +620,12 @@ if not res.ok:
               </div>
             </Section>
           </article>
+
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-8">
+              <ApiNav />
+            </div>
+          </aside>
         </div>
       </main>
     </div>
@@ -704,21 +704,19 @@ function Section({
 }) {
   return (
     <section id={id} className="scroll-mt-24">
-      <div className="flex items-baseline justify-between gap-3 border-t border-zinc-200/70 pt-5 dark:border-zinc-800/60">
-        <h2 className="flex items-center gap-3 font-mono text-sm font-semibold uppercase tracking-[0.16em] text-zinc-900 dark:text-zinc-50">
-          <span
-            aria-hidden
-            className="inline-block h-4 w-[3px] rounded-sm bg-indigo-500/90 dark:bg-indigo-400/90"
-          />
-          <span className="font-mono text-xs tabular-nums text-indigo-600 dark:text-indigo-400">
-            §{number}
+      <div className="flex items-baseline justify-between gap-4 border-t border-zinc-200/70 pt-6 dark:border-zinc-800/60">
+        <div className="flex items-baseline gap-5">
+          <span className="font-mono text-5xl font-light leading-none tabular-nums text-indigo-500 dark:text-indigo-400">
+            {String(number).padStart(2, "0")}
           </span>
-          <span>{title}</span>
-        </h2>
+          <h2 className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-zinc-900 dark:text-zinc-50">
+            {title}
+          </h2>
+        </div>
         <a
           href={`#${id}`}
           aria-label={`Link to ${title}`}
-          className="font-mono text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+          className="font-mono text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
         >
           #
         </a>

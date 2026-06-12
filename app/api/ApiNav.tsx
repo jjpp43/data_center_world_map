@@ -71,14 +71,19 @@ export function ApiNav() {
       className="text-base"
     >
       <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-        On this page
+        Contents
       </div>
       <ul className="mt-3 space-y-0.5">
-        {NAV.map((item) => (
+        {NAV.map((item, idx) => (
           <li key={item.id}>
-            <NavLink id={item.id} label={item.label} active={active} />
+            <NavLink
+              id={item.id}
+              label={item.label}
+              number={idx + 1}
+              active={active}
+            />
             {item.children && (
-              <ul className="mt-0.5 ml-3 space-y-0.5 border-l border-zinc-200/70 pl-3 dark:border-zinc-800/60">
+              <ul className="mt-0.5 ml-9 space-y-0.5 border-l border-zinc-200/70 pl-3 dark:border-zinc-800/60">
                 {item.children.map((child) => (
                   <li key={child.id}>
                     <NavLink
@@ -101,11 +106,13 @@ export function ApiNav() {
 function NavLink({
   id,
   label,
+  number,
   active,
   small = false,
 }: {
   id: string;
   label: string;
+  number?: number;
   active: string;
   small?: boolean;
 }) {
@@ -113,7 +120,7 @@ function NavLink({
   return (
     <a
       href={`#${id}`}
-      className={`block rounded px-2 py-1 transition-colors ${
+      className={`flex items-baseline gap-3 rounded px-2 py-1 transition-colors ${
         small ? "text-sm" : "text-base"
       } ${
         isActive
@@ -121,7 +128,18 @@ function NavLink({
           : "text-zinc-600 hover:bg-zinc-100/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900/60 dark:hover:text-zinc-100"
       }`}
     >
-      {label}
+      {number != null && (
+        <span
+          className={`min-w-[1.5rem] font-mono text-xs tabular-nums ${
+            isActive
+              ? "text-indigo-500 dark:text-indigo-400"
+              : "text-zinc-400 dark:text-zinc-500"
+          }`}
+        >
+          {String(number).padStart(2, "0")}
+        </span>
+      )}
+      <span>{label}</span>
     </a>
   );
 }
