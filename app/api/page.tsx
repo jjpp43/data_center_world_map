@@ -3,7 +3,7 @@ import Link from "next/link";
 import { EditorialHeader } from "@/components/editorial";
 import { getTheme } from "@/lib/theme";
 import { ApiNav } from "./ApiNav";
-import { CodeTabs } from "./CodeTabs";
+import { CodeTabs, ResponseBlock } from "./CodeTabs";
 
 export const metadata: Metadata = {
   title: "API",
@@ -62,7 +62,7 @@ export default async function ApiDocsPage() {
         </div>
 
         {/* Mobile TOC */}
-        <details className="mt-10 rounded-2xl border border-zinc-200/70 bg-white/60 px-4 py-3 backdrop-blur-md lg:hidden dark:border-zinc-800/70 dark:bg-zinc-900/30">
+        <details className="mt-10 rounded-2xl border border-zinc-300 bg-white px-4 py-3 shadow-sm lg:hidden dark:border-zinc-700 dark:bg-zinc-900/70">
           <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-700 dark:text-zinc-300">
             On this page
           </summary>
@@ -505,9 +505,9 @@ if not res.ok:
                 />
               </div>
 
-              <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/40 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-900/30">
+              <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-zinc-200/70 bg-zinc-50/60 font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500 dark:border-zinc-800/70 dark:bg-zinc-900/40">
+                  <thead className="border-b border-zinc-200 bg-zinc-100/80 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300">
                     <tr>
                       <th className="px-4 py-2.5 text-left font-medium">Status</th>
                       <th className="px-4 py-2.5 text-left font-medium">When</th>
@@ -535,9 +535,9 @@ if not res.ok:
 
             {/* ─────────── Pricing ─────────── */}
             <Section id="pricing" number={7} title="Pricing">
-              <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/40 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-900/30">
+              <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-zinc-200/70 bg-zinc-50/60 font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500 dark:border-zinc-800/70 dark:bg-zinc-900/40">
+                  <thead className="border-b border-zinc-200 bg-zinc-100/80 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300">
                     <tr>
                       <th className="px-4 py-2.5 text-left font-medium">Tier</th>
                       <th className="px-4 py-2.5 text-left font-medium">Quota</th>
@@ -730,8 +730,8 @@ function Section({
 
 function Pill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-zinc-200/70 bg-white/60 px-3 py-2 dark:border-zinc-800/70 dark:bg-zinc-900/30">
-      <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+    <div className="rounded-lg border border-zinc-300 bg-white px-3 py-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70">
+      <div className="text-[11px] font-medium uppercase tracking-[0.15em] text-indigo-600 dark:text-indigo-400">
         {label}
       </div>
       <div className="mt-0.5 font-mono text-sm tabular-nums text-zinc-900 dark:text-zinc-100">
@@ -763,33 +763,33 @@ function Endpoint({
   return (
     <article
       id={id}
-      className="mt-8 scroll-mt-24 overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/40 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-900/30"
+      className="mt-8 scroll-mt-24 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70"
     >
-      <header className="flex flex-wrap items-baseline gap-3 border-b border-zinc-200/60 px-5 py-3 dark:border-zinc-800/60">
-        <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-wider text-emerald-700 dark:text-emerald-300">
+      <header className="flex flex-wrap items-baseline gap-3 border-b border-zinc-200 bg-gradient-to-r from-indigo-50/60 to-transparent px-5 py-4 dark:border-zinc-800 dark:from-indigo-950/30">
+        <span className="rounded-md bg-emerald-500 px-2 py-0.5 font-mono text-xs font-semibold tracking-wider text-white shadow-sm">
           {method}
         </span>
-        <code className="font-mono text-base text-zinc-900 dark:text-zinc-100">{path}</code>
-        <span className="text-base text-zinc-500">— {description}</span>
+        <code className="font-mono text-base font-medium text-zinc-900 dark:text-zinc-100">{path}</code>
+        <span className="text-base text-zinc-600 dark:text-zinc-400">— {description}</span>
       </header>
 
       {params && params.length > 0 && (
-        <div className="px-5 py-3">
-          <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+        <div className="border-t border-zinc-200 bg-indigo-50/20 px-5 py-4 dark:border-zinc-800 dark:bg-indigo-950/10">
+          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">
             Query parameters
           </div>
           <table className="w-full text-sm">
-            <tbody className="divide-y divide-zinc-200/50 dark:divide-zinc-800/50">
+            <tbody className="divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
               {params.map(([name, type, desc, ex]) => (
-                <tr key={name}>
-                  <td className="py-1.5 pr-3 align-top font-mono text-xs text-zinc-900 dark:text-zinc-100">
+                <tr key={name} className="even:bg-zinc-50/40 dark:even:bg-zinc-900/20">
+                  <td className="py-2 pl-1 pr-3 align-top font-mono text-sm text-zinc-900 dark:text-zinc-100">
                     {name}
                   </td>
-                  <td className="py-1.5 pr-3 align-top font-mono text-[11px] text-indigo-600 dark:text-indigo-400">
+                  <td className="py-2 pr-3 align-top font-mono text-xs text-indigo-600 dark:text-indigo-400">
                     {type}
                   </td>
-                  <td className="py-1.5 pr-3 align-top text-zinc-600 dark:text-zinc-400">{desc}</td>
-                  <td className="py-1.5 align-top font-mono text-[11px] text-zinc-500">{ex}</td>
+                  <td className="py-2 pr-3 align-top text-zinc-700 dark:text-zinc-300">{desc}</td>
+                  <td className="py-2 pr-1 align-top font-mono text-xs text-zinc-500">{ex}</td>
                 </tr>
               ))}
             </tbody>
@@ -797,35 +797,30 @@ function Endpoint({
         </div>
       )}
 
-      <div className="border-t border-zinc-200/60 px-5 py-3 dark:border-zinc-800/60">
+      <div className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
         <CodeTabs label="Request" sample={sample} />
       </div>
 
-      <div className="border-t border-zinc-200/60 px-5 py-3 dark:border-zinc-800/60">
-        <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500">
-          Response (truncated)
-        </div>
-        <pre className="overflow-x-auto rounded-lg border border-zinc-200/70 bg-zinc-50/80 p-3 font-mono text-xs leading-relaxed text-zinc-800 dark:border-zinc-800/70 dark:bg-zinc-950/60 dark:text-zinc-200">
-          {response}
-        </pre>
+      <div className="border-t border-zinc-200 bg-emerald-50/30 px-5 py-4 dark:border-zinc-800 dark:bg-emerald-950/10">
+        <ResponseBlock label="Response (truncated)">{response}</ResponseBlock>
       </div>
 
       {fields && fields.length > 0 && (
-        <div className="border-t border-zinc-200/60 px-5 py-3 dark:border-zinc-800/60">
-          <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+        <div className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
+          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">
             Response fields
           </div>
           <table className="w-full text-sm">
-            <tbody className="divide-y divide-zinc-200/50 dark:divide-zinc-800/50">
+            <tbody className="divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
               {fields.map(([name, type, desc]) => (
-                <tr key={name}>
-                  <td className="py-1.5 pr-3 align-top font-mono text-xs text-zinc-900 dark:text-zinc-100">
+                <tr key={name} className="even:bg-zinc-50/40 dark:even:bg-zinc-900/20">
+                  <td className="py-2 pl-1 pr-3 align-top font-mono text-sm text-zinc-900 dark:text-zinc-100">
                     {name}
                   </td>
-                  <td className="py-1.5 pr-3 align-top font-mono text-[11px] text-indigo-600 dark:text-indigo-400">
+                  <td className="py-2 pr-3 align-top font-mono text-xs text-indigo-600 dark:text-indigo-400">
                     {type}
                   </td>
-                  <td className="py-1.5 align-top text-zinc-600 dark:text-zinc-400">{desc}</td>
+                  <td className="py-2 pr-1 align-top text-zinc-700 dark:text-zinc-300">{desc}</td>
                 </tr>
               ))}
             </tbody>
@@ -865,12 +860,12 @@ function PricingRow({
   forWho: string;
 }) {
   return (
-    <tr className="transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
+    <tr className="transition-colors even:bg-zinc-50/60 hover:bg-indigo-50/40 dark:even:bg-zinc-900/30 dark:hover:bg-indigo-950/20">
       <td className="px-4 py-3 align-top font-medium text-zinc-900 dark:text-zinc-100">{tier}</td>
-      <td className="px-4 py-3 align-top font-mono text-xs tabular-nums text-zinc-700 dark:text-zinc-300">
+      <td className="px-4 py-3 align-top font-mono text-sm tabular-nums text-zinc-700 dark:text-zinc-300">
         {quota}
       </td>
-      <td className="px-4 py-3 align-top font-mono text-xs tabular-nums text-zinc-700 dark:text-zinc-300">
+      <td className="px-4 py-3 align-top font-mono text-sm tabular-nums text-zinc-700 dark:text-zinc-300">
         {price}
       </td>
       <td className="px-4 py-3 align-top text-base text-zinc-600 dark:text-zinc-400">{forWho}</td>
@@ -880,8 +875,8 @@ function PricingRow({
 
 function ErrorRow({ status, when, action }: { status: string; when: string; action: string }) {
   return (
-    <tr className="transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
-      <td className="px-4 py-3 align-top font-mono text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+    <tr className="transition-colors even:bg-zinc-50/60 hover:bg-indigo-50/40 dark:even:bg-zinc-900/30 dark:hover:bg-indigo-950/20">
+      <td className="px-4 py-3 align-top font-mono text-base font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
         {status}
       </td>
       <td className="px-4 py-3 align-top text-base text-zinc-700 dark:text-zinc-300">{when}</td>

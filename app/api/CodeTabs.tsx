@@ -37,22 +37,22 @@ export function CodeTabs({
   return (
     <div>
       {label && (
-        <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+        <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">
           {label}
         </div>
       )}
-      <div className="overflow-hidden rounded-lg border border-zinc-200/70 bg-zinc-50/80 dark:border-zinc-800/70 dark:bg-zinc-950/60">
-        <div className="flex items-center justify-between gap-2 border-b border-zinc-200/70 bg-zinc-50/40 px-2 dark:border-zinc-800/70 dark:bg-zinc-900/30">
+      <div className="overflow-hidden rounded-xl shadow-sm ring-1 ring-zinc-900/80 dark:ring-zinc-700/80">
+        <div className="flex items-center justify-between gap-2 border-b border-zinc-800 bg-zinc-900">
           <div className="flex">
             {ORDER.map((lang) => (
               <button
                 key={lang}
                 type="button"
                 onClick={() => setActive(lang)}
-                className={`px-3 py-1.5 font-mono text-xs uppercase tracking-wider transition-colors ${
+                className={`px-4 py-2 font-mono text-xs uppercase tracking-wider transition-colors ${
                   active === lang
-                    ? "border-b-2 border-indigo-500 text-zinc-900 dark:text-zinc-100"
-                    : "border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    ? "border-b-2 border-indigo-400 text-zinc-50"
+                    : "border-b-2 border-transparent text-zinc-500 hover:text-zinc-300"
                 }`}
               >
                 {LABELS[lang]}
@@ -62,13 +62,13 @@ export function CodeTabs({
           <button
             type="button"
             onClick={copy}
-            className="mr-1 rounded px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+            className="mr-2 rounded px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
             aria-label="Copy code"
           >
             {copied ? "Copied" : "Copy"}
           </button>
         </div>
-        <pre className="overflow-x-auto p-4 font-mono text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+        <pre className="overflow-x-auto bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100">
           {sample[active]}
         </pre>
       </div>
@@ -76,9 +76,34 @@ export function CodeTabs({
   );
 }
 
+/**
+ * Static code block — same dark "editor" style as CodeTabs, no tabs.
+ * Used for response examples.
+ */
+export function ResponseBlock({
+  label,
+  children,
+}: {
+  label?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      {label && (
+        <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">
+          {label}
+        </div>
+      )}
+      <pre className="overflow-x-auto rounded-xl bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 shadow-sm ring-1 ring-zinc-900/80 dark:ring-zinc-700/80">
+        {children}
+      </pre>
+    </div>
+  );
+}
+
 export function Snippet({ children }: { children: ReactNode }) {
   return (
-    <pre className="overflow-x-auto rounded-lg border border-zinc-200/70 bg-zinc-50/80 p-4 font-mono text-sm leading-relaxed text-zinc-800 dark:border-zinc-800/70 dark:bg-zinc-950/60 dark:text-zinc-200">
+    <pre className="overflow-x-auto rounded-xl bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 shadow-sm ring-1 ring-zinc-900/80 dark:ring-zinc-700/80">
       {children}
     </pre>
   );
