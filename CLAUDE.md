@@ -83,7 +83,7 @@ Default: `country=US`, dark, globe, clouds on, no focus. **Do not** add per-pan 
 
 ## Public API (v1)
 
-Read-only, **Bearer-token auth required**, open CORS, edge-cached. Docs at `/api`. HTML pages stay fully public — only JSON/CSV endpoints are gated.
+Read-only, **Bearer-token auth required**, open CORS, edge-cached. Docs at `/api` — chapter-style layout with sticky left sidebar (scroll-spy via IntersectionObserver), collapsible `<details>` TOC on mobile, JS/Python/cURL code tabs on every example, per-endpoint response field tables, and color-coded sections (indigo = inputs/config, emerald = outputs/data). Code blocks render in a dark `bg-zinc-950` "editor" style so they pop against the white card surfaces. HTML pages stay fully public — only JSON/CSV endpoints are gated.
 
 | Endpoint | Returns |
 |---|---|
@@ -106,7 +106,8 @@ app/
 ├── page.tsx                            map (client) + <MobileHome>
 ├── layout.tsx                          Geist + Geist Mono + WebSite/Organization JSON-LD + SessionProvider
 ├── facility/[slug]/page.tsx            SSR detail; buildSummary/buildFaqJsonLd/buildPlaceJsonLd
-├── about/page.tsx, methodology/page.tsx, api/page.tsx
+├── about/page.tsx, methodology/page.tsx
+├── api/{page,ApiNav,CodeTabs}.tsx       /api docs — page + sticky chapter sidebar + JS/Python/cURL tabs with dark editor blocks
 ├── operators/[slug]/page.tsx           landing pages, CollectionPage+ItemList JSON-LD
 ├── countries/[code]/page.tsx           landing pages
 ├── metros/{page,[slug]/page}.tsx       Phase 10a — ~60 canonical metros
