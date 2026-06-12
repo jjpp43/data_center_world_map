@@ -13,7 +13,7 @@ export function Legend({ cloudRegionsVisible, onCloudRegionsToggle }: Props) {
   return (
     <div className="pointer-events-auto absolute bottom-4 left-4 z-20">
       {open ? (
-        <div className="rounded-2xl border border-zinc-200/60 bg-white/80 px-4 py-3 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
+        <div className="rounded-2xl border border-zinc-300/80 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -73,7 +73,7 @@ export function Legend({ cloudRegionsVisible, onCloudRegionsToggle }: Props) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 rounded-full border border-zinc-200/60 bg-white/80 px-3 py-2 text-xs font-medium text-zinc-700 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
+          className="flex items-center gap-2 rounded-full border border-zinc-300/80 bg-white/95 px-3 py-2 text-xs font-medium text-zinc-700 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
           aria-label="Open legend"
         >
           <span className="flex -space-x-0.5">

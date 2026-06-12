@@ -9,7 +9,7 @@ type Props = {
 
 export function MapToggle({ projection, onChange }: Props) {
   return (
-    <div className="pointer-events-auto absolute right-4 top-20 z-20 flex overflow-hidden rounded-full border border-zinc-200/60 bg-white/80 p-1 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
+    <div className="pointer-events-auto absolute right-4 top-20 z-20 flex overflow-hidden rounded-full border border-zinc-300/80 bg-white/95 p-1 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
       <ToggleButton active={projection === "mercator"} onClick={() => onChange("mercator")}>
         2D
       </ToggleButton>

@@ -59,7 +59,7 @@ export function FilterCard({
   }, [facilities]);
 
   return (
-    <div className="pointer-events-auto absolute left-4 top-20 z-20 w-72 rounded-2xl border border-zinc-200/60 bg-white/80 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
+    <div className="pointer-events-auto absolute left-4 top-20 z-20 w-72 rounded-2xl border border-zinc-300/80 bg-white/95 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
       <button
         type="button"
         onClick={() => setCollapsed(!collapsed)}

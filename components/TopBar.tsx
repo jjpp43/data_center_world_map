@@ -15,7 +15,7 @@ type Props = {
 export function TopBar({ facilities, onSelect, theme, onToggleTheme }: Props) {
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center gap-4 px-4 py-3">
-      <div className="pointer-events-auto flex items-center rounded-full border border-zinc-200/60 bg-white/80 px-4 py-2 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
+      <div className="pointer-events-auto flex items-center rounded-full border border-zinc-300/80 bg-white/95 px-4 py-2 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
         <Link
           href="/"
           className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
@@ -25,7 +25,7 @@ export function TopBar({ facilities, onSelect, theme, onToggleTheme }: Props) {
         </Link>
       </div>
 
-      <nav className="pointer-events-auto flex items-center gap-4 rounded-full border border-zinc-200/60 bg-white/80 px-4 py-2 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
+      <nav className="pointer-events-auto flex items-center gap-4 rounded-full border border-zinc-300/80 bg-white/95 px-4 py-2 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
         <Link
           href="/about"
           className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
@@ -54,7 +54,7 @@ export function TopBar({ facilities, onSelect, theme, onToggleTheme }: Props) {
         type="button"
         onClick={onToggleTheme}
         aria-label="Toggle theme"
-        className="pointer-events-auto ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200/60 bg-white/80 text-zinc-700 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
+        className="pointer-events-auto ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300/80 bg-white/95 text-zinc-700 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
       >
         {theme === "dark" ? <SunIcon /> : <MoonIcon />}
       </button>
