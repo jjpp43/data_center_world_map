@@ -18,6 +18,7 @@
     "scrape:coresite": "tsx coresite.ts",
     "scrape:cyrusone": "tsx cyrusone.ts",
     "scrape:qts": "tsx qts.ts",
+    "scrape:ironmountain": "tsx ironmountain.ts",
     "scrape:operators-all": "tsx operators-all.ts",
     "scrape:osm": "tsx osm.ts",
     "scrape:aws": "tsx aws.ts",
@@ -34,6 +35,7 @@
   "dependencies": {
     "cheerio": "1.0.0",
     "i18n-iso-countries": "7.13.0",
+    "playwright": "^1.60.0",
     "undici": "7.2.0",
     "zod": "3.24.1"
   },
