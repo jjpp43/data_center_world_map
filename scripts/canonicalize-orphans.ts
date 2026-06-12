@@ -22,6 +22,9 @@ import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
 const APPLY = process.argv.includes("--apply");
+const LIMIT_IDX = process.argv.indexOf("--limit");
+const LIMIT = LIMIT_IDX >= 0 ? parseInt(process.argv[LIMIT_IDX + 1], 10) : null;
+const VERBOSE = LIMIT != null || process.argv.includes("--verbose");
 const OUT = path.join(process.cwd(), "scrapers/out");
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -174,8 +177,13 @@ interface Stats {
 async function main() {
   console.log(`# Orphan canonicalization (${APPLY ? "APPLY" : "DRY-RUN"})\n`);
 
-  const orphans = await readJsonl<Orphan>(path.join(OUT, "orphans.operator-pages.jsonl"));
-  console.log(`Orphans: ${orphans.length}\n`);
+  let orphans = await readJsonl<Orphan>(path.join(OUT, "orphans.operator-pages.jsonl"));
+  console.log(`Orphans in file: ${orphans.length}`);
+  if (LIMIT != null) {
+    orphans = orphans.slice(0, LIMIT);
+    console.log(`Limit: processing first ${orphans.length}`);
+  }
+  console.log();
 
   // Load all source records into a slug map
   const sourceFiles = [
@@ -212,37 +220,68 @@ async function main() {
 
   for (let i = 0; i < orphans.length; i++) {
     const o = orphans[i];
-    process.stdout.write(`  ${i + 1}/${orphans.length}\r`);
+    if (!VERBOSE) process.stdout.write(`  ${i + 1}/${orphans.length}\r`);
 
     if (existingSlugs.has(o.slug)) {
       stats.skippedSlugExists++;
+      if (VERBOSE) console.log(`  SKIP slug exists: ${o.slug}`);
       continue;
     }
 
     const src = sourceBySlug.get(o.slug);
     if (!src) {
       stats.errors++;
+      if (VERBOSE) console.log(`  ERR no source: ${o.slug}`);
       continue;
     }
 
     const loc = await locate(src);
     if (!loc) {
       stats.skippedNoLocation++;
-      console.log(`\n  ⚠ no location: ${o.slug}`);
+      console.log(`  ⚠ no location: ${o.slug}`);
       continue;
     }
 
     const canonicalOp = CANONICAL_OPERATOR[o.op] ?? o.op;
 
-    // Re-match in case an existing canonical now sits within 250m
-    const { data: matched } = await sb.rpc("match_data_center", {
-      p_operator: canonicalOp,
-      p_name: src.name,
-      p_lat: loc.lat,
-      p_lng: loc.lng,
-      p_radius_m: 250,
-    });
-    const matchedId = (matched as string | null) ?? null;
+    // Strict, operator-scoped match. We deliberately avoid match_data_center's
+    // spatial branch because its 250m radius matches across operators —
+    // Equinix orphans were getting linked to EdgeConneX/Centersquare/Aligned
+    // facilities in the same carrier hotel building. Three tiers:
+    //   1. Exact (canonical_operator, name)
+    //   2. operator ILIKE 'canonical%' + name ILIKE 'orphan_name%'
+    //   3. operator ILIKE 'canonical%' + name regex matching the facility code
+    let matchedId: string | null = null;
+    {
+      const { data: tier1 } = await sb
+        .from("data_centers")
+        .select("id")
+        .eq("operator", canonicalOp)
+        .eq("name", src.name)
+        .limit(1);
+      matchedId = tier1?.[0]?.id ?? null;
+    }
+    if (!matchedId) {
+      const { data: tier2 } = await sb
+        .from("data_centers")
+        .select("id")
+        .ilike("operator", `${canonicalOp}%`)
+        .ilike("name", `${src.name}%`)
+        .order("name", { ascending: true })
+        .limit(1);
+      matchedId = tier2?.[0]?.id ?? null;
+    }
+    if (!matchedId && src.code) {
+      const escaped = src.code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const { data: tier3 } = await sb
+        .from("data_centers")
+        .select("id, name")
+        .ilike("operator", `${canonicalOp}%`)
+        .filter("name", "imatch", `\\m${escaped}\\M`)
+        .order("name", { ascending: true })
+        .limit(1);
+      matchedId = tier3?.[0]?.id ?? null;
+    }
 
     if (matchedId) {
       // Link source_records to the matched canonical (if not already linked)
@@ -265,6 +304,11 @@ async function main() {
       }
       stats.linkedExisting++;
       stats.byOperator.set(o.op, (stats.byOperator.get(o.op) ?? 0) + 1);
+      if (VERBOSE) {
+        console.log(
+          `  LINK ${o.slug} → matched canonical ${matchedId.slice(0, 8)}… @ (${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}, ${loc.country})`,
+        );
+      }
       continue;
     }
 
@@ -282,7 +326,8 @@ async function main() {
       lng: loc.lng,
       status: "operational" as const,
       power_mw: src.specs?.power_mw ?? null,
-      space_sqft: src.specs?.space_sqft ?? null,
+      space_sqft:
+        src.specs?.space_sqft != null ? Math.round(src.specs.space_sqft) : null,
       tier: src.specs?.tier ?? null,
       year_built: src.specs?.year_built ?? null,
       cooling: src.specs?.cooling ?? null,
@@ -319,6 +364,11 @@ async function main() {
     }
     stats.inserted++;
     stats.byOperator.set(o.op, (stats.byOperator.get(o.op) ?? 0) + 1);
+    if (VERBOSE) {
+      console.log(
+        `  NEW  ${o.slug} → ${canonicalOp} @ (${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}, ${loc.country}) — ${src.location.city ?? "—"}`,
+      );
+    }
   }
 
   // Report

@@ -4,10 +4,10 @@ Public map of every known data center in the world, viewable on a single Mapbox 
 
 ## Current status (2026-06-11)
 
-Phases 1–10 + 5b (monetization) shipped. Next active: Phase 9 (orphan canonicalization) or Phase 11 (hyperscale buildings).
+Phases 1–10 + 5b (monetization) + 9 orphan canonicalization shipped. Next active: Iron Mountain via Playwright or Phase 11 (hyperscale buildings).
 
-- **5,351** facilities (5,256 PeeringDB + 95 OSM-only after dedup); **34,732** networks; **1,309** IXPs; **176** cloud regions; **57,206** network↔fac + **4,134** IX↔fac relations
-- **714** operator-page records across 7 colos (Equinix, Digital Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS) → **480 enriched, 234 orphans**. Iron Mountain blocked by Vercel checkpoint, needs Playwright.
+- **5,581** facilities (5,256 PeeringDB + 95 OSM-only + 230 operator-page canonicals after Phase 9); **34,732** networks; **1,309** IXPs; **176** cloud regions; **57,206** network↔fac + **4,134** IX↔fac relations
+- **714** operator-page records across 7 colos (Equinix, Digital Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS) → **480 enriched at first ingest + 230 canonicalized in Phase 9 + 4 late-linked = 714 fully landed**. Iron Mountain still blocked by Vercel checkpoint, needs Playwright.
 - Migrations **0001–0010** applied. RLS public-read-only on every data table; auth-scoped on `api_keys` + `subscriptions`.
 - Routes: map at `/`, `/facility/[slug]`, `/about`, `/methodology`, `/api` (docs), `/operators/[slug]`, `/countries/[code]`, `/metros[/slug]`, `/ixps[/slug]`, `/networks/[asn]`, `/density[/tier]`, `/insights[/slug]`. Auth + dashboard at `/login`, `/auth/{callback,signout}`, `/dashboard/{keys,billing}`. Billing wiring at `/api/billing/checkout` + `/api/webhooks/polar`. **Auth-gated dataset API** at `/api/v1/{facilities,operators,countries,cloud-regions}` (JSON + CSV, open CORS, Bearer token required, per-key monthly quota via root `proxy.ts` — Next.js 16 renamed the middleware convention to proxy).
 - Mobile: `<MobileHome>` search-first list below `md` breakpoint. Theme cookie-persisted across all server pages.
@@ -28,7 +28,7 @@ Phases 1–10 + 5b (monetization) shipped. Next active: Phase 9 (orphan canonica
 ## Data model
 
 ```
-data_centers (5,351)          ← canonical
+data_centers (5,581)          ← canonical
   ├→ source_records           ← N:1, raw payload kept
   ├→ networks_at_facility →   networks (34,732 ASNs)
   └→ ixes_at_facility    →    ixes (1,309 IXPs)
@@ -181,7 +181,7 @@ scrapers/                               separate Node 22 subproject (out/ and ca
      5. Create Pro + Team subscription products in Polar.sh
      6. Set `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_PRO_PRODUCT_ID`, `POLAR_TEAM_PRODUCT_ID` in Vercel env, redeploy
      7. Register webhook endpoint `https://datacenters.world/api/webhooks/polar` in Polar dashboard with format=Raw, events=subscription.{created,updated,active,canceled,revoked}
-9. ⏸ Orphan canonicalization + Iron Mountain (Playwright)
+9. ✅ Orphan canonicalization — all 234 operator-page orphans resolved via `scripts/canonicalize-orphans.ts` (Mapbox geocoding + strict matcher). 230 new canonicals + 4 late-linked. ⏸ Iron Mountain still pending (Playwright; Vercel checkpoint blocks undici).
 10. ⏸ Hyperscale buildings (scrape Microsoft + Google ESG pages, +300–500 facilities)
 11. ⏸ User submissions + admin UI
 
@@ -262,7 +262,7 @@ RLS on every public table (public-read on data tables; auth-scoped via `auth.uid
 
 - **PeeringDB spec gap**: tier/year_built ≈ 0%. Operator pages closed power/space partially.
 - **Hyperscale buildings invisible**: AWS/Google/MS/Meta don't publish. We show cloud *regions* instead. Roadmap: scrape MS + Google ESG pages.
-- **234 operator-page orphans**: scraped but unmatched (mostly DR/Equinix/CyrusOne sites not in PeeringDB). Geocode + insert as new canonicals = +200–300 (Phase 7).
+- **Operator-page orphans canonicalized (Phase 9)**: all 234 resolved via `scripts/canonicalize-orphans.ts` → Mapbox geocoding + strict (operator, name) re-match → 230 new canonicals + 4 late-linked to existing. Old `scripts/audit-quality.ts` now reports 0 missing operators, 0 operator-string variants.
 - **Iron Mountain**: Vercel Security Checkpoint blocks `undici`. Needs Playwright.
 - **Coverage gap vs DataCenterMap (~2,600 US missing)**: PeeringDB scope is interconnect-relevant only. Single-tenant enterprise, telco POPs, small colos missing.
 - **No interactive mobile map** (intentional — `<MobileHome>` list fallback).
