@@ -7,15 +7,19 @@ import { useEffect, type ReactNode } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-const POSTHOG_HOST =
+const POSTHOG_INGEST_HOST =
   process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
+const POSTHOG_UI_HOST = POSTHOG_INGEST_HOST.includes("eu")
+  ? "https://eu.posthog.com"
+  : "https://us.posthog.com";
 
 export function PostHogProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!POSTHOG_KEY || typeof window === "undefined") return;
     if (!posthog.__loaded) {
       posthog.init(POSTHOG_KEY, {
-        api_host: POSTHOG_HOST,
+        api_host: "/ingest",
+        ui_host: POSTHOG_UI_HOST,
         person_profiles: "identified_only",
         capture_pageview: false,
         autocapture: true,
