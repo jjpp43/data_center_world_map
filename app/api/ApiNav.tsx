@@ -68,9 +68,9 @@ export function ApiNav() {
   return (
     <nav
       aria-label="API documentation sections"
-      className="text-sm"
+      className="text-base"
     >
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+      <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
         On this page
       </div>
       <ul className="mt-3 space-y-0.5">
@@ -114,7 +114,7 @@ function NavLink({
     <a
       href={`#${id}`}
       className={`block rounded px-2 py-1 transition-colors ${
-        small ? "text-xs" : "text-sm"
+        small ? "text-sm" : "text-base"
       } ${
         isActive
           ? "bg-indigo-50 font-medium text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"

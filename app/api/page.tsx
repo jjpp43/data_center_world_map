@@ -86,7 +86,7 @@ export default async function ApiDocsPage() {
                 The datacenters.world API is a read-only REST interface over the same dataset that
                 powers the public map and editorial pages.
               </p>
-              <ul className="mt-4 max-w-2xl space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+              <ul className="mt-4 max-w-2xl space-y-2 text-base text-zinc-600 dark:text-zinc-300">
                 <li>
                   <strong className="font-mono text-zinc-900 dark:text-zinc-100">5,675</strong>{" "}
                   data center facilities across <strong className="font-mono">148</strong>{" "}
@@ -101,7 +101,7 @@ export default async function ApiDocsPage() {
                   Azure, Oracle
                 </li>
               </ul>
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-zinc-500">
+              <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-500">
                 JSON by default, CSV via{" "}
                 <Inline>?format=csv</Inline>. All responses are edge-cached with{" "}
                 <Inline>stale-while-revalidate</Inline> and any-origin CORS. Sources include
@@ -154,7 +154,7 @@ data, meta = body['data'], body['meta']`,
                   }}
                 />
               </div>
-              <p className="mt-4 text-sm text-zinc-500">
+              <p className="mt-4 text-base text-zinc-500">
                 Free tier is 1,000 requests/month — no card required. Quota resets calendar-month
                 in UTC.
               </p>
@@ -186,13 +186,13 @@ res = requests.get(
                   }}
                 />
               </div>
-              <p className="mt-5 max-w-2xl text-sm text-zinc-500">
+              <p className="mt-5 max-w-2xl text-base text-zinc-500">
                 Keys are <Inline>dcw_</Inline> + 43 base64url chars (256 bits of entropy from
                 <Inline>crypto.randomBytes</Inline>). The plaintext is shown once at creation and
                 stored sha256-hashed at rest. Lost a key? Revoke and regenerate from the dashboard
                 — there&rsquo;s no recovery path.
               </p>
-              <p className="mt-3 max-w-2xl text-sm text-zinc-500">
+              <p className="mt-3 max-w-2xl text-base text-zinc-500">
                 Every successful response sets <Inline>X-RateLimit-Tier</Inline>,{" "}
                 <Inline>X-RateLimit-Limit</Inline>, and <Inline>X-RateLimit-Remaining</Inline>.
                 See <a href="#errors" className="text-blue-600 hover:underline dark:text-blue-400">Errors &amp; rate limits</a> for the over-quota behavior.
@@ -524,7 +524,7 @@ if not res.ok:
                 </table>
               </div>
 
-              <p className="mt-6 max-w-2xl text-sm text-zinc-500">
+              <p className="mt-6 max-w-2xl text-base text-zinc-500">
                 Rate-limit headers on every successful response:{" "}
                 <Inline>X-RateLimit-Tier</Inline> (free | pro | team | enterprise),{" "}
                 <Inline>X-RateLimit-Limit</Inline> (monthly cap), and{" "}
@@ -553,7 +553,7 @@ if not res.ok:
                   </tbody>
                 </table>
               </div>
-              <p className="mt-4 max-w-2xl text-sm text-zinc-500">
+              <p className="mt-4 max-w-2xl text-base text-zinc-500">
                 Pro and Team ship with a 3-day free trial via Polar.sh — no charge until day 4,
                 cancel anytime. Upgrades take effect immediately and every active key on your
                 account inherits the new tier. Manage from the{" "}
@@ -572,7 +572,7 @@ if not res.ok:
                 changes (new optional query params, new response fields) ship without version
                 bump.
               </p>
-              <p className="mt-3 max-w-2xl text-sm text-zinc-500">
+              <p className="mt-3 max-w-2xl text-base text-zinc-500">
                 Deprecation policy: any field or param removed from <Inline>v1</Inline> gets at
                 least 90 days&rsquo; notice via the <Inline>Deprecation</Inline> response header
                 and a note here.
@@ -581,7 +581,7 @@ if not res.ok:
 
             {/* ─────────── Roadmap ─────────── */}
             <Section id="roadmap" number={9} title="Roadmap">
-              <ul className="mt-5 max-w-2xl space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
+              <ul className="mt-5 max-w-2xl space-y-3 text-base text-zinc-600 dark:text-zinc-300">
                 <li>
                   <strong className="text-zinc-900 dark:text-zinc-100">OpenAPI 3.1 spec</strong> at{" "}
                   <Inline>/api/v1/openapi.json</Inline> — usable from Cursor, ChatGPT custom GPTs,
@@ -769,8 +769,8 @@ function Endpoint({
         <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-wider text-emerald-700 dark:text-emerald-300">
           {method}
         </span>
-        <code className="font-mono text-sm text-zinc-900 dark:text-zinc-100">{path}</code>
-        <span className="text-sm text-zinc-500">— {description}</span>
+        <code className="font-mono text-base text-zinc-900 dark:text-zinc-100">{path}</code>
+        <span className="text-base text-zinc-500">— {description}</span>
       </header>
 
       {params && params.length > 0 && (
@@ -839,8 +839,8 @@ function Endpoint({
 function Convention({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
-      <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{children}</p>
+      <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
+      <p className="mt-1 text-base leading-relaxed text-zinc-600 dark:text-zinc-400">{children}</p>
     </div>
   );
 }
@@ -873,7 +873,7 @@ function PricingRow({
       <td className="px-4 py-3 align-top font-mono text-xs tabular-nums text-zinc-700 dark:text-zinc-300">
         {price}
       </td>
-      <td className="px-4 py-3 align-top text-sm text-zinc-600 dark:text-zinc-400">{forWho}</td>
+      <td className="px-4 py-3 align-top text-base text-zinc-600 dark:text-zinc-400">{forWho}</td>
     </tr>
   );
 }
@@ -881,11 +881,11 @@ function PricingRow({
 function ErrorRow({ status, when, action }: { status: string; when: string; action: string }) {
   return (
     <tr className="transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
-      <td className="px-4 py-3 align-top font-mono text-xs font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+      <td className="px-4 py-3 align-top font-mono text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
         {status}
       </td>
-      <td className="px-4 py-3 align-top text-sm text-zinc-700 dark:text-zinc-300">{when}</td>
-      <td className="px-4 py-3 align-top text-sm text-zinc-600 dark:text-zinc-400">{action}</td>
+      <td className="px-4 py-3 align-top text-base text-zinc-700 dark:text-zinc-300">{when}</td>
+      <td className="px-4 py-3 align-top text-base text-zinc-600 dark:text-zinc-400">{action}</td>
     </tr>
   );
 }
