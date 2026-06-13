@@ -4,14 +4,54 @@ import { revalidatePath } from "next/cache";
 import { supabaseAuthServer } from "@/lib/supabase-server";
 import { TIER_LIMITS, generateApiKey, tierLabel } from "@/lib/api-keys";
 import { POLAR_PRO_PRODUCT_ID, POLAR_TEAM_PRODUCT_ID } from "@/lib/polar";
+import { CodeTabs } from "@/app/api/CodeTabs";
 import { KeysClient } from "./KeysClient";
+import { KeyNameEditor } from "./KeyNameEditor";
 
 const INACTIVE_THRESHOLD_DAYS = 14;
 
-function daysUntilMonthEnd(now = new Date()): number {
-  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  const ms = next.getTime() - now.getTime();
-  return Math.max(1, Math.ceil(ms / 86_400_000));
+function anniversaryOnOrBefore(anchor: Date, today: Date): Date {
+  const day = anchor.getUTCDate();
+  const y = today.getUTCFullYear();
+  const m = today.getUTCMonth();
+  const lastThis = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const candThis = new Date(Date.UTC(y, m, Math.min(day, lastThis)));
+  if (candThis.getTime() <= today.getTime()) return candThis;
+  const prevMonthLast = new Date(Date.UTC(y, m, 0));
+  const lastPrev = prevMonthLast.getUTCDate();
+  return new Date(
+    Date.UTC(prevMonthLast.getUTCFullYear(), prevMonthLast.getUTCMonth(), Math.min(day, lastPrev)),
+  );
+}
+
+function nextAnniversaryAfter(anchor: Date, start: Date): Date {
+  const day = anchor.getUTCDate();
+  const y = start.getUTCFullYear();
+  const m = start.getUTCMonth();
+  const lastNext = new Date(Date.UTC(y, m + 2, 0)).getUTCDate();
+  return new Date(Date.UTC(y, m + 1, Math.min(day, lastNext)));
+}
+
+function computeCycle(
+  signupIso: string | undefined,
+  sub: { status: string; current_period_start: string | null; current_period_end: string | null } | null,
+  now = new Date(),
+): { start: Date; end: Date } {
+  if (
+    sub &&
+    ["active", "trialing"].includes(sub.status) &&
+    sub.current_period_start &&
+    sub.current_period_end
+  ) {
+    return {
+      start: new Date(sub.current_period_start),
+      end: new Date(sub.current_period_end),
+    };
+  }
+  const signup = signupIso ? new Date(signupIso) : now;
+  const start = anniversaryOnOrBefore(signup, now);
+  const end = nextAnniversaryAfter(signup, start);
+  return { start, end };
 }
 
 function isStaleUnused(createdAt: string, lastUsedAt: string | null): boolean {
@@ -41,6 +81,7 @@ interface KeyRow {
 interface SubscriptionRow {
   tier: string;
   status: string;
+  current_period_start: string | null;
   current_period_end: string | null;
   polar_subscription_id: string;
 }
@@ -50,15 +91,21 @@ interface DailyUsageRow {
   request_count: number;
 }
 
-function buildMonthlyUsageSeries(rows: DailyUsageRow[], now = new Date()): { date: string; count: number }[] {
+function buildCycleUsageSeries(
+  rows: DailyUsageRow[],
+  cycleStart: Date,
+  now = new Date(),
+): { date: string; count: number }[] {
   const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const startUtc = new Date(
+    Date.UTC(cycleStart.getUTCFullYear(), cycleStart.getUTCMonth(), cycleStart.getUTCDate()),
+  );
   const totals = new Map<string, number>();
   for (const r of rows) {
     totals.set(r.usage_date, (totals.get(r.usage_date) ?? 0) + r.request_count);
   }
   const series: { date: string; count: number }[] = [];
-  const cursor = new Date(monthStart);
+  const cursor = new Date(startUtc);
   while (cursor.getTime() <= todayUtc.getTime()) {
     const iso = cursor.toISOString().slice(0, 10);
     series.push({ date: iso, count: totals.get(iso) ?? 0 });
@@ -108,6 +155,22 @@ async function revokeKey(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
+async function renameKey(formData: FormData) {
+  "use server";
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim().slice(0, 60);
+  if (!id || !name) return;
+  const sb = await supabaseAuthServer();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) redirect("/login");
+  await sb
+    .from("api_keys")
+    .update({ name })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  revalidatePath("/dashboard");
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -118,9 +181,7 @@ export default async function DashboardPage({
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect("/login");
 
-  const monthStartIso = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1))
-    .toISOString()
-    .slice(0, 10);
+  const lookbackIso = new Date(Date.now() - 45 * 86_400_000).toISOString().slice(0, 10);
 
   const [keysRes, subsRes, dailyRes] = await Promise.all([
     sb
@@ -131,7 +192,7 @@ export default async function DashboardPage({
       .returns<KeyRow[]>(),
     sb
       .from("subscriptions")
-      .select("tier, status, current_period_end, polar_subscription_id")
+      .select("tier, status, current_period_start, current_period_end, polar_subscription_id")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -140,22 +201,27 @@ export default async function DashboardPage({
       .from("api_key_usage_daily")
       .select("usage_date, request_count")
       .eq("user_id", user.id)
-      .gte("usage_date", monthStartIso)
+      .gte("usage_date", lookbackIso)
       .returns<DailyUsageRow[]>(),
   ]);
 
   const keys = keysRes.data ?? [];
-  const usageSeries = buildMonthlyUsageSeries(dailyRes.data ?? []);
   const active = subsRes.data?.[0] ?? null;
   const isActive = active && ["active", "trialing"].includes(active.status);
   const currentTier = isActive && active ? active.tier : "free";
+  const cycle = computeCycle(user.created_at, active);
+  const usageSeries = buildCycleUsageSeries(dailyRes.data ?? [], cycle.start);
   const proConfigured = !!POLAR_PRO_PRODUCT_ID;
   const teamConfigured = !!POLAR_TEAM_PRODUCT_ID;
   const anyUnconfigured = !proConfigured || !teamConfigured;
 
   const activeKeys = keys.filter((k) => !k.revoked_at);
   const totalUsage = activeKeys.reduce((sum, k) => sum + (k.current_month_usage ?? 0), 0);
-  const daysToReset = daysUntilMonthEnd();
+  const daysToReset = Math.max(
+    1,
+    Math.ceil((cycle.end.getTime() - Date.now()) / 86_400_000),
+  );
+  const cycleAnchorLabel = isActive ? "billing cycle" : "signup cycle";
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
@@ -180,6 +246,9 @@ export default async function DashboardPage({
           total={totalUsage}
           activeKeys={activeKeys.length}
           daysToReset={daysToReset}
+          cycleStart={cycle.start}
+          cycleEnd={cycle.end}
+          anchorLabel={cycleAnchorLabel}
         />
       </section>
 
@@ -278,16 +347,13 @@ export default async function DashboardPage({
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm"
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`font-medium ${
-                          isRevoked
-                            ? "text-zinc-400 line-through"
-                            : "text-zinc-900 dark:text-zinc-100"
-                        }`}
-                      >
-                        {k.name}
-                      </span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <KeyNameEditor
+                        id={k.id}
+                        name={k.name}
+                        canEdit={!isRevoked}
+                        action={renameKey}
+                      />
                       <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-300">
                         {tierLabel(k.tier)}
                       </span>
@@ -346,9 +412,23 @@ export default async function DashboardPage({
 
       <section className="mt-10 rounded-2xl border border-zinc-200/70 bg-white/40 p-5 dark:border-zinc-800/60 dark:bg-zinc-900/30">
         <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">How to use</h3>
-        <pre className="mt-3 overflow-x-auto rounded-lg bg-zinc-900 p-4 font-mono text-xs leading-relaxed text-zinc-100">{`curl https://datacenters.world/api/v1/facilities?country=DE \\
-     -H "Authorization: Bearer dcw_..."`}</pre>
+        <div className="mt-3">
+          <CodeTabs sample={buildHowToSample(activeKeys)} />
+        </div>
         <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+          {activeKeys.length === 1 && (
+            <>
+              Snippets show your key prefix{" "}
+              <span className="font-mono">{activeKeys[0].key_prefix}</span> — paste the full
+              key you copied at creation in place of it.{" "}
+            </>
+          )}
+          {activeKeys.length === 0 && (
+            <>Generate a key above, then paste it in place of <span className="font-mono">dcw_…</span>.{" "}</>
+          )}
+          {activeKeys.length > 1 && (
+            <>Use any of your active keys in place of <span className="font-mono">dcw_…</span>.{" "}</>
+          )}
           Pass the key in the <span className="font-mono">Authorization</span> header on every
           request. Responses include <span className="font-mono">X-RateLimit-Remaining</span> and{" "}
           <span className="font-mono">X-RateLimit-Limit</span> headers.
@@ -363,20 +443,22 @@ function UsageChart({
   total,
   activeKeys,
   daysToReset,
+  cycleStart,
+  cycleEnd,
+  anchorLabel,
 }: {
   series: { date: string; count: number }[];
   total: number;
   activeKeys: number;
   daysToReset: number;
+  cycleStart: Date;
+  cycleEnd: Date;
+  anchorLabel: string;
 }) {
   const max = Math.max(1, ...series.map((d) => d.count));
-  const monthLabel = series.length
-    ? new Date(series[0].date + "T00:00:00Z").toLocaleString(undefined, {
-        month: "long",
-        year: "numeric",
-        timeZone: "UTC",
-      })
-    : "";
+  const fmt = (d: Date) =>
+    d.toLocaleString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
+  const rangeLabel = `${fmt(cycleStart)} → ${fmt(cycleEnd)}`;
   const todayIdx = series.length - 1;
 
   return (
@@ -384,7 +466,7 @@ function UsageChart({
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
-            Requests · {monthLabel}
+            Requests · {anchorLabel} · {rangeLabel}
           </div>
           <div className="mt-1 font-mono text-3xl tabular-nums leading-none text-zinc-900 dark:text-zinc-50">
             {total.toLocaleString()}
@@ -407,7 +489,7 @@ function UsageChart({
         preserveAspectRatio="none"
         className="mt-4 h-24 w-full"
         role="img"
-        aria-label={`Daily API requests for ${monthLabel}`}
+        aria-label={`Daily API requests for ${rangeLabel}`}
       >
         {series.map((d, i) => {
           const barW = 100 / series.length;
@@ -450,6 +532,30 @@ function UsageChart({
       </div>
     </div>
   );
+}
+
+const API_BASE = "https://datacenters.world/api/v1";
+
+function buildHowToSample(activeKeys: { key_prefix: string }[]) {
+  const keyToken = activeKeys.length === 1 ? activeKeys[0].key_prefix : "dcw_…";
+  return {
+    curl: `curl '${API_BASE}/facilities?country=DE&limit=5' \\
+  -H 'Authorization: Bearer ${keyToken}'`,
+    javascript: `const res = await fetch(
+  '${API_BASE}/facilities?country=DE&limit=5',
+  { headers: { Authorization: 'Bearer ${keyToken}' } }
+);
+const { data, meta } = await res.json();`,
+    python: `import requests
+
+res = requests.get(
+    '${API_BASE}/facilities',
+    params={'country': 'DE', 'limit': 5},
+    headers={'Authorization': 'Bearer ${keyToken}'},
+)
+res.raise_for_status()
+data = res.json()['data']`,
+  };
 }
 
 const TIER_ORDER = ["free", "pro", "team", "enterprise"] as const;

@@ -17,6 +17,7 @@ type PolarSubscription = {
   status: string;
   customer_id?: string;
   product_id?: string;
+  current_period_start?: string | null;
   current_period_end?: string | null;
   metadata?: Record<string, unknown> | null;
 };
@@ -59,6 +60,7 @@ async function applyEvent(event: PolarEvent) {
     p_tier: tier,
     p_status: effectiveStatus,
     p_current_period_end: sub.current_period_end ?? null,
+    p_current_period_start: sub.current_period_start ?? null,
   });
   if (error) {
     console.error("[polar webhook] RPC error", error);

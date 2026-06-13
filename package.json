@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/check-security.mjs",
+    "prebuild": "node scripts/check-security.mjs && tsx --env-file-if-exists=.env.local scripts/build-geojson.ts",
     "build": "next build",
     "start": "next start",
     "ingest": "tsx --env-file=.env.local scripts/ingest.ts",

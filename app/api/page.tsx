@@ -155,8 +155,8 @@ data, meta = body['data'], body['meta']`,
                 />
               </div>
               <p className="mt-4 text-base text-zinc-500">
-                Free tier is 1,000 requests/month — no card required. Quota resets calendar-month
-                in UTC.
+                Free tier is 1,000 requests/month — no card required. Quota resets monthly on
+                your signup anniversary (free) or billing cycle (paid).
               </p>
             </Section>
 

@@ -33,8 +33,8 @@ export default function HomePage() {
     let cancelled = false;
     (async () => {
       const [fRes, rRes] = await Promise.all([
-        fetch("/api/facilities.geojson"),
-        fetch("/api/cloud-regions.geojson"),
+        fetch("/facilities.geojson"),
+        fetch("/cloud-regions.geojson"),
       ]);
       const fJson = (await fRes.json()) as GeoJSON.FeatureCollection;
       const rJson = (await rRes.json()) as GeoJSON.FeatureCollection;

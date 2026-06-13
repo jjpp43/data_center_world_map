@@ -174,19 +174,7 @@ export default async function MethodologyPage() {
           </div>
         </section>
 
-        <section className="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div>
-            <SectionHeader number={6}>Corrections and submissions</SectionHeader>
-            <p className="mt-5 max-w-xl text-zinc-600 dark:text-zinc-300">
-              Find an error? Know about a facility we&rsquo;re missing? Send the details —
-              building name, operator, address, and a verifiable source — and we&rsquo;ll add
-              it.
-            </p>
-            <p className="mt-3 max-w-xl text-zinc-600 dark:text-zinc-300">
-              Operators: if you&rsquo;d like your facility list verified directly rather than
-              scraped, get in touch.
-            </p>
-          </div>
+        <section className="mt-16 flex justify-end">
           <Link
             href="/about"
             className="inline-flex w-fit items-center gap-1.5 rounded-full border border-zinc-200/60 bg-white/80 px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"

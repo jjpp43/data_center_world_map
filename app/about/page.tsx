@@ -210,14 +210,6 @@ export default async function AboutPage() {
           </ul>
         </section>
 
-        <section className="mt-16">
-          <SectionHeader>Corrections</SectionHeader>
-          <p className="mt-5 max-w-xl text-zinc-600 dark:text-zinc-300">
-            Find an error? Know a facility we&rsquo;re missing? Send building name, operator,
-            address, and a verifiable source — we&rsquo;ll add it.
-          </p>
-        </section>
-
         <section className="mt-16 border-t border-zinc-200/70 pt-6 text-xs text-zinc-500 dark:border-zinc-800/60">
           <p className="font-mono">
             Built by Junna Park · Data from PeeringDB (CC-BY-SA), OpenStreetMap (ODbL), and

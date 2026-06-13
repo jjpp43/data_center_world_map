@@ -85,12 +85,18 @@ const OPERATOR_ALIASES: Record<string, string> = {
   "digital-realty-trust": "digital-realty",
 };
 
+const GEOJSON_CACHE = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800";
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
       {
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        source: "/:asset(facilities.geojson|cloud-regions.geojson)",
+        headers: [{ key: "Cache-Control", value: GEOJSON_CACHE }],
       },
     ];
   },

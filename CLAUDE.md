@@ -4,7 +4,7 @@ Public map of every known data center on Earth — single Mapbox view with 2D �
 
 ## Current status
 
-Phases 1–11 + 5b (monetization) + 9 (orphan canonicalization + Iron Mountain) shipped. Migrations `0001–0014` applied. Next: user submissions + admin UI (Phase 12).
+Phases 1–11 + 5b (monetization) + 9 (orphan canonicalization + Iron Mountain) shipped. Migrations `0001–0015` applied. No user submissions — site is purely a curated/scraped dataset.
 
 - **5,675** facilities · **34,732** networks · **1,309** IXPs · **176** cloud regions · **57,206** network↔fac · **4,134** IX↔fac
 - Sources: PeeringDB (5,256), OSM-only (95), operator-pages canonicalized (230), Iron Mountain (4 new + 19 enriched), Google buildings (58), Meta buildings (32). Microsoft Azure deferred — they only publish region grain, which `cloud_regions` already covers.
@@ -145,7 +145,7 @@ scrapers/                                 Node 22 subproject (out/ and cache/ gi
 
 ## Migrations summary
 
-`0001–0006` schema + PostGIS + RLS + relationships · `0007` api_keys + anonymous throttle · `0008` subscriptions · `0009` monthly tier quotas · `0010` drop anonymous tier (API auth-only) · `0011` `api_key_usage_daily` (dashboard chart) · `0012` Free 500 → 1,000 · `0013` canonicalize 8 operator string variants · `0014` backfill 34 NULL operators.
+`0001–0006` schema + PostGIS + RLS + relationships · `0007` api_keys + anonymous throttle · `0008` subscriptions · `0009` monthly tier quotas · `0010` drop anonymous tier (API auth-only) · `0011` `api_key_usage_daily` (dashboard chart) · `0012` Free 500 → 1,000 · `0013` canonicalize 8 operator string variants · `0014` backfill 34 NULL operators · `0015` anchor quota cycle to signup anniversary (free) / billing period (paid).
 
 ## Build phases (compact)
 
@@ -156,7 +156,6 @@ scrapers/                                 Node 22 subproject (out/ and cache/ gi
 5. ✅ Monetization (Phase 5b): GitHub OAuth + per-key monthly quotas + Polar.sh. Tiers: Free 1k · Pro 10k $9.99 (3-day trial) · Team 50k $39.99 (3-day trial) · Enterprise 5M.
 6. ✅ Orphan canonicalization (Phase 9): 234 operator-page orphans resolved → 230 new canonicals + 4 late-linked. Iron Mountain shipped via Playwright (23 facilities).
 7. ✅ Hyperscale buildings (Phase 11): Google +58, Meta +32. Microsoft deferred.
-8. ⏸ User submissions + admin UI (Phase 12).
 
 **Polar.sh chosen over Stripe**: Korean-bank payout + merchant-of-record VAT handling. Fees ~4% + 40¢.
 
@@ -247,7 +246,7 @@ One-time setup when standing up a fresh env:
 - **Microsoft Azure buildings deferred**: only region-grain published; `cloud_regions` covers it.
 - **Coverage gap vs DataCenterMap (~2,600 US missing)**: PeeringDB scope is interconnect-relevant only. Single-tenant enterprise, telco POPs, small colos missing.
 - **No interactive mobile map** (intentional — `<MobileHome>` list fallback).
-- **No user submissions / admin yet** (Phase 12).
+- **No user submissions** — intentional; the dataset is curated/scraped only.
 - **No photos / footprints** populated (columns exist).
 - **Photorealistic 3D rejected** — stylized only.
 - **datacentermap.com / Cloudscene scraping forbidden** by their ToS.

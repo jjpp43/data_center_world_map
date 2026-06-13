@@ -10,6 +10,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { triggerRebuild } from "./_trigger-rebuild";
 
 const APPLY = process.argv.includes("--apply");
 const OUT = path.join(process.cwd(), "scrapers/out");
@@ -144,6 +145,7 @@ async function main() {
   console.log(`- Skipped:  **${skipped}**`);
   console.log(`- Errors:   **${errors}**`);
   if (!APPLY) console.log("\nRe-run with `--apply` to commit.");
+  if (APPLY) await triggerRebuild("ingest-meta");
 }
 
 main().catch((e) => {

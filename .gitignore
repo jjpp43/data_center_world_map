@@ -44,3 +44,8 @@ next-env.d.ts
 /scrapers/cache/
 /scrapers/node_modules/
 /scrapers/out/
+
+# Baked at build time via scripts/build-geojson.ts (and the daily Vercel cron).
+# Committing would just create noisy diffs on every data change.
+/public/facilities.geojson
+/public/cloud-regions.geojson
