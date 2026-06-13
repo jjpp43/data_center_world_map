@@ -27,6 +27,7 @@ export default function HomePage() {
     const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     window.history.replaceState(null, "", url);
     document.cookie = `dcw-theme=${state.theme}; path=/; max-age=31536000; SameSite=Lax`;
+    document.documentElement.classList.toggle("dark", state.theme === "dark");
   }, [state]);
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function HomePage() {
 
   return (
     <div
-      className={`${theme === "dark" ? "dark" : ""} relative h-full overflow-hidden bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
+      className="relative h-full overflow-hidden bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
     >
       <div className="block h-full md:hidden">
         <MobileHome facilities={facilities} />

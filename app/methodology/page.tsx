@@ -7,7 +7,6 @@ import {
   Source,
   Test,
 } from "@/components/editorial";
-import { getTheme } from "@/lib/theme";
 
 export const revalidate = 86400;
 
@@ -26,11 +25,10 @@ export const metadata: Metadata = {
 };
 
 export default async function MethodologyPage() {
-  const theme = await getTheme();
 
   return (
     <div
-      className={`${theme === "dark" ? "dark" : ""} min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
+      className={`min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
     >
       <EditorialHeader active="methodology" />
 

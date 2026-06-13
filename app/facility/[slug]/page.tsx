@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
 import { InfoToggle } from "@/components/InfoToggle";
-import { getTheme } from "@/lib/theme";
 
 const INFO: Record<string, string> = {
   "Power redundancy":
@@ -154,6 +153,8 @@ function buildSummary(args: {
   return `${args.name} is a data center operated by ${op}${where ? ` in ${where}` : ""}.${specBlurb}${presenceBlurb}`;
 }
 
+export const revalidate = 86400;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const sb = supabaseServer();
@@ -250,11 +251,10 @@ export default async function FacilityPage({ params }: Props) {
 
   const jsonLd = buildPlaceJsonLd(dc, networks.length, ixes.length);
   const faqJsonLd = buildFaqJsonLd(dc, networks.length, ixes, sources ?? []);
-  const theme = await getTheme();
 
   return (
     <div
-      className={`${theme === "dark" ? "dark" : ""} min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
+      className={`min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
     >
       <script
         type="application/ld+json"

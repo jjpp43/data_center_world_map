@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { countryFlag, countryName } from "@/lib/countries";
 import { loadIxpDetail, loadIxpSummaries } from "@/lib/ixps-data";
 import { operatorSlug } from "@/lib/operators";
-import { getTheme } from "@/lib/theme";
 
 export const revalidate = 3600;
 
@@ -89,9 +88,8 @@ export default async function IxpPage({ params }: Props) {
     },
   };
 
-  const theme = await getTheme();
   return (
-    <div className={`${theme === "dark" ? "dark" : ""} min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}>
+    <div className={`min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <header className="sticky top-0 z-10 border-b border-zinc-200/70 bg-white/80 backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">

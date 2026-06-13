@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EditorialHeader } from "@/components/editorial";
-import { getTheme } from "@/lib/theme";
 import { ApiNav } from "./ApiNav";
 import { CodeTabs, ResponseBlock } from "./CodeTabs";
+
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: "API",
@@ -22,11 +23,10 @@ export const metadata: Metadata = {
 const BASE = "https://datacenters.world/api/v1";
 
 export default async function ApiDocsPage() {
-  const theme = await getTheme();
 
   return (
     <div
-      className={`${theme === "dark" ? "dark" : ""} min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
+      className={`min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
     >
       <EditorialHeader active="api" />
 

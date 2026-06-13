@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
 import { findOperatorBySlug, loadOperatorSummaries } from "@/lib/operators";
-import { getTheme } from "@/lib/theme";
 
 export const revalidate = 3600;
 
@@ -115,10 +114,9 @@ export default async function OperatorPage({ params }: Props) {
     },
   };
 
-  const theme = await getTheme();
 
   return (
-    <div className={`${theme === "dark" ? "dark" : ""} min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}>
+    <div className={`min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SimpleHeader />
       <main className="mx-auto max-w-4xl px-6 py-10">

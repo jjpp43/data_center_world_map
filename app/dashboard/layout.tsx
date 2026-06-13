@@ -2,10 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { supabaseAuthServer } from "@/lib/supabase-server";
-import { getTheme } from "@/lib/theme";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const [sb, theme] = await Promise.all([supabaseAuthServer(), getTheme()]);
+  const sb = await supabaseAuthServer();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect("/login");
 
@@ -13,7 +12,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <div
-      className={`${theme === "dark" ? "dark" : ""} min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
+      className="min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
     >
       <header className="sticky top-0 z-10 border-b border-zinc-200/70 bg-white/80 backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">

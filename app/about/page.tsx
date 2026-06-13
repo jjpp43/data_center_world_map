@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
 import { EditorialHeader, Gap, RankedRow, SectionHeader, Stat } from "@/components/editorial";
-import { getTheme } from "@/lib/theme";
 
 export const revalidate = 3600;
 
@@ -82,13 +81,13 @@ async function loadStats() {
 }
 
 export default async function AboutPage() {
-  const [stats, theme] = await Promise.all([loadStats(), getTheme()]);
+  const stats = await loadStats();
   const maxCountry = stats.topCountries[0]?.[1] ?? 1;
   const maxOperator = stats.topUsOperators[0]?.[1] ?? 1;
 
   return (
     <div
-      className={`${theme === "dark" ? "dark" : ""} min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
+      className="min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
     >
       <EditorialHeader active="about" />
 

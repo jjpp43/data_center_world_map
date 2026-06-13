@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { cookies } from "next/headers";
 import { SessionProvider } from "@/components/SessionProvider";
 import { PostHogProvider, PostHogPageView } from "@/components/PostHog";
 import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
+
+// Inline pre-paint script: read the dcw-theme cookie and toggle .dark on
+// <html> before React hydrates. Default is dark (no cookie OR cookie !== light).
+// Kept inline + before <body> so there's no flash of wrong theme. The home
+// page's theme-toggle effect keeps it in sync after hydration.
+const THEME_BOOTSTRAP_SCRIPT = `
+try {
+  var m = document.cookie.match(/(?:^|; )dcw-theme=([^;]+)/);
+  if (!m || m[1] !== 'light') document.documentElement.classList.add('dark');
+} catch (_) { document.documentElement.classList.add('dark'); }
+`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -92,28 +102,19 @@ const SITE_JSON_LD = {
   ],
 };
 
-async function detectInitialSession(): Promise<boolean> {
-  // Synchronous cookie check — no Supabase API call. Supabase Auth stores the
-  // session as one or more cookies named `sb-<project-ref>-auth-token[.N]`.
-  // Presence is good enough for an initial UI hint; the browser client
-  // verifies authoritatively.
-  const c = await cookies();
-  return c.getAll().some(
-    (x) => x.name.startsWith("sb-") && x.name.includes("-auth-token"),
-  );
-}
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const initialSignedIn = await detectInitialSession();
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+      </head>
       <body className="h-full font-sans">
         <script
           type="application/ld+json"
@@ -121,9 +122,7 @@ export default async function RootLayout({
         />
         <PostHogProvider>
           <PostHogPageView />
-          <SessionProvider initialSignedIn={initialSignedIn}>
-            {children}
-          </SessionProvider>
+          <SessionProvider>{children}</SessionProvider>
         </PostHogProvider>
       </body>
     </html>
