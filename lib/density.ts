@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "./supabase";
 
 export type DensityTier = "ultra-dense" | "dense" | "standard";
@@ -78,36 +79,40 @@ export interface DensityFacility {
   network_count: number;
 }
 
-async function loadAllWithNetworkCount(): Promise<DensityFacility[]> {
-  const sb = supabaseServer();
-  const rows: DensityFacility[] = [];
-  for (let from = 0; from < 100_000; from += 1000) {
-    const { data, error } = await sb
-      .from("data_centers")
-      .select(
-        "slug, name, operator, city, country, power_mw, networks_at_facility(count)",
-      )
-      .neq("status", "decommissioned")
-      .order("slug")
-      .range(from, from + 999)
-      .returns<FacilityRow[]>();
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    rows.push(
-      ...data.map((r) => ({
-        slug: r.slug,
-        name: r.name,
-        operator: r.operator,
-        city: r.city,
-        country: r.country,
-        power_mw: r.power_mw,
-        network_count: r.networks_at_facility?.[0]?.count ?? 0,
-      })),
-    );
-    if (data.length < 1000) break;
-  }
-  return rows;
-}
+const loadAllWithNetworkCount = unstable_cache(
+  async (): Promise<DensityFacility[]> => {
+    const sb = supabaseServer();
+    const rows: DensityFacility[] = [];
+    for (let from = 0; from < 100_000; from += 1000) {
+      const { data, error } = await sb
+        .from("data_centers")
+        .select(
+          "slug, name, operator, city, country, power_mw, networks_at_facility(count)",
+        )
+        .neq("status", "decommissioned")
+        .order("slug")
+        .range(from, from + 999)
+        .returns<FacilityRow[]>();
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      rows.push(
+        ...data.map((r) => ({
+          slug: r.slug,
+          name: r.name,
+          operator: r.operator,
+          city: r.city,
+          country: r.country,
+          power_mw: r.power_mw,
+          network_count: r.networks_at_facility?.[0]?.count ?? 0,
+        })),
+      );
+      if (data.length < 1000) break;
+    }
+    return rows;
+  },
+  ["density-facilities-v1"],
+  { revalidate: 86_400, tags: ["data-centers"] },
+);
 
 export interface DensityIndex {
   tiers: Array<TierSpec & { count: number }>;

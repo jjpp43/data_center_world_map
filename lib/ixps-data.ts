@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "./supabase";
 
 function rawSlug(name: string): string {
@@ -42,7 +43,7 @@ interface IxRawRow {
  * IXPs share the same slugified name (rare but real — e.g. regional shards
  * of the same brand).
  */
-export async function loadIxpSummaries(): Promise<IxpSummary[]> {
+async function fetchIxpSummaries(): Promise<IxpSummary[]> {
   const sb = supabaseServer();
   const rows: IxRawRow[] = [];
   for (let from = 0; from < 100_000; from += 1000) {
@@ -87,6 +88,12 @@ export async function loadIxpSummaries(): Promise<IxpSummary[]> {
     })
     .filter((r) => r.slug.length > 0);
 }
+
+export const loadIxpSummaries = unstable_cache(
+  fetchIxpSummaries,
+  ["ixp-summaries-v1"],
+  { revalidate: 86_400, tags: ["ixes"] },
+);
 
 export interface IxpDetail {
   ixp: IxpSummary;

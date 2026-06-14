@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "./supabase";
 
 export interface DenseFacility {
@@ -27,7 +28,7 @@ interface FacRow {
  * density-tier classifier and the network-density insight. Pagination matches
  * the rest of the loaders so the row cap follows a single pattern.
  */
-export async function loadFacilitiesWithCounts(): Promise<DenseFacility[]> {
+async function fetchFacilitiesWithCounts(): Promise<DenseFacility[]> {
   const sb = supabaseServer();
   const out: DenseFacility[] = [];
   for (let from = 0; from < 100_000; from += 1000) {
@@ -58,6 +59,12 @@ export async function loadFacilitiesWithCounts(): Promise<DenseFacility[]> {
   }
   return out;
 }
+
+export const loadFacilitiesWithCounts = unstable_cache(
+  fetchFacilitiesWithCounts,
+  ["facilities-with-counts-v1"],
+  { revalidate: 86_400, tags: ["data-centers"] },
+);
 
 export interface InsightCard {
   slug: string;

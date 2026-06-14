@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "./supabase";
 
 export interface Metro {
@@ -161,40 +162,44 @@ export function assignMetro(lat: number, lng: number, country?: string): Metro |
   return best?.metro ?? null;
 }
 
-async function loadAllFacilities(): Promise<FacilityWithNetCount[]> {
-  const sb = supabaseServer();
-  const rows: FacilityWithNetCount[] = [];
-  for (let from = 0; from < 100_000; from += 1000) {
-    const { data, error } = await sb
-      .from("data_centers")
-      .select(
-        "slug, name, operator, country, city, lat, lng, power_mw, networks_at_facility(count)",
-      )
-      .neq("status", "decommissioned")
-      .not("lat", "is", null)
-      .not("lng", "is", null)
-      .order("slug")
-      .range(from, from + 999)
-      .returns<FacilityRow[]>();
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    rows.push(
-      ...data.map((r) => ({
-        slug: r.slug,
-        name: r.name,
-        operator: r.operator,
-        country: r.country,
-        city: r.city,
-        lat: r.lat,
-        lng: r.lng,
-        power_mw: r.power_mw,
-        network_count: r.networks_at_facility?.[0]?.count ?? 0,
-      })),
-    );
-    if (data.length < 1000) break;
-  }
-  return rows;
-}
+const loadAllFacilities = unstable_cache(
+  async (): Promise<FacilityWithNetCount[]> => {
+    const sb = supabaseServer();
+    const rows: FacilityWithNetCount[] = [];
+    for (let from = 0; from < 100_000; from += 1000) {
+      const { data, error } = await sb
+        .from("data_centers")
+        .select(
+          "slug, name, operator, country, city, lat, lng, power_mw, networks_at_facility(count)",
+        )
+        .neq("status", "decommissioned")
+        .not("lat", "is", null)
+        .not("lng", "is", null)
+        .order("slug")
+        .range(from, from + 999)
+        .returns<FacilityRow[]>();
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      rows.push(
+        ...data.map((r) => ({
+          slug: r.slug,
+          name: r.name,
+          operator: r.operator,
+          country: r.country,
+          city: r.city,
+          lat: r.lat,
+          lng: r.lng,
+          power_mw: r.power_mw,
+          network_count: r.networks_at_facility?.[0]?.count ?? 0,
+        })),
+      );
+      if (data.length < 1000) break;
+    }
+    return rows;
+  },
+  ["metro-facilities-v1"],
+  { revalidate: 86_400, tags: ["data-centers"] },
+);
 
 export async function loadMetroSummaries(): Promise<MetroSummary[]> {
   const facilities = await loadAllFacilities();

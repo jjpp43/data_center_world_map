@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "./supabase";
 
 export interface NetworkSummary {
@@ -40,7 +41,7 @@ interface NetRawRow {
  * The full 34k network space includes a long tail of single- or zero-facility
  * networks; sitemap/index filter on >= the threshold callers pass in.
  */
-export async function loadNetworkSummaries(): Promise<NetworkSummary[]> {
+async function fetchNetworkSummaries(): Promise<NetworkSummary[]> {
   const sb = supabaseServer();
   const rows: NetRawRow[] = [];
   for (let from = 0; from < 100_000; from += 1000) {
@@ -77,6 +78,12 @@ export async function loadNetworkSummaries(): Promise<NetworkSummary[]> {
     }))
     .sort((a, b) => b.facility_count - a.facility_count || a.asn - b.asn);
 }
+
+export const loadNetworkSummaries = unstable_cache(
+  fetchNetworkSummaries,
+  ["network-summaries-v1"],
+  { revalidate: 86_400, tags: ["networks"] },
+);
 
 export interface NetworkDetail {
   network: NetworkSummary;

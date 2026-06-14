@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "./supabase";
 
 export interface CountrySummary {
@@ -13,7 +14,7 @@ interface CountryAggRow {
   power_mw: number | null;
 }
 
-export async function loadCountrySummaries(): Promise<CountrySummary[]> {
+async function fetchCountrySummaries(): Promise<CountrySummary[]> {
   const sb = supabaseServer();
   const rows: CountryAggRow[] = [];
   for (let from = 0; from < 100_000; from += 1000) {
@@ -49,6 +50,12 @@ export async function loadCountrySummaries(): Promise<CountrySummary[]> {
     }))
     .sort((a, b) => b.facility_count - a.facility_count);
 }
+
+export const loadCountrySummaries = unstable_cache(
+  fetchCountrySummaries,
+  ["country-summaries-v1"],
+  { revalidate: 86_400, tags: ["data-centers"] },
+);
 
 export async function findCountryByCode(code: string): Promise<CountrySummary | null> {
   const upper = code.toUpperCase();

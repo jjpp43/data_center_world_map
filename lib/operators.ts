@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "./supabase";
 
 /**
@@ -33,7 +34,7 @@ interface OperatorAggRow {
  * Counts come from a fan-out scan rather than a per-operator SQL group-by so
  * we don't depend on Postgres views — the table is small enough (5k rows).
  */
-export async function loadOperatorSummaries(): Promise<OperatorSummary[]> {
+async function fetchOperatorSummaries(): Promise<OperatorSummary[]> {
   const sb = supabaseServer();
   const rows: OperatorAggRow[] = [];
   for (let from = 0; from < 100_000; from += 1000) {
@@ -72,6 +73,12 @@ export async function loadOperatorSummaries(): Promise<OperatorSummary[]> {
     .filter((o) => o.slug.length > 0)
     .sort((a, b) => b.facility_count - a.facility_count);
 }
+
+export const loadOperatorSummaries = unstable_cache(
+  fetchOperatorSummaries,
+  ["operator-summaries-v1"],
+  { revalidate: 86_400, tags: ["data-centers"] },
+);
 
 /**
  * Resolve a URL slug back to the canonical operator name. Returns null if no
