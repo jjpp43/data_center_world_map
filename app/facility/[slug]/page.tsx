@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
@@ -155,14 +156,63 @@ function buildSummary(args: {
 
 export const revalidate = 86400;
 
+const loadFacilityMeta = unstable_cache(
+  async (slug: string) => {
+    const sb = supabaseServer();
+    const { data } = await sb
+      .from("data_centers")
+      .select("name, operator, code, city, country, power_mw, space_sqft, tier")
+      .eq("slug", slug)
+      .maybeSingle();
+    return data;
+  },
+  ["facility-meta-v1"],
+  { revalidate: 86_400, tags: ["data-centers"] },
+);
+
+const loadFacilityDetail = unstable_cache(
+  async (slug: string) => {
+    const sb = supabaseServer();
+    const { data: dc, error } = await sb
+      .from("data_centers")
+      .select(
+        "id, slug, name, operator, code, address, city, region, country, postal_code, lat, lng, status, power_mw, power_redundancy, power_distribution, space_sqft, space_sqm, raised_floor_sqft, site_acres, building_description, min_cabinet_density_kw, max_cabinet_density_kw, tier, uptime_sla, ups_redundancy, generator_redundancy, generator_autonomy, cooling, cooling_redundancy, year_built, year_opened, pue, meet_me_rooms, carriers, ixps, certifications, security, website, datasheet_url, verified",
+      )
+      .eq("slug", slug)
+      .maybeSingle<DataCenter>();
+    if (error) throw error;
+    if (!dc) return null;
+
+    const [{ data: sources }, { data: nafRows }, { data: iafRows }] = await Promise.all([
+      sb
+        .from("source_records")
+        .select("source, source_id, source_url, raw, fetched_at")
+        .eq("data_center_id", dc.id)
+        .order("source")
+        .returns<SourceRecord[]>(),
+      sb
+        .from("networks_at_facility")
+        .select("local_asn, networks(net_id, asn, name, website, info_type, info_scope, info_traffic, policy_general)")
+        .eq("data_center_id", dc.id)
+        .limit(1000)
+        .returns<NetworkAtFac[]>(),
+      sb
+        .from("ixes_at_facility")
+        .select("ixes(ix_id, name, name_long, country, website, net_count)")
+        .eq("data_center_id", dc.id)
+        .limit(200)
+        .returns<IxAtFac[]>(),
+    ]);
+
+    return { dc, sources: sources ?? [], nafRows: nafRows ?? [], iafRows: iafRows ?? [] };
+  },
+  ["facility-detail-v1"],
+  { revalidate: 86_400, tags: ["data-centers"] },
+);
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const sb = supabaseServer();
-  const { data } = await sb
-    .from("data_centers")
-    .select("name, operator, code, city, country, power_mw, space_sqft, tier")
-    .eq("slug", slug)
-    .maybeSingle();
+  const data = await loadFacilityMeta(slug);
   if (!data) return { title: "Facility not found" };
   const op = data.operator ?? "Unknown operator";
   const title = `${data.name} · ${op}`;
@@ -196,42 +246,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function FacilityPage({ params }: Props) {
   const { slug } = await params;
-  const sb = supabaseServer();
-
-  const { data: dc, error } = await sb
-    .from("data_centers")
-    .select(
-      "id, slug, name, operator, code, address, city, region, country, postal_code, lat, lng, status, power_mw, power_redundancy, power_distribution, space_sqft, space_sqm, raised_floor_sqft, site_acres, building_description, min_cabinet_density_kw, max_cabinet_density_kw, tier, uptime_sla, ups_redundancy, generator_redundancy, generator_autonomy, cooling, cooling_redundancy, year_built, year_opened, pue, meet_me_rooms, carriers, ixps, certifications, security, website, datasheet_url, verified",
-    )
-    .eq("slug", slug)
-    .maybeSingle<DataCenter>();
-
-  if (error) {
-    console.error("[facility]", error);
+  let payload;
+  try {
+    payload = await loadFacilityDetail(slug);
+  } catch (e) {
+    console.error("[facility]", e);
     notFound();
   }
-  if (!dc) notFound();
-
-  const [{ data: sources }, { data: nafRows }, { data: iafRows }] = await Promise.all([
-    sb
-      .from("source_records")
-      .select("source, source_id, source_url, raw, fetched_at")
-      .eq("data_center_id", dc.id)
-      .order("source")
-      .returns<SourceRecord[]>(),
-    sb
-      .from("networks_at_facility")
-      .select("local_asn, networks(net_id, asn, name, website, info_type, info_scope, info_traffic, policy_general)")
-      .eq("data_center_id", dc.id)
-      .limit(1000)
-      .returns<NetworkAtFac[]>(),
-    sb
-      .from("ixes_at_facility")
-      .select("ixes(ix_id, name, name_long, country, website, net_count)")
-      .eq("data_center_id", dc.id)
-      .limit(200)
-      .returns<IxAtFac[]>(),
-  ]);
+  if (!payload) notFound();
+  const { dc, sources, nafRows, iafRows } = payload;
 
   const networks = (nafRows ?? [])
     .map((r) => r.networks)

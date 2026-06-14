@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "@/lib/supabase";
 import { loadOperatorSummaries } from "@/lib/operators";
 import { loadCountrySummaries } from "@/lib/countries-data";
@@ -14,24 +15,28 @@ export const revalidate = 86400;
 
 type Row = { slug: string; updated_at: string | null };
 
-async function loadFacilitySlugs(): Promise<Row[]> {
-  const sb = supabaseServer();
-  const all: Row[] = [];
-  for (let from = 0; from < 100_000; from += 1000) {
-    const { data, error } = await sb
-      .from("data_centers")
-      .select("slug, updated_at")
-      .neq("status", "decommissioned")
-      .order("slug")
-      .range(from, from + 999)
-      .returns<Row[]>();
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    all.push(...data);
-    if (data.length < 1000) break;
-  }
-  return all;
-}
+const loadFacilitySlugs = unstable_cache(
+  async (): Promise<Row[]> => {
+    const sb = supabaseServer();
+    const all: Row[] = [];
+    for (let from = 0; from < 100_000; from += 1000) {
+      const { data, error } = await sb
+        .from("data_centers")
+        .select("slug, updated_at")
+        .neq("status", "decommissioned")
+        .order("slug")
+        .range(from, from + 999)
+        .returns<Row[]>();
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      all.push(...data);
+      if (data.length < 1000) break;
+    }
+    return all;
+  },
+  ["sitemap-facility-slugs-v1"],
+  { revalidate: 86_400, tags: ["data-centers"] },
+);
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();

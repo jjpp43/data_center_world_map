@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
@@ -48,31 +49,43 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+const loadFacilitiesForOperator = unstable_cache(
+  async (operatorName: string): Promise<Facility[]> => {
+    const sb = supabaseServer();
+    const facilities: Facility[] = [];
+    for (let from = 0; from < 100_000; from += 1000) {
+      const { data, error } = await sb
+        .from("data_centers")
+        .select("slug, name, code, city, country, status, power_mw, space_sqft")
+        .eq("operator", operatorName)
+        .neq("status", "decommissioned")
+        .order("country")
+        .order("city")
+        .order("name")
+        .range(from, from + 999)
+        .returns<Facility[]>();
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      facilities.push(...data);
+      if (data.length < 1000) break;
+    }
+    return facilities;
+  },
+  ["operator-facilities-v1"],
+  { revalidate: 86_400, tags: ["data-centers"] },
+);
+
 export default async function OperatorPage({ params }: Props) {
   const { slug } = await params;
   const op = await findOperatorBySlug(slug);
   if (!op) notFound();
 
-  const sb = supabaseServer();
-  const facilities: Facility[] = [];
-  for (let from = 0; from < 100_000; from += 1000) {
-    const { data, error } = await sb
-      .from("data_centers")
-      .select("slug, name, code, city, country, status, power_mw, space_sqft")
-      .eq("operator", op.name)
-      .neq("status", "decommissioned")
-      .order("country")
-      .order("city")
-      .order("name")
-      .range(from, from + 999)
-      .returns<Facility[]>();
-    if (error) {
-      console.error("[operators/[slug]]", error);
-      notFound();
-    }
-    if (!data || data.length === 0) break;
-    facilities.push(...data);
-    if (data.length < 1000) break;
+  let facilities: Facility[];
+  try {
+    facilities = await loadFacilitiesForOperator(op.name);
+  } catch (e) {
+    console.error("[operators/[slug]]", e);
+    notFound();
   }
 
   const byCountry = new Map<string, Facility[]>();

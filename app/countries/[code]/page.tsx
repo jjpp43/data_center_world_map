@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
@@ -50,6 +51,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+const loadFacilitiesForCountry = unstable_cache(
+  async (countryCode: string): Promise<Facility[]> => {
+    const sb = supabaseServer();
+    const facilities: Facility[] = [];
+    for (let from = 0; from < 100_000; from += 1000) {
+      const { data, error } = await sb
+        .from("data_centers")
+        .select("slug, name, operator, code, city, region, country, status, power_mw, space_sqft")
+        .eq("country", countryCode)
+        .neq("status", "decommissioned")
+        .order("city")
+        .order("operator")
+        .order("name")
+        .range(from, from + 999)
+        .returns<Facility[]>();
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      facilities.push(...data);
+      if (data.length < 1000) break;
+    }
+    return facilities;
+  },
+  ["country-facilities-v1"],
+  { revalidate: 86_400, tags: ["data-centers"] },
+);
+
 export default async function CountryPage({ params }: Props) {
   const { code } = await params;
   const c = await findCountryByCode(code);
@@ -57,26 +84,12 @@ export default async function CountryPage({ params }: Props) {
   const upper = c.code;
   const name = countryName(upper);
 
-  const sb = supabaseServer();
-  const facilities: Facility[] = [];
-  for (let from = 0; from < 100_000; from += 1000) {
-    const { data, error } = await sb
-      .from("data_centers")
-      .select("slug, name, operator, code, city, region, country, status, power_mw, space_sqft")
-      .eq("country", upper)
-      .neq("status", "decommissioned")
-      .order("city")
-      .order("operator")
-      .order("name")
-      .range(from, from + 999)
-      .returns<Facility[]>();
-    if (error) {
-      console.error("[countries/[code]]", error);
-      notFound();
-    }
-    if (!data || data.length === 0) break;
-    facilities.push(...data);
-    if (data.length < 1000) break;
+  let facilities: Facility[];
+  try {
+    facilities = await loadFacilitiesForCountry(upper);
+  } catch (e) {
+    console.error("[countries/[code]]", e);
+    notFound();
   }
 
   // Group by city for a useful reading order
