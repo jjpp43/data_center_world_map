@@ -41,7 +41,9 @@ api_key_usage_daily           ← per-day rollup for dashboard chart (mig 0011)
 
 Full-bleed map (desktop). Below `md`: `<MobileHome>` search-first list. Dark default, light theme persists via `dcw-theme` cookie.
 
-- **TopBar**: `[brand]` `[nav: About · Methodology · API]` `[search]` `[theme]` `[AccountPill]` — AccountPill is solid-white "Sign in →" CTA when signed out, glass "Account ▾" dropdown (Dashboard, Sign out) when signed in. Initial state seeded from `SessionProvider` cookie hint to avoid flash. AccountPill also rendered by `EditorialHeader` so it's visible on `/about`, `/methodology`, `/api`.
+**Theme** is applied by an inline pre-paint script in `app/layout.tsx` that toggles `.dark` on `<html>` from the cookie before React hydrates. The home page's toggle effect keeps `documentElement.classList` in sync. Server pages don't read the cookie — that's what enables ISR (see § Caching/egress).
+
+- **TopBar**: `[brand]` `[nav: About · Methodology · API]` `[search]` `[theme]` `[AccountPill]` — AccountPill is solid-white "Sign in →" CTA when signed out, glass "Account ▾" dropdown (Dashboard, Sign out) when signed in. Initial state seeded by `SessionProvider` reading the Supabase auth cookie client-side (lazy `useState`) to avoid flash. AccountPill also rendered by `EditorialHeader` so it's visible on `/about`, `/methodology`, `/api`.
 - **FilterCard** (top-left, collapsible): operator + country multi-selects, cloud focus chips. Power slider and status filter removed (status 100% operational; power_mw 2.4%).
 - **MapToggle** (top-right), **Legend** (bottom-left, collapsed pill), **FirstRunHint** (fades in once via localStorage).
 - **Marker click** → 400px right-slide `FacilityPanel` → "View full page" → `/facility/[slug]`.
@@ -97,30 +99,35 @@ Helpers in `lib/api.ts`: `jsonResponse`, `csvResponse`, `errorResponse`, `prefli
 
 ```
 app/
-├── page.tsx                              map (client) + <MobileHome>
-├── layout.tsx                            Geist + Geist Mono + WebSite JSON-LD + SessionProvider + PostHog
-├── facility/[slug]/page.tsx              SSR detail; FAQ + Place JSON-LD
-├── about/page.tsx, methodology/page.tsx
-├── api/{page,ApiNav,CodeTabs}.tsx        chapter-style docs (see above)
+├── page.tsx                              map (client) + <MobileHome>; toggles `.dark` on <html>
+├── layout.tsx                            Geist + Geist Mono + WebSite JSON-LD + inline theme script + SessionProvider + PostHog
+├── facility/[slug]/page.tsx              SSR detail (ISR 7d, unstable_cache per slug); FAQ + Place JSON-LD
+├── about/page.tsx, methodology/page.tsx  ISR
+├── api/{page,ApiNav,CodeTabs}.tsx        chapter-style docs (ISR 24h)
 ├── api/v1/{facilities,operators,countries,cloud-regions}/route.ts
-├── api/{facilities,cloud-regions}.geojson/route.ts        map-internal
 ├── api/billing/checkout/route.ts         Polar Checkout session creator
 ├── api/webhooks/polar/route.ts           signature-verified webhook receiver
-├── operators/[slug]/page.tsx             CollectionPage + ItemList JSON-LD
-├── countries/[code]/page.tsx
-├── metros, ixps, networks, density, insights/...   Phase 10 pivots
+├── api/cron/refresh-geojson/route.ts     weekly Vercel cron → pings Deploy Hook
+├── operators/[slug]/page.tsx             ISR 7d; CollectionPage + ItemList JSON-LD
+├── countries/[code]/page.tsx             ISR 7d
+├── metros, ixps, networks, density, insights/...   Phase 10 pivots (ISR 7d for per-slug)
 ├── login/page.tsx                        GitHub OAuth start (server action)
 ├── auth/{callback,signout}/route.ts      OAuth code exchange + signOut
-├── dashboard/{layout,page,KeysClient}.tsx  single dashboard — keys, plan, billing, usage chart
-├── sitemap.ts                            ~14k URLs · robots.ts AI-crawler allowlist
+├── dashboard/{layout,page,KeysClient,KeyNameEditor}.tsx  keys / plan / billing / usage chart
+├── sitemap.ts                            ~14k URLs (ISR 24h, facility-slug fetch cached)
 
 proxy.ts                                  root — Bearer auth on /api/v1/*. Next.js 16 renamed middleware → proxy.
+vercel.json                               weekly cron for /api/cron/refresh-geojson (Sundays 03:00 UTC)
+
+public/
+├── facilities.geojson                    baked at build by scripts/build-geojson.ts (gitignored)
+└── cloud-regions.geojson                 baked at build (gitignored)
 
 components/
 ├── Map.tsx, TopBar.tsx, SearchBox.tsx, FilterCard.tsx, MapToggle.tsx, Legend.tsx
 ├── FacilityPanel.tsx, MobileHome.tsx, FirstRunHint.tsx, InfoToggle.tsx, NoTokenBanner.tsx
 ├── AccountPill.tsx                       Sign in / Account dropdown (used by TopBar + EditorialHeader)
-├── SessionProvider.tsx                   cookie-hint context to avoid auth flash
+├── SessionProvider.tsx                   reads Supabase auth cookie client-side via lazy useState
 ├── PostHog.tsx                           PostHogProvider + PostHogPageView, identify on Supabase auth
 └── editorial.tsx                         Stat, RankedRow, SectionHeader, EditorialHeader (renders AccountPill)
 
@@ -129,19 +136,40 @@ lib/
 ├── supabase-server.ts                    cookie-aware auth client, server-only
 ├── api-keys.ts                           generateApiKey, hashApiKey, TIER_LIMITS
 ├── polar.ts                              Polar Checkout + Standard-Webhooks verify (raw fetch)
-├── api.ts, types.ts, url-state.ts, theme.ts, countries.ts
+├── api.ts, types.ts, url-state.ts, countries.ts
 └── operators.ts, countries-data.ts, metros-data.ts, ixps-data.ts, networks-data.ts, density.ts, insights-data.ts
+                                          all heavy loaders wrapped in unstable_cache (24h, tag "data-centers"/"networks"/"ixes")
 
 scripts/
-├── ingest.ts                             reads scrapers/out/*.jsonl → upserts
-├── ingest-{ironmountain,google,meta}.ts  per-source ingest (Mapbox geocode + strict matcher)
-├── canonicalize-orphans.ts               resolves Phase 9 orphans (strict 3-tier matcher)
+├── ingest.ts                             reads scrapers/out/*.jsonl → upserts → triggerRebuild()
+├── ingest-{ironmountain,google,meta}.ts  per-source ingest (--apply triggers rebuild)
+├── canonicalize-orphans.ts               resolves Phase 9 orphans (--apply triggers rebuild)
+├── build-geojson.ts                      prebuild step: writes public/{facilities,cloud-regions}.geojson
+├── _trigger-rebuild.ts                   POSTs VERCEL_DEPLOY_HOOK_URL; no-op if unset
 ├── audit-quality.ts, audit-orphans.ts    read-only audit reports
 └── check-security.mjs                    prebuild guard
 
-supabase/migrations/0001–0014.sql         see § Migrations below
+.github/workflows/backup.yml              weekly pg_dump → GH artifact (Sundays 04:00 UTC, 90-day retention)
+supabase/migrations/0001–0015.sql         see § Migrations below
 scrapers/                                 Node 22 subproject (out/ and cache/ gitignored)
 ```
+
+## Caching / egress
+
+Supabase egress is the dominant cost constraint. Three layers of caching, top to bottom:
+
+**1. Map data — static-baked at build time.**
+`scripts/build-geojson.ts` runs from `prebuild` and writes `public/{facilities,cloud-regions}.geojson` (null-stripped, ~1.9 MB + 41 KB). The homepage `fetch("/facilities.geojson")` hits the Vercel CDN. **Runtime function never touches Supabase for map data.** Old `/api/{facilities,cloud-regions}.geojson` route handlers were deleted. Cache headers in `next.config.ts`: `public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800`.
+
+**2. SSR pages — ISR.**
+Every server page used to call `getTheme()` → `cookies()`, forcing dynamic mode and silently disabling the page-level `revalidate` exports. That's been removed (theme is now inline-script + client-side). Per-slug pages (`/facility/[slug]`, `/operators/[slug]`, `/countries/[code]`, `/metros/[slug]`, `/ixps/[slug]`, `/networks/[asn]`, `/density/[tier]`) use `revalidate = 604800` (7d). Index pages use 3600–86400. Sitemap uses 86400.
+
+**3. Data fetches — `unstable_cache`.**
+Every heavy loader in `lib/*-data.ts`, `lib/operators.ts`, `lib/density.ts` is wrapped in `unstable_cache(fn, key, { revalidate: 86400, tags: [...] })`. Same for the per-slug data fetches inside `/facility/[slug]`, `/operators/[slug]`, `/countries/[code]`, and `app/sitemap.ts`'s `loadFacilitySlugs`. **One Supabase pass per (loader, args) per 24h globally** — shared across regions and across every page that calls the same loader. Tags `"data-centers"`, `"networks"`, `"ixes"` for future selective invalidation.
+
+**Refresh cadence.** Every deploy invalidates `unstable_cache`. Ingest scripts call `triggerRebuild()` after `--apply` → pings `VERCEL_DEPLOY_HOOK_URL` → fresh build. A weekly Vercel cron (`vercel.json` → `/api/cron/refresh-geojson`) does the same for slow drift even without an ingest. Without `VERCEL_DEPLOY_HOOK_URL` set (local dev), `triggerRebuild` is a no-op.
+
+**Backup.** `.github/workflows/backup.yml` runs `pg_dump` weekly (Sundays 04:00 UTC), excluding `auth` + `storage` schemas, uploads gzipped artifact (90-day retention). Manual via `workflow_dispatch`. Requires `SUPABASE_DB_URL` repo secret (session pooler URL).
 
 ## Migrations summary
 
@@ -163,14 +191,16 @@ scrapers/                                 Node 22 subproject (out/ and cache/ gi
 
 ```bash
 npm run dev                       # local
-npm run build                     # prebuild runs check:security
-npm run ingest                    # re-ingest scrapers/out/*.jsonl
+npm run build                     # prebuild: check:security + tsx scripts/build-geojson.ts
+npm run ingest                    # re-ingest scrapers/out/*.jsonl + triggerRebuild()
 npm run audit:quality             # read-only data audit
-npm run canonicalize:orphans -- --apply
+npm run canonicalize:orphans -- --apply   # --apply triggers Vercel rebuild on success
 npm run ingest:ironmountain -- --apply
 npm run ingest:google -- --apply
 npm run ingest:meta -- --apply
 ```
+
+`prebuild` uses `tsx --env-file-if-exists=.env.local` so it works both locally (with `.env.local`) and on Vercel (envs in `process.env`). The geojson bake reads only public tables — anon key is enough, no service role needed.
 
 Ingest order in `main()`: cloud regions → PeeringDB facilities → OSM → operator pages → networks → IXes → netfac → ixfac. Idempotent on (slug), (source, source_id), (data_center_id, network_id).
 
@@ -214,10 +244,19 @@ POLAR_PRO_PRODUCT_ID=<prod_id>          # if unset, /dashboard shows "Coming soo
 POLAR_TEAM_PRODUCT_ID=<prod_id>
 POLAR_API_BASE=https://api.polar.sh     # optional (sandbox: https://sandbox-api.polar.sh)
 
+# Cache / rebuild orchestration
+VERCEL_DEPLOY_HOOK_URL=https://api.vercel.com/v1/integrations/deploy/...
+                                        # ingest scripts + /api/cron/refresh-geojson POST here.
+                                        # Unset locally → triggerRebuild is a no-op (graceful).
+CRON_SECRET=<random 32 bytes>           # Vercel sends Authorization: Bearer $CRON_SECRET on cron invocations
+                                        # /api/cron/refresh-geojson gates on this.
+
 # Analytics (optional — site works without)
 NEXT_PUBLIC_POSTHOG_KEY=phc_...
 NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com   # eu.i.posthog.com for EU
 ```
+
+GitHub repo secret (separate, for the backup workflow): `SUPABASE_DB_URL` = Supabase session-pooler connection string.
 
 **PostHog wiring** (`components/PostHog.tsx`): Client-only. `PostHogProvider` initializes on mount, identifies signed-in users via supabaseBrowser `onAuthStateChange`, resets on sign-out. `PostHogPageView` fires `$pageview` on App Router pathname change. Autocapture catches clicks/forms — only one named event: `key_generated`. `person_profiles: "identified_only"` so anonymous traffic doesn't burn the 1M-events/month free quota. **Reverse proxy**: `/ingest/*` rewrites in `next.config.ts` forward to `us-assets.i.posthog.com` + `us.i.posthog.com` so ad-blockers see same-origin traffic.
 
@@ -231,7 +270,7 @@ RLS on every public table (public-read on data; auth-scoped via `auth.uid()` on 
 
 One-time setup when standing up a fresh env:
 
-1. Apply migrations `0001–0014` to Supabase
+1. Apply migrations `0001–0015` to Supabase
 2. Enable GitHub provider in Supabase Auth
 3. Register GitHub OAuth app with callback at **Supabase's** `https://<project-ref>.supabase.co/auth/v1/callback` (NOT our `/auth/callback` — Supabase is the OAuth relay)
 4. Configure Supabase Auth → URL Configuration: Site URL = `https://datacenters.world`; Redirect URLs allowlist = `http://localhost:3000/**` + `https://datacenters.world/**`
@@ -239,6 +278,8 @@ One-time setup when standing up a fresh env:
 6. Create Pro + Team subscription products in Polar with 3-day trial, no card required
 7. Set Polar env vars + redeploy
 8. Register webhook `https://datacenters.world/api/webhooks/polar` in Polar with format=Raw, events=`subscription.{created,updated,active,canceled,revoked}`
+9. Vercel → Settings → Git → Deploy Hooks: create one for `main`, copy URL → set as `VERCEL_DEPLOY_HOOK_URL` env var. Set `CRON_SECRET` (random 32 bytes). Redeploy.
+10. GitHub repo → Settings → Secrets → add `SUPABASE_DB_URL` (Supabase session-pooler conn string) so the weekly backup workflow can dump.
 
 ## Out of scope / known limitations
 
