@@ -5,7 +5,7 @@ import { countryFlag, countryName } from "@/lib/countries";
 import { TIERS, loadDensityTier, type DensityTier } from "@/lib/density";
 import { operatorSlug } from "@/lib/operators";
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Props = {
   params: Promise<{ tier: string }>;

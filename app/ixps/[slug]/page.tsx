@@ -5,7 +5,7 @@ import { countryFlag, countryName } from "@/lib/countries";
 import { loadIxpDetail, loadIxpSummaries } from "@/lib/ixps-data";
 import { operatorSlug } from "@/lib/operators";
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Props = {
   params: Promise<{ slug: string }>;

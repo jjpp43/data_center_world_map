@@ -6,7 +6,7 @@ import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
 import { findOperatorBySlug, loadOperatorSummaries } from "@/lib/operators";
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Props = {
   params: Promise<{ slug: string }>;

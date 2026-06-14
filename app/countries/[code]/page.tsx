@@ -7,7 +7,7 @@ import { countryFlag, countryName } from "@/lib/countries";
 import { findCountryByCode, loadCountrySummaries } from "@/lib/countries-data";
 import { operatorSlug } from "@/lib/operators";
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Props = {
   params: Promise<{ code: string }>;

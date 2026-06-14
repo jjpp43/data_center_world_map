@@ -154,7 +154,7 @@ function buildSummary(args: {
   return `${args.name} is a data center operated by ${op}${where ? ` in ${where}` : ""}.${specBlurb}${presenceBlurb}`;
 }
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 const loadFacilityMeta = unstable_cache(
   async (slug: string) => {
