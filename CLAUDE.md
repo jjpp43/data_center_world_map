@@ -4,7 +4,7 @@ Public map of every known data center on Earth — single Mapbox view with 2D �
 
 ## Current status
 
-Phases 1–11 + 5b (monetization) + 9 (orphan canonicalization + Iron Mountain) shipped. Migrations `0001–0015` applied. No user submissions — site is purely a curated/scraped dataset.
+Phases 1–11 + 5b (monetization) + 9 (orphan canonicalization + Iron Mountain) shipped. Migrations `0001–0016` applied. No user submissions — site is purely a curated/scraped dataset.
 
 - **5,675** facilities · **34,732** networks · **1,309** IXPs · **176** cloud regions · **57,206** network↔fac · **4,134** IX↔fac
 - Sources: PeeringDB (5,256), OSM-only (95), operator-pages canonicalized (230), Iron Mountain (4 new + 19 enriched), Google buildings (58), Meta buildings (32). Microsoft Azure deferred — they only publish region grain, which `cloud_regions` already covers.
@@ -114,7 +114,7 @@ app/
 ├── login/page.tsx                        GitHub OAuth start (server action)
 ├── auth/{callback,signout}/route.ts      OAuth code exchange + signOut
 ├── dashboard/{layout,page,KeysClient,KeyNameEditor}.tsx  keys / plan / billing / usage chart
-├── sitemap.ts                            ~14k URLs (ISR 24h, facility-slug fetch cached)
+├── sitemap.ts                            ~900 URLs — capped per type (top-500 facilities by network_count, top-200 operators, top-100 IXPs, top-100 networks, all 148 countries, all 30 metros, static pages). Long-tail URLs still resolve on demand.
 
 proxy.ts                                  root — Bearer auth on /api/v1/*. Next.js 16 renamed middleware → proxy.
 vercel.json                               weekly cron for /api/cron/refresh-geojson (Sundays 03:00 UTC)
@@ -164,8 +164,10 @@ Supabase egress is the dominant cost constraint. Three layers of caching, top to
 **2. SSR pages — ISR.**
 Every server page used to call `getTheme()` → `cookies()`, forcing dynamic mode and silently disabling the page-level `revalidate` exports. That's been removed (theme is now inline-script + client-side). Per-slug pages (`/facility/[slug]`, `/operators/[slug]`, `/countries/[code]`, `/metros/[slug]`, `/ixps/[slug]`, `/networks/[asn]`, `/density/[tier]`) use `revalidate = 604800` (7d). Index pages use 3600–86400. Sitemap uses 86400.
 
-**3. Data fetches — `unstable_cache`.**
-Every heavy loader in `lib/*-data.ts`, `lib/operators.ts`, `lib/density.ts` is wrapped in `unstable_cache(fn, key, { revalidate: 86400, tags: [...] })`. Same for the per-slug data fetches inside `/facility/[slug]`, `/operators/[slug]`, `/countries/[code]`, and `app/sitemap.ts`'s `loadFacilitySlugs`. **One Supabase pass per (loader, args) per 24h globally** — shared across regions and across every page that calls the same loader. Tags `"data-centers"`, `"networks"`, `"ixes"` for future selective invalidation.
+**3. Data fetches — materialized views + `unstable_cache`.**
+The heavy aggregations read from Postgres materialized views (`country_summary`, `operator_summary`, `facility_density`) instead of pulling 6k raw rows and aggregating in JS — single-query 148-row reads instead of 6 paginated calls. Every loader in `lib/*-data.ts`, `lib/operators.ts`, `lib/density.ts` is then wrapped in `unstable_cache(fn, key, { revalidate: 86400, tags: [...] })`. Same for the per-slug data fetches inside `/facility/[slug]`, `/operators/[slug]`, `/countries/[code]`, and `app/sitemap.ts`'s top-facility-slug fetch. **One Supabase pass per (loader, args) per 24h globally** — shared across regions and across every page that calls the same loader. Tags `"data-centers"`, `"networks"`, `"ixes"` for future selective invalidation.
+
+Materialized views are refreshed by `refresh_summary_views()` RPC (concurrent refresh, non-blocking). Ingest scripts call `refreshSummaryViews()` before `triggerRebuild()` after `--apply` so the new build sees fresh counts.
 
 **Refresh cadence.** Every deploy invalidates `unstable_cache`. Ingest scripts call `triggerRebuild()` after `--apply` → pings `VERCEL_DEPLOY_HOOK_URL` → fresh build. A weekly Vercel cron (`vercel.json` → `/api/cron/refresh-geojson`) does the same for slow drift even without an ingest. Without `VERCEL_DEPLOY_HOOK_URL` set (local dev), `triggerRebuild` is a no-op.
 
@@ -173,7 +175,7 @@ Every heavy loader in `lib/*-data.ts`, `lib/operators.ts`, `lib/density.ts` is w
 
 ## Migrations summary
 
-`0001–0006` schema + PostGIS + RLS + relationships · `0007` api_keys + anonymous throttle · `0008` subscriptions · `0009` monthly tier quotas · `0010` drop anonymous tier (API auth-only) · `0011` `api_key_usage_daily` (dashboard chart) · `0012` Free 500 → 1,000 · `0013` canonicalize 8 operator string variants · `0014` backfill 34 NULL operators · `0015` anchor quota cycle to signup anniversary (free) / billing period (paid).
+`0001–0006` schema + PostGIS + RLS + relationships · `0007` api_keys + anonymous throttle · `0008` subscriptions · `0009` monthly tier quotas · `0010` drop anonymous tier (API auth-only) · `0011` `api_key_usage_daily` (dashboard chart) · `0012` Free 500 → 1,000 · `0013` canonicalize 8 operator string variants · `0014` backfill 34 NULL operators · `0015` anchor quota cycle to signup anniversary (free) / billing period (paid) · `0016` materialized views `country_summary`, `operator_summary`, `facility_density` + `refresh_summary_views()` RPC.
 
 ## Build phases (compact)
 
@@ -270,7 +272,7 @@ RLS on every public table (public-read on data; auth-scoped via `auth.uid()` on 
 
 One-time setup when standing up a fresh env:
 
-1. Apply migrations `0001–0015` to Supabase
+1. Apply migrations `0001–0016` to Supabase
 2. Enable GitHub provider in Supabase Auth
 3. Register GitHub OAuth app with callback at **Supabase's** `https://<project-ref>.supabase.co/auth/v1/callback` (NOT our `/auth/callback` — Supabase is the OAuth relay)
 4. Configure Supabase Auth → URL Configuration: Site URL = `https://datacenters.world`; Redirect URLs allowlist = `http://localhost:3000/**` + `https://datacenters.world/**`

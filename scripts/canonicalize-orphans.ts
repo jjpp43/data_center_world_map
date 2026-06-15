@@ -20,7 +20,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
-import { triggerRebuild } from "./_trigger-rebuild";
+import { refreshSummaryViews, triggerRebuild } from "./_trigger-rebuild";
 
 const APPLY = process.argv.includes("--apply");
 const LIMIT_IDX = process.argv.indexOf("--limit");
@@ -388,7 +388,7 @@ async function main() {
   if (!APPLY) {
     console.log("Re-run with `npm run canonicalize:orphans -- --apply` to commit changes.");
   }
-  if (APPLY) await triggerRebuild("canonicalize-orphans");
+  if (APPLY) { await refreshSummaryViews(); await triggerRebuild("canonicalize-orphans"); }
 }
 
 main().catch((err) => {

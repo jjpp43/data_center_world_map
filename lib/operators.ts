@@ -23,52 +23,27 @@ export interface OperatorSummary {
   total_power_mw: number | null;
 }
 
-interface OperatorAggRow {
-  operator: string;
-  country: string;
-  power_mw: number | null;
+interface OperatorSummaryRow {
+  name: string;
+  facility_count: number;
+  country_count: number;
+  total_power_mw: number | null;
 }
 
-/**
- * Aggregate every operator with at least one non-decommissioned facility.
- * Counts come from a fan-out scan rather than a per-operator SQL group-by so
- * we don't depend on Postgres views — the table is small enough (5k rows).
- */
 async function fetchOperatorSummaries(): Promise<OperatorSummary[]> {
   const sb = supabaseServer();
-  const rows: OperatorAggRow[] = [];
-  for (let from = 0; from < 100_000; from += 1000) {
-    const { data, error } = await sb
-      .from("data_centers")
-      .select("operator, country, power_mw")
-      .neq("status", "decommissioned")
-      .not("operator", "is", null)
-      .order("operator")
-      .range(from, from + 999)
-      .returns<OperatorAggRow[]>();
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    rows.push(...data);
-    if (data.length < 1000) break;
-  }
-
-  const byName = new Map<string, { countries: Set<string>; count: number; mw: number | null }>();
-  for (const r of rows) {
-    if (!r.operator) continue;
-    const cur = byName.get(r.operator) ?? { countries: new Set<string>(), count: 0, mw: null };
-    cur.count += 1;
-    if (r.country) cur.countries.add(r.country);
-    if (r.power_mw != null) cur.mw = (cur.mw ?? 0) + r.power_mw;
-    byName.set(r.operator, cur);
-  }
-
-  return [...byName.entries()]
-    .map(([name, v]) => ({
-      name,
-      slug: operatorSlug(name),
-      facility_count: v.count,
-      countries: v.countries.size,
-      total_power_mw: v.mw,
+  const { data, error } = await sb
+    .from("operator_summary")
+    .select("name, facility_count, country_count, total_power_mw")
+    .returns<OperatorSummaryRow[]>();
+  if (error) throw error;
+  return (data ?? [])
+    .map((r) => ({
+      name: r.name,
+      slug: operatorSlug(r.name),
+      facility_count: r.facility_count,
+      countries: r.country_count,
+      total_power_mw: r.total_power_mw,
     }))
     .filter((o) => o.slug.length > 0)
     .sort((a, b) => b.facility_count - a.facility_count);

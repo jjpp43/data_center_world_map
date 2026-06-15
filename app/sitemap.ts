@@ -13,35 +13,59 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
 
 export const revalidate = 86400;
 
-type Row = { slug: string; updated_at: string | null };
+// Crawl-budget caps. Long-tail URLs (the 5,675 - 500 = 5,175 quietest
+// facilities, the 1,000+ tail operators, etc.) still resolve on demand —
+// we just don't push them into Google's queue. This focuses crawl budget
+// on high-value pages and keeps Vercel ISR writes + Supabase egress bounded
+// when bots discover the site.
+const SITEMAP_CAPS = {
+  facilities: 500,
+  operators: 200,
+  ixps: 100,
+  networks: 100,
+} as const;
 
-const loadFacilitySlugs = unstable_cache(
-  async (): Promise<Row[]> => {
+type FacSlugRow = {
+  slug: string;
+  updated_at: string | null;
+  network_count: number;
+};
+
+const loadTopFacilitySlugs = unstable_cache(
+  async (): Promise<FacSlugRow[]> => {
     const sb = supabaseServer();
-    const all: Row[] = [];
-    for (let from = 0; from < 100_000; from += 1000) {
-      const { data, error } = await sb
-        .from("data_centers")
-        .select("slug, updated_at")
-        .neq("status", "decommissioned")
-        .order("slug")
-        .range(from, from + 999)
-        .returns<Row[]>();
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-      all.push(...data);
-      if (data.length < 1000) break;
-    }
-    return all;
+    const { data, error } = await sb
+      .from("facility_density")
+      .select("slug, network_count")
+      .order("network_count", { ascending: false })
+      .limit(SITEMAP_CAPS.facilities)
+      .returns<{ slug: string; network_count: number }[]>();
+    if (error) throw error;
+    const top = data ?? [];
+    if (top.length === 0) return [];
+    const { data: stamps } = await sb
+      .from("data_centers")
+      .select("slug, updated_at")
+      .in(
+        "slug",
+        top.map((r) => r.slug),
+      )
+      .returns<{ slug: string; updated_at: string | null }[]>();
+    const stampBySlug = new Map((stamps ?? []).map((s) => [s.slug, s.updated_at]));
+    return top.map((r) => ({
+      slug: r.slug,
+      network_count: r.network_count,
+      updated_at: stampBySlug.get(r.slug) ?? null,
+    }));
   },
-  ["sitemap-facility-slugs-v1"],
+  ["sitemap-top-facility-slugs-v1"],
   { revalidate: 86_400, tags: ["data-centers"] },
 );
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const [facilities, operators, countries, metros, ixps, networks] = await Promise.all([
-    loadFacilitySlugs(),
+    loadTopFacilitySlugs(),
     loadOperatorSummaries(),
     loadCountrySummaries(),
     loadMetroSummaries(),
@@ -82,11 +106,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  // Single-facility operators don't need their own listing — their one facility
-  // page already covers it. We still render that route on demand; we just keep
-  // it out of the sitemap to avoid diluting it.
+  // Top operators only — long-tail operators (1-2 facilities) still render
+  // on demand but stay out of the sitemap to focus Google's crawl budget on
+  // pages that can actually rank.
   const operatorEntries: MetadataRoute.Sitemap = operators
     .filter((o) => o.facility_count >= 2 && o.slug.length > 0)
+    .slice(0, SITEMAP_CAPS.operators)
     .map((o) => ({
       url: `${SITE}/operators/${o.slug}`,
       lastModified: now,
@@ -110,6 +135,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const ixpEntries: MetadataRoute.Sitemap = ixps
     .filter((i) => i.facility_count > 0)
+    .slice(0, SITEMAP_CAPS.ixps)
     .map((i) => ({
       url: `${SITE}/ixps/${i.slug}`,
       lastModified: now,
@@ -117,10 +143,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.65,
     }));
 
-  // Networks: only list ASNs present in ≥2 facilities. Single-facility ASNs
-  // make for thin pages and bloat the sitemap.
   const networkEntries: MetadataRoute.Sitemap = networks
     .filter((n) => n.facility_count >= 2)
+    .slice(0, SITEMAP_CAPS.networks)
     .map((n) => ({
       url: `${SITE}/networks/${n.asn}`,
       lastModified: now,

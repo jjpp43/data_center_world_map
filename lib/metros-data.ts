@@ -111,18 +111,6 @@ export interface MetroSummary extends Metro {
   total_power_mw: number | null;
 }
 
-interface FacilityRow {
-  slug: string;
-  name: string;
-  operator: string | null;
-  country: string;
-  city: string | null;
-  lat: number;
-  lng: number;
-  power_mw: number | null;
-  networks_at_facility: Array<{ count: number }> | null;
-}
-
 interface FacilityWithNetCount {
   slug: string;
   name: string;
@@ -168,36 +156,21 @@ const loadAllFacilities = unstable_cache(
     const rows: FacilityWithNetCount[] = [];
     for (let from = 0; from < 100_000; from += 1000) {
       const { data, error } = await sb
-        .from("data_centers")
-        .select(
-          "slug, name, operator, country, city, lat, lng, power_mw, networks_at_facility(count)",
-        )
-        .neq("status", "decommissioned")
+        .from("facility_density")
+        .select("slug, name, operator, country, city, lat, lng, power_mw, network_count")
         .not("lat", "is", null)
         .not("lng", "is", null)
         .order("slug")
         .range(from, from + 999)
-        .returns<FacilityRow[]>();
+        .returns<FacilityWithNetCount[]>();
       if (error) throw error;
       if (!data || data.length === 0) break;
-      rows.push(
-        ...data.map((r) => ({
-          slug: r.slug,
-          name: r.name,
-          operator: r.operator,
-          country: r.country,
-          city: r.city,
-          lat: r.lat,
-          lng: r.lng,
-          power_mw: r.power_mw,
-          network_count: r.networks_at_facility?.[0]?.count ?? 0,
-        })),
-      );
+      rows.push(...data);
       if (data.length < 1000) break;
     }
     return rows;
   },
-  ["metro-facilities-v1"],
+  ["metro-facilities-v2"],
   { revalidate: 86_400, tags: ["data-centers"] },
 );
 

@@ -59,16 +59,6 @@ export function classifyDensity(networkCount: number | null | undefined): Densit
   return "standard";
 }
 
-interface FacilityRow {
-  slug: string;
-  name: string;
-  operator: string | null;
-  city: string | null;
-  country: string;
-  power_mw: number | null;
-  networks_at_facility: Array<{ count: number }> | null;
-}
-
 export interface DensityFacility {
   slug: string;
   name: string;
@@ -85,32 +75,19 @@ const loadAllWithNetworkCount = unstable_cache(
     const rows: DensityFacility[] = [];
     for (let from = 0; from < 100_000; from += 1000) {
       const { data, error } = await sb
-        .from("data_centers")
-        .select(
-          "slug, name, operator, city, country, power_mw, networks_at_facility(count)",
-        )
-        .neq("status", "decommissioned")
+        .from("facility_density")
+        .select("slug, name, operator, city, country, power_mw, network_count")
         .order("slug")
         .range(from, from + 999)
-        .returns<FacilityRow[]>();
+        .returns<DensityFacility[]>();
       if (error) throw error;
       if (!data || data.length === 0) break;
-      rows.push(
-        ...data.map((r) => ({
-          slug: r.slug,
-          name: r.name,
-          operator: r.operator,
-          city: r.city,
-          country: r.country,
-          power_mw: r.power_mw,
-          network_count: r.networks_at_facility?.[0]?.count ?? 0,
-        })),
-      );
+      rows.push(...data);
       if (data.length < 1000) break;
     }
     return rows;
   },
-  ["density-facilities-v1"],
+  ["density-facilities-v2"],
   { revalidate: 86_400, tags: ["data-centers"] },
 );
 
