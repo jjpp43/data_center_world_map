@@ -24,6 +24,10 @@ export const DEFAULT_STATE: AppState = {
 };
 
 export function parseUrl(sp: URLSearchParams): AppState {
+  // Bare URL (no query string) → apply documented defaults (country=US, etc.)
+  // so a fresh visit lands on the US view instead of an empty-filter globe.
+  // Once any param is set, respect exactly what's there.
+  if ([...sp.keys()].length === 0) return DEFAULT_STATE;
   const next: AppState = {
     filters: {
       operators: csv(sp.get("op")),

@@ -81,8 +81,8 @@ export function Map({
       container: containerRef.current,
       style: STYLE_URL[initial.style],
       projection,
-      center: [10, 25],
-      zoom: 1.6,
+      center: [-98, 39],
+      zoom: 1.8,
       attributionControl: false,
     });
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-right");
