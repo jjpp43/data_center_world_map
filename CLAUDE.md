@@ -302,3 +302,32 @@ One-time setup when standing up a fresh env:
 - **5d (future)**: sponsored operator profiles ($50–200/facility/year) — verified badge + enhanced page. Inclusion is *never* paid.
 
 **Avoid**: pay-to-list, hard paywall on public map, aggressive lead-gen forms.
+
+## Open improvements
+
+Tracked here so the next session can pick the best one. Ordered loosely by impact-to-effort within each bucket.
+
+**Performance / cost** (after this session's wins)
+- Vector tiles (.mvt) instead of GeoJSON for the map data — 5–10× smaller payload, but needs `pg_tileserv` or build-time tile gen. Probably overkill unless the site grows.
+- Pre-generate facility OG images at build (one per top-500 sitemap entry).
+
+**Growth / monetization**
+- 5c-step-1: newsletter capture on `/about` (Resend / Buttondown). Validates demand for paid content before committing to a full paywall.
+- 5c-step-2: paywall deeper analysis on `/insights/*` ($20–30/mo). Free preview, paid full report.
+- 5d: sponsored operator profiles. `data_centers.verified` column already exists.
+
+**Data coverage** (extends the moat — compounding effort)
+- More operator-page scrapers: Aligned, Stack, Compass, T5, Sabey, Switch, Vantage, H5, Element Critical (mentioned as "tractable" on `/about`).
+- Revisit Microsoft Azure buildings annually — currently region-grain only, may publish building-level eventually.
+- Photos / footprints: columns exist, unpopulated. Sources: operator press, Mapillary, StreetView.
+
+**Product polish**
+- Account deletion in the dashboard (GDPR hygiene, small task).
+- Email alerts on API key quota threshold (80% / 100%). Resend + a daily cron.
+- API key rotation flow (generate-new + deprecate-old with overlap window).
+- Dashboard: top endpoints by usage. Needs an `endpoint` column added to `api_key_usage_daily` (or a new `api_key_usage_endpoint_daily` rollup).
+
+**Operations / DX**
+- Error monitoring (Sentry free tier or PostHog error tracking).
+- Typed Supabase client: `npx supabase gen types typescript` → replace hand-rolled `<Row>` interfaces.
+- Auto-refresh materialized views on a Supabase pg_cron schedule as a safety net if ingest skips the refresh.
