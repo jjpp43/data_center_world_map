@@ -84,6 +84,14 @@ export default function HomePage() {
     <div
       className="relative h-full overflow-hidden bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
     >
+      <h1 className="sr-only">Data Centers Map — Every Data Centre in the World</h1>
+      <p className="sr-only">
+        An open, sourced map of 5,675 data centers (also spelled data centres) across 148
+        countries. Search every facility by operator, country, metro, network, or Internet
+        exchange. Verified specs sourced from PeeringDB, operator pages, OpenStreetMap, and
+        public filings — including Equinix, Digital Realty, Keppel Data Centres, Iron Mountain,
+        Google, Meta, and 1,000+ other operators worldwide.
+      </p>
       <div className="block h-full md:hidden">
         <MobileHome facilities={facilities} />
       </div>

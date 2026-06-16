@@ -35,10 +35,14 @@ export const metadata: Metadata = {
     template: "%s · datacenters.world",
   },
   description:
-    "An open, sourced map of every serious data center on Earth — 5,300+ facilities across 148 countries with verified specs, operators, networks, and IXPs.",
+    "An open, sourced map of every data center (data centre) on Earth — 5,300+ facilities across 148 countries with verified specs, operators, networks, and IXPs.",
   keywords: [
     "data center map",
+    "data centre map",
+    "data centers map",
+    "data centres map",
     "data centers",
+    "data centres",
     "colocation",
     "Equinix",
     "Digital Realty",
