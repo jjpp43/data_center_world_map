@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "@/lib/supabase";
 import {
   clampInt,
@@ -38,6 +39,68 @@ type Row = {
 const SELECT_COLUMNS =
   "slug, name, operator, code, address, city, region, country, postal_code, lat, lng, status, power_mw, space_sqft, tier, year_built, pue, ups_redundancy, uptime_sla, networks_at_facility(count), ixes_at_facility(count)";
 
+type FacilitiesQuery = {
+  countries: string[];
+  operators: string[];
+  minPowerMw: number | null;
+  status: string | null;
+  limit: number;
+  offset: number;
+};
+
+const getFacilitiesPage = unstable_cache(
+  async (q: FacilitiesQuery) => {
+    const sb = supabaseServer();
+    let query = sb
+      .from("data_centers")
+      .select(SELECT_COLUMNS, { count: "exact" })
+      .order("slug")
+      .range(q.offset, q.offset + q.limit - 1);
+
+    if (q.countries.length > 0) query = query.in("country", q.countries);
+    if (q.operators.length > 0) {
+      if (q.operators.length === 1) {
+        query = query.ilike("operator", `${q.operators[0]}%`);
+      } else {
+        query = query.in("operator", q.operators);
+      }
+    }
+    if (q.minPowerMw !== null) query = query.gte("power_mw", q.minPowerMw);
+    if (q.status) query = query.eq("status", q.status);
+
+    const { data, error, count } = await query.returns<Row[]>();
+    if (error) throw new Error(`query failed: ${error.message}`);
+
+    const rows = (data ?? []).map((r) => ({
+      slug: r.slug,
+      name: r.name,
+      operator: r.operator,
+      code: r.code,
+      address: r.address,
+      city: r.city,
+      region: r.region,
+      country: r.country,
+      postal_code: r.postal_code,
+      lat: r.lat,
+      lng: r.lng,
+      status: r.status,
+      power_mw: r.power_mw,
+      space_sqft: r.space_sqft,
+      tier: r.tier,
+      year_built: r.year_built,
+      pue: r.pue,
+      ups_redundancy: r.ups_redundancy,
+      uptime_sla: r.uptime_sla,
+      network_count: r.networks_at_facility?.[0]?.count ?? 0,
+      ix_count: r.ixes_at_facility?.[0]?.count ?? 0,
+    }));
+
+    return { rows, total: count ?? 0 };
+  },
+  ["api-v1-facilities-v1"],
+  { revalidate: 86400, tags: ["data-centers"] },
+);
+
 export function OPTIONS() {
   return preflight();
 }
@@ -48,7 +111,8 @@ export async function GET(req: NextRequest) {
   const offset = clampInt(sp.get("offset"), 0, 0, 1_000_000);
   const countries = csv(sp.get("country")).map((c) => c.toUpperCase());
   const operators = csv(sp.get("operator"));
-  const minPowerMw = parseFloat(sp.get("min_power_mw") ?? "");
+  const minPowerMwRaw = parseFloat(sp.get("min_power_mw") ?? "");
+  const minPowerMw = Number.isFinite(minPowerMwRaw) ? minPowerMwRaw : null;
   const status = sp.get("status");
   const format = (sp.get("format") ?? "json").toLowerCase();
 
@@ -56,62 +120,26 @@ export async function GET(req: NextRequest) {
     return errorResponse("format must be 'json' or 'csv'");
   }
 
-  const sb = supabaseServer();
-
-  let query = sb
-    .from("data_centers")
-    .select(SELECT_COLUMNS, { count: "exact" })
-    .order("slug")
-    .range(offset, offset + limit - 1);
-
-  if (countries.length > 0) query = query.in("country", countries);
-  if (operators.length > 0) {
-    if (operators.length === 1) {
-      query = query.ilike("operator", `${operators[0]}%`);
-    } else {
-      query = query.in("operator", operators);
-    }
+  let rows: Awaited<ReturnType<typeof getFacilitiesPage>>["rows"];
+  let total: number;
+  try {
+    ({ rows, total } = await getFacilitiesPage({
+      countries,
+      operators,
+      minPowerMw,
+      status,
+      limit,
+      offset,
+    }));
+  } catch (e) {
+    return errorResponse((e as Error).message, 500);
   }
-  if (Number.isFinite(minPowerMw)) query = query.gte("power_mw", minPowerMw);
-  if (status) query = query.eq("status", status);
-
-  const { data, error, count } = await query.returns<Row[]>();
-
-  if (error) {
-    return errorResponse(`query failed: ${error.message}`, 500);
-  }
-
-  const rows = (data ?? []).map((r) => ({
-    slug: r.slug,
-    name: r.name,
-    operator: r.operator,
-    code: r.code,
-    address: r.address,
-    city: r.city,
-    region: r.region,
-    country: r.country,
-    postal_code: r.postal_code,
-    lat: r.lat,
-    lng: r.lng,
-    status: r.status,
-    power_mw: r.power_mw,
-    space_sqft: r.space_sqft,
-    tier: r.tier,
-    year_built: r.year_built,
-    pue: r.pue,
-    ups_redundancy: r.ups_redundancy,
-    uptime_sla: r.uptime_sla,
-    network_count: r.networks_at_facility?.[0]?.count ?? 0,
-    ix_count: r.ixes_at_facility?.[0]?.count ?? 0,
-  }));
 
   if (format === "csv") {
     return csvResponse(rows, { filename: "facilities.csv" });
   }
 
-  const total = count ?? 0;
   const nextOffset = offset + rows.length;
-
   return jsonResponse({
     data: rows,
     meta: {
@@ -123,3 +151,4 @@ export async function GET(req: NextRequest) {
     },
   });
 }
+

@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "@/lib/supabase";
 import {
   csv,
@@ -26,6 +27,27 @@ type Row = {
 
 const VALID_PROVIDERS = new Set(["aws", "gcp", "azure", "oracle"]);
 
+const getCloudRegions = unstable_cache(
+  async (providers: string[], countries: string[]): Promise<Row[]> => {
+    const sb = supabaseServer();
+    let q = sb
+      .from("cloud_regions")
+      .select(
+        "provider, code, name, city, country, lat, lng, az_count, launched_year, services, source_url",
+      )
+      .order("provider")
+      .order("code");
+    if (providers.length > 0) q = q.in("provider", providers);
+    if (countries.length > 0) q = q.in("country", countries);
+
+    const { data, error } = await q.returns<Row[]>();
+    if (error) throw new Error(`query failed: ${error.message}`);
+    return data ?? [];
+  },
+  ["api-v1-cloud-regions-v1"],
+  { revalidate: 86400, tags: ["data-centers"] },
+);
+
 export function OPTIONS() {
   return preflight();
 }
@@ -45,21 +67,12 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const sb = supabaseServer();
-  let q = sb
-    .from("cloud_regions")
-    .select(
-      "provider, code, name, city, country, lat, lng, az_count, launched_year, services, source_url",
-    )
-    .order("provider")
-    .order("code");
-  if (providers.length > 0) q = q.in("provider", providers);
-  if (countries.length > 0) q = q.in("country", countries);
-
-  const { data, error } = await q.returns<Row[]>();
-  if (error) return errorResponse(`query failed: ${error.message}`, 500);
-
-  const rows = data ?? [];
+  let rows: Row[];
+  try {
+    rows = await getCloudRegions(providers, countries);
+  } catch (e) {
+    return errorResponse((e as Error).message, 500);
+  }
 
   if (format === "csv") {
     return csvResponse(rows, { filename: "cloud-regions.csv", cache: "aggregate" });
