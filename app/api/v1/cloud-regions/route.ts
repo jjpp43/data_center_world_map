@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import { unstable_cache } from "next/cache";
-import { supabaseServer } from "@/lib/supabase";
+import { getCloudRegions, type CloudRegionRow } from "@/lib/api-data";
 import {
   csv,
   csvResponse,
@@ -12,42 +11,7 @@ import {
 
 export const runtime = "nodejs";
 
-type Row = {
-  provider: string;
-  code: string;
-  name: string;
-  city: string | null;
-  country: string | null;
-  lat: number;
-  lng: number;
-  az_count: number | null;
-  launched_year: number | null;
-  services: string[] | null;
-  source_url: string | null;
-};
-
 const VALID_PROVIDERS = new Set(["aws", "gcp", "azure", "oracle"]);
-
-const getCloudRegions = unstable_cache(
-  async (providers: string[], countries: string[]): Promise<Row[]> => {
-    const sb = supabaseServer();
-    let q = sb
-      .from("cloud_regions")
-      .select(
-        "provider, code, name, city, country, lat, lng, az_count, launched_year, services, source_url",
-      )
-      .order("provider")
-      .order("code");
-    if (providers.length > 0) q = q.in("provider", providers);
-    if (countries.length > 0) q = q.in("country", countries);
-
-    const { data, error } = await q.returns<Row[]>();
-    if (error) throw new Error(`query failed: ${error.message}`);
-    return data ?? [];
-  },
-  ["api-v1-cloud-regions-v1"],
-  { revalidate: 86400, tags: ["data-centers"] },
-);
 
 export function OPTIONS() {
   return preflight();
@@ -68,7 +32,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  let rows: Row[];
+  let rows: CloudRegionRow[];
   try {
     rows = await getCloudRegions(providers, countries);
   } catch (e) {

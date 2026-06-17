@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 export const config = {
-  matcher: ["/api/v1/:path*"],
+  // /api/v1/*: REST endpoints. /api/mcp: Streamable HTTP MCP transport
+  // (single endpoint, JSON-RPC inside POST body). Both share the same
+  // Bearer auth + per-key monthly quota path.
+  matcher: ["/api/v1/:path*", "/api/mcp"],
 };
 
 async function sha256Hex(input: string): Promise<string> {
