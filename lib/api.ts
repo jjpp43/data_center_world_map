@@ -9,10 +9,13 @@ export const PUBLIC_CORS = {
 
 type CacheBudget = "list" | "detail" | "aggregate";
 
+// `private` keeps the CDN from caching per-user headers (X-RateLimit-*)
+// across keys. unstable_cache (24h) carries the Supabase-dedup load that
+// the public CDN cache used to provide.
 const CACHE: Record<CacheBudget, string> = {
-  list: "public, s-maxage=300, stale-while-revalidate=3600",
-  detail: "public, s-maxage=3600, stale-while-revalidate=86400",
-  aggregate: "public, s-maxage=3600, stale-while-revalidate=86400",
+  list: "private, max-age=300, must-revalidate",
+  detail: "private, max-age=3600, must-revalidate",
+  aggregate: "private, max-age=3600, must-revalidate",
 };
 
 export function jsonResponse(
@@ -99,7 +102,10 @@ function escapeCsvCell(v: unknown): string {
   if (v == null) return "";
   if (typeof v === "number" || typeof v === "boolean") return String(v);
   if (typeof v === "object") return escapeCsvCell(JSON.stringify(v));
-  const s = String(v);
+  let s = String(v);
+  // Neutralize CSV/spreadsheet formula execution on cells whose first
+  // character would be interpreted as a formula by Excel/Sheets/Numbers.
+  if (s.length > 0 && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
