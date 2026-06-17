@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SessionProvider } from "@/components/SessionProvider";
 import { PostHogProvider, PostHogPageView } from "@/components/PostHog";
+import { jsonForHtml } from "@/lib/json-ld";
 import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -122,7 +123,7 @@ export default function RootLayout({
       <body className="h-full font-sans">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}
+          dangerouslySetInnerHTML={{ __html: jsonForHtml(SITE_JSON_LD) }}
         />
         <PostHogProvider>
           <PostHogPageView />

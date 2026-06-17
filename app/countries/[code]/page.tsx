@@ -6,6 +6,7 @@ import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
 import { findCountryByCode, loadCountrySummaries } from "@/lib/countries-data";
 import { operatorSlug } from "@/lib/operators";
+import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 604800;
 
@@ -132,7 +133,7 @@ export default async function CountryPage({ params }: Props) {
 
   return (
     <div className={`min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForHtml(jsonLd) }} />
       <SimpleHeader />
       <main className="mx-auto max-w-4xl px-6 py-10">
         <div className="text-xs uppercase tracking-wider text-zinc-500">Country</div>

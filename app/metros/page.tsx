@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { countryFlag, countryName } from "@/lib/countries";
 import { loadMetroSummaries } from "@/lib/metros-data";
+import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 3600;
 
@@ -44,7 +45,7 @@ export default async function MetrosIndex() {
 
   return (
     <div className={`min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForHtml(jsonLd) }} />
       <header className="sticky top-0 z-10 border-b border-zinc-200/70 bg-white/80 backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">
           <Link href="/" className="flex items-center gap-2 text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100">

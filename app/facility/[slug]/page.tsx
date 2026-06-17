@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
 import { InfoToggle } from "@/components/InfoToggle";
+import { jsonForHtml } from "@/lib/json-ld";
 
 const INFO: Record<string, string> = {
   "Power redundancy":
@@ -281,12 +282,12 @@ export default async function FacilityPage({ params }: Props) {
     >
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonForHtml(jsonLd) }}
       />
       {faqJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonForHtml(faqJsonLd) }}
         />
       )}
       <header className="sticky top-0 z-10 border-b border-zinc-200/70 bg-white/80 backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/80">
