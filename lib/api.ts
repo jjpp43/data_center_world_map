@@ -60,6 +60,15 @@ export function errorResponse(message: string, status = 400): NextResponse {
   );
 }
 
+// Log the real error server-side, return a generic 500 with a short id
+// the caller can share when reporting. Prevents PostgREST/Supabase error
+// strings (table names, constraint hints, SQL fragments) from leaking.
+export function internalError(scope: string, e: unknown): NextResponse {
+  const id = Math.random().toString(36).slice(2, 10);
+  console.error(`[${id}] ${scope}:`, e);
+  return errorResponse(`internal error (id: ${id})`, 500);
+}
+
 export function preflight(): NextResponse {
   return new NextResponse(null, {
     status: 204,

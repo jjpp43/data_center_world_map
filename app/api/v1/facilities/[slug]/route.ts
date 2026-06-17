@@ -1,7 +1,11 @@
 import { NextRequest } from "next/server";
 import { unstable_cache } from "next/cache";
 import { supabaseServer } from "@/lib/supabase";
-import { errorResponse, jsonResponse, preflight } from "@/lib/api";
+import { errorResponse, internalError, jsonResponse, preflight } from "@/lib/api";
+
+// Cheap shape gate so random/garbage slugs don't burn an unstable_cache
+// miss + Supabase round-trip apiece. Real slugs are kebab-case ASCII.
+const SLUG_SHAPE = /^[a-z0-9](?:[a-z0-9-]{0,98}[a-z0-9])?$/;
 
 export const runtime = "nodejs";
 
@@ -124,11 +128,15 @@ export async function GET(
 ) {
   const { slug } = await params;
 
+  if (!SLUG_SHAPE.test(slug)) {
+    return errorResponse(`facility not found: ${slug}`, 404);
+  }
+
   let detail: Awaited<ReturnType<typeof getFacilityDetail>>;
   try {
     detail = await getFacilityDetail(slug);
   } catch (e) {
-    return errorResponse((e as Error).message, 500);
+    return internalError("api/v1/facilities/[slug]", e);
   }
 
   if (!detail) return errorResponse(`facility not found: ${slug}`, 404);

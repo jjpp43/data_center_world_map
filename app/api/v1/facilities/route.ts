@@ -6,6 +6,7 @@ import {
   csv,
   csvResponse,
   errorResponse,
+  internalError,
   jsonResponse,
   preflight,
 } from "@/lib/api";
@@ -132,7 +133,7 @@ export async function GET(req: NextRequest) {
       offset,
     }));
   } catch (e) {
-    return errorResponse((e as Error).message, 500);
+    return internalError("api/v1/facilities", e);
   }
 
   if (format === "csv") {

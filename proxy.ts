@@ -13,6 +13,32 @@ async function sha256Hex(input: string): Promise<string> {
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// Per-instance negative cache for known-invalid Bearer hashes. Absorbs
+// junk-token floods so we don't fire a Supabase RPC per request. Capped
+// to bound memory under a sustained spray; insertion-order eviction
+// matches Map semantics so the oldest entry drops first.
+const INVALID_TOKEN_TTL_MS = 60_000;
+const INVALID_TOKEN_CACHE_MAX = 1024;
+const invalidTokenCache = new Map<string, number>();
+
+function isKnownInvalid(hash: string): boolean {
+  const exp = invalidTokenCache.get(hash);
+  if (exp == null) return false;
+  if (exp < Date.now()) {
+    invalidTokenCache.delete(hash);
+    return false;
+  }
+  return true;
+}
+
+function rememberInvalid(hash: string): void {
+  if (invalidTokenCache.size >= INVALID_TOKEN_CACHE_MAX) {
+    const oldest = invalidTokenCache.keys().next().value;
+    if (oldest !== undefined) invalidTokenCache.delete(oldest);
+  }
+  invalidTokenCache.set(hash, Date.now() + INVALID_TOKEN_TTL_MS);
+}
+
 interface ValidateRow {
   key_id: string;
   tier: string;
@@ -78,9 +104,13 @@ export async function proxy(req: NextRequest) {
   }
 
   const hash = await sha256Hex(bearer);
+  if (isKnownInvalid(hash)) {
+    return jsonError(401, "Invalid or revoked API key");
+  }
   const rows = await rpc<ValidateRow[]>("validate_and_charge_api_key", { p_hash: hash });
   const row = rows?.[0];
   if (!row) {
+    rememberInvalid(hash);
     return jsonError(401, "Invalid or revoked API key");
   }
   if (row.remaining <= 0) {

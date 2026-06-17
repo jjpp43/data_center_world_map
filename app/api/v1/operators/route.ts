@@ -6,6 +6,7 @@ import {
   csv,
   csvResponse,
   errorResponse,
+  internalError,
   jsonResponse,
   preflight,
 } from "@/lib/api";
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
   try {
     aggregates = await getOperatorAggregates(countries);
   } catch (e) {
-    return errorResponse((e as Error).message, 500);
+    return internalError("api/v1/operators", e);
   }
 
   const rows = aggregates

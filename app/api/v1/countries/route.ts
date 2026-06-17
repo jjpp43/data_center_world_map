@@ -2,7 +2,13 @@ import { NextRequest } from "next/server";
 import { unstable_cache } from "next/cache";
 import { supabaseServer } from "@/lib/supabase";
 import { countryName } from "@/lib/countries";
-import { csvResponse, errorResponse, jsonResponse, preflight } from "@/lib/api";
+import {
+  csvResponse,
+  errorResponse,
+  internalError,
+  jsonResponse,
+  preflight,
+} from "@/lib/api";
 
 export const runtime = "nodejs";
 
@@ -58,7 +64,7 @@ export async function GET(req: NextRequest) {
   try {
     rows = await getCountryAggregates();
   } catch (e) {
-    return errorResponse((e as Error).message, 500);
+    return internalError("api/v1/countries", e);
   }
 
   if (format === "csv") {
