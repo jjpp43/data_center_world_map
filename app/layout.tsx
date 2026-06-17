@@ -113,7 +113,7 @@ const SITE_JSON_LD = {
       "@id": `${SITE}/#dataset`,
       name: "datacenters.world atlas",
       description:
-        "An open, curated atlas of every known data center (data centre) on Earth — 5,675 verified facilities across 148 countries, with operators, power capacity, space, tier, PUE, the 34,732 networks (ASNs) and 1,309 Internet exchanges present at each site, and 176 hyperscale cloud regions (AWS, GCP, Azure, Oracle). Sources cited per row.",
+        "An open, curated atlas of every known data center (data centre) on Earth — 5,675 verified facilities across 148 countries, with operators, power capacity, space, tier, PUE, the 34,732 networks (ASNs) and 1,309 Internet exchanges present at each site, and 176 hyperscale cloud regions (AWS, Google, Azure, Oracle). Sources cited per row.",
       url: SITE,
       creator: { "@id": `${SITE}/#org` },
       publisher: { "@id": `${SITE}/#org` },

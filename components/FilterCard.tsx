@@ -17,7 +17,7 @@ const QUICK_OPERATORS: Array<{ label: string; value: string }> = [
 
 const CLOUD_PROVIDERS: Array<{ label: string; value: CloudProvider; color: string }> = [
   { label: "AWS", value: "aws", color: "#ff9d2e" },
-  { label: "GCP", value: "gcp", color: "#a855f7" },
+  { label: "Google", value: "gcp", color: "#a855f7" },
   { label: "Azure", value: "azure", color: "#3aa0e6" },
   { label: "Oracle", value: "oracle", color: "#ff5757" },
 ];

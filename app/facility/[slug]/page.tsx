@@ -844,7 +844,7 @@ const SOURCE_LABEL: Record<string, string> = {
   peeringdb: "PeeringDB",
   osm: "OpenStreetMap",
   aws: "AWS",
-  gcp: "GCP",
+  gcp: "Google",
   azure: "Azure",
   oracle: "Oracle Cloud",
   "equinix-com": "Equinix",

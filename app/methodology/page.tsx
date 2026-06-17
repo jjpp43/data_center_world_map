@@ -141,7 +141,7 @@ export default async function MethodologyPage() {
               name="Cloud provider region pages"
               count="176"
               unit="regions"
-              what="AWS, GCP, Azure, Oracle. Tracked as a separate map layer, not in the facility table. A region is a logical grouping of buildings, not a building."
+              what="AWS, Google, Azure, Oracle. Tracked as a separate map layer, not in the facility table. A region is a logical grouping of buildings, not a building."
               url={null}
             />
           </div>

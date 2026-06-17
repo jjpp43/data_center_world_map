@@ -97,7 +97,7 @@ export default async function ApiDocsPage() {
                   <strong className="font-mono">1,309</strong> internet exchanges
                 </li>
                 <li>
-                  <strong className="font-mono">176</strong> public cloud regions across AWS, GCP,
+                  <strong className="font-mono">176</strong> public cloud regions across AWS, Google,
                   Azure, Oracle
                 </li>
               </ul>
@@ -394,7 +394,7 @@ data = res.json()['data']`,
                 id="ep-cloud-regions"
                 method="GET"
                 path="/api/v1/cloud-regions"
-                description="All public cloud regions across AWS, GCP, Azure, and Oracle."
+                description="All public cloud regions across AWS, Google, Azure, and Oracle."
                 params={[
                   ["provider", "enum", "aws | gcp | azure | oracle, comma-separated", "provider=aws,gcp"],
                   ["country", "string", "ISO-3166-1 alpha-2 codes", "country=DE"],
@@ -553,7 +553,7 @@ data = res.json()['data']`,
                     <ToolRow
                       name="list_cloud_regions"
                       inputs="provider, country[]"
-                      returns="Hyperscale regions across AWS, GCP, Azure, Oracle."
+                      returns="Hyperscale regions across AWS, Google, Azure, Oracle."
                     />
                   </tbody>
                 </table>

@@ -175,7 +175,7 @@ const handler = createMcpHandler(
       {
         title: "List hyperscale cloud regions",
         description:
-          "Hyperscale cloud regions for AWS, GCP, Azure, and Oracle. Filterable by provider and country. These are region-grain (not building-grain) — for building locations, use search_facilities.",
+          "Hyperscale cloud regions for AWS, Google, Azure, and Oracle. Filterable by provider and country (note: the provider wire value for Google is `gcp`). These are region-grain (not building-grain) — for building locations, use search_facilities.",
         inputSchema: {
           provider: z.enum(["aws", "gcp", "azure", "oracle"]).optional(),
           country: z.array(z.string().length(2)).optional(),
