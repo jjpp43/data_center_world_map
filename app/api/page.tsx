@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EditorialHeader } from "@/components/editorial";
 import { ApiNav } from "./ApiNav";
-import { CodeTabs, ResponseBlock } from "./CodeTabs";
+import { CodeTabs, ResponseBlock, Snippet } from "./CodeTabs";
 
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: "API",
   description:
-    "Auth-gated REST API for the datacenters.world atlas — 5,675 facilities, 34,732 networks, 1,309 IXPs, 176 cloud regions. JSON or CSV, open CORS, edge-cached. Free tier 1,000 req/month.",
+    "REST + MCP access to the datacenters.world atlas — 5,675 facilities, 34,732 networks, 1,309 IXPs, 176 cloud regions. JSON or CSV, open CORS, edge-cached. Plug into Claude Desktop, Cursor, or Claude Code via MCP, or call /api/v1 from anywhere. Free tier 1,000 req/month.",
   alternates: { canonical: "/api" },
   openGraph: {
     title: "datacenters.world API",
     description:
-      "Auth-gated REST API for the datacenters.world atlas — 5,675 facilities, 34,732 networks, 1,309 IXPs, 176 cloud regions.",
+      "REST + MCP access to the datacenters.world atlas — 5,675 facilities, 34,732 networks, 1,309 IXPs, 176 cloud regions.",
     type: "article",
     url: "/api",
   },
@@ -436,8 +436,139 @@ data = res.json()['data']`,
               />
             </Section>
 
+            {/* ─────────── MCP ─────────── */}
+            <Section id="mcp" number={5} title="MCP (AI tool access)">
+              <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
+                The same atlas, exposed as <a
+                  href="https://modelcontextprotocol.io"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Model Context Protocol
+                </a>{" "}
+                tools. Add the endpoint below to Claude Desktop, Cursor, Claude Code, or any
+                other MCP-aware client and your AI gets typed access to facilities, operators,
+                networks, IXPs, and cloud regions — citations included.
+              </p>
+
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Pill label="Endpoint" value="/api/mcp" />
+                <Pill label="Transport" value="streamable http" />
+                <Pill label="Auth" value="bearer (required)" />
+                <Pill label="Quota" value="shared with REST" />
+              </div>
+
+              <h3 className="mt-10 font-mono text-[11px] uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">
+                Client config
+              </h3>
+
+              <div className="mt-3 space-y-5">
+                <div>
+                  <div className="mb-2 font-mono text-xs text-zinc-500">
+                    Claude Desktop · Cursor · any HTTP-MCP client
+                  </div>
+                  <Snippet>{`{
+  "mcpServers": {
+    "datacenters-world": {
+      "url": "https://datacenters.world/api/mcp",
+      "headers": {
+        "Authorization": "Bearer dcw_…"
+      }
+    }
+  }
+}`}</Snippet>
+                </div>
+
+                <div>
+                  <div className="mb-2 font-mono text-xs text-zinc-500">
+                    Claude Code (CLI)
+                  </div>
+                  <Snippet>{`claude mcp add datacenters-world \\
+  --transport http \\
+  --header "Authorization: Bearer dcw_…" \\
+  https://datacenters.world/api/mcp`}</Snippet>
+                </div>
+
+                <div>
+                  <div className="mb-2 font-mono text-xs text-zinc-500">
+                    Stdio-only clients (older builds) — wrap with{" "}
+                    <Inline>mcp-remote</Inline>
+                  </div>
+                  <Snippet>{`{
+  "mcpServers": {
+    "datacenters-world": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://datacenters.world/api/mcp",
+        "--header",
+        "Authorization: Bearer dcw_…"
+      ]
+    }
+  }
+}`}</Snippet>
+                </div>
+              </div>
+
+              <h3 className="mt-10 font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">
+                Tools
+              </h3>
+              <p className="mt-2 max-w-2xl text-base text-zinc-500">
+                All five tools return a <Inline>source_url</Inline> pointing at the canonical
+                facility / operator / IXP page so your AI can cite back to the dataset.
+              </p>
+
+              <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-zinc-200 bg-zinc-100/80 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300">
+                    <tr>
+                      <th className="px-4 py-2.5 text-left font-medium">Tool</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Inputs</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Returns</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                    <ToolRow
+                      name="search_facilities"
+                      inputs="country[], operator (prefix), min_power_mw, limit"
+                      returns="Up to 50 facilities with key facts + source_url."
+                    />
+                    <ToolRow
+                      name="get_facility"
+                      inputs="slug"
+                      returns="Full record — specs, top 50 ASNs, top 20 IXPs, source provenance."
+                    />
+                    <ToolRow
+                      name="list_operators"
+                      inputs="country[], min_facilities, limit"
+                      returns="Operators ranked by facility count + country breadth."
+                    />
+                    <ToolRow
+                      name="list_countries"
+                      inputs="(none)"
+                      returns="All 148 countries with facility counts."
+                    />
+                    <ToolRow
+                      name="list_cloud_regions"
+                      inputs="provider, country[]"
+                      returns="Hyperscale regions across AWS, GCP, Azure, Oracle."
+                    />
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="mt-6 max-w-2xl text-base text-zinc-500">
+                Quota note: each MCP tool call counts as one request against your monthly
+                quota — same path as <Inline>/api/v1/*</Inline>. AI agents typically fan out
+                3–6 tool calls per chat turn, so budget accordingly. Free tier (1,000/month)
+                covers roughly 150–300 chat conversations.
+              </p>
+            </Section>
+
             {/* ─────────── Conventions ─────────── */}
-            <Section id="conventions" number={5} title="Conventions">
+            <Section id="conventions" number={6} title="Conventions">
               <div className="mt-5 grid grid-cols-1 gap-x-10 gap-y-6 sm:grid-cols-2">
                 <Convention title="Response envelope">
                   All JSON responses are <Inline>{`{ data, meta }`}</Inline>. <Inline>data</Inline>{" "}
@@ -470,7 +601,7 @@ data = res.json()['data']`,
             </Section>
 
             {/* ─────────── Errors & rate limits ─────────── */}
-            <Section id="errors" number={6} title="Errors & rate limits">
+            <Section id="errors" number={7} title="Errors & rate limits">
               <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
                 Non-2xx responses use a uniform error envelope:
               </p>
@@ -534,7 +665,7 @@ if not res.ok:
             </Section>
 
             {/* ─────────── Pricing ─────────── */}
-            <Section id="pricing" number={7} title="Pricing">
+            <Section id="pricing" number={8} title="Pricing">
               <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70">
                 <table className="w-full text-sm">
                   <thead className="border-b border-zinc-200 bg-zinc-100/80 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300">
@@ -565,7 +696,7 @@ if not res.ok:
             </Section>
 
             {/* ─────────── Versioning ─────────── */}
-            <Section id="versioning" number={8} title="Versioning">
+            <Section id="versioning" number={9} title="Versioning">
               <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
                 All endpoints live under <Inline>/api/v1/</Inline>. Breaking changes ship under a
                 new major (<Inline>/api/v2/</Inline>) — never inside <Inline>v1</Inline>. Additive
@@ -828,6 +959,20 @@ function PricingRow({
         {price}
       </td>
       <td className="px-4 py-3 align-top text-base text-zinc-600 dark:text-zinc-400">{forWho}</td>
+    </tr>
+  );
+}
+
+function ToolRow({ name, inputs, returns }: { name: string; inputs: string; returns: string }) {
+  return (
+    <tr className="transition-colors even:bg-zinc-50/60 hover:bg-indigo-50/40 dark:even:bg-zinc-900/30 dark:hover:bg-indigo-950/20">
+      <td className="px-4 py-3 align-top font-mono text-sm text-zinc-900 dark:text-zinc-100">
+        {name}
+      </td>
+      <td className="px-4 py-3 align-top font-mono text-xs text-indigo-600 dark:text-indigo-400">
+        {inputs}
+      </td>
+      <td className="px-4 py-3 align-top text-base text-zinc-600 dark:text-zinc-400">{returns}</td>
     </tr>
   );
 }

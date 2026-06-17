@@ -23,6 +23,7 @@ export const NAV: NavItem[] = [
       { id: "ep-cloud-regions", label: "Cloud regions" },
     ],
   },
+  { id: "mcp", label: "MCP (AI tool access)" },
   { id: "conventions", label: "Conventions" },
   { id: "errors", label: "Errors & rate limits" },
   { id: "pricing", label: "Pricing" },

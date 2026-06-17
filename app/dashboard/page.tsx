@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { supabaseAuthServer } from "@/lib/supabase-server";
 import { TIER_LIMITS, generateApiKey, tierLabel } from "@/lib/api-keys";
 import { POLAR_PRO_PRODUCT_ID, POLAR_TEAM_PRODUCT_ID } from "@/lib/polar";
-import { CodeTabs } from "@/app/api/CodeTabs";
+import { CodeTabs, Snippet } from "@/app/api/CodeTabs";
+import Link from "next/link";
 import { KeysClient } from "./KeysClient";
 import { KeyNameEditor } from "./KeyNameEditor";
 
@@ -434,6 +435,35 @@ export default async function DashboardPage({
           <span className="font-mono">X-RateLimit-Limit</span> headers.
         </p>
       </section>
+
+      <section className="mt-10 rounded-2xl border border-zinc-200/70 bg-white/40 p-5 dark:border-zinc-800/60 dark:bg-zinc-900/30">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Use from AI tools (MCP)
+          </h3>
+          <span className="rounded bg-indigo-100/70 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+            New
+          </span>
+        </div>
+        <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+          Add the snippet to Claude Desktop, Cursor, or Claude Code and your AI gets typed
+          access to facilities, operators, networks, IXPs, and cloud regions — with citations
+          back to <span className="font-mono">datacenters.world</span>.
+        </p>
+        <div className="mt-3">
+          <Snippet>{buildMcpConfig(activeKeys)}</Snippet>
+        </div>
+        <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+          Quota is shared with REST — each tool call counts as one request. See{" "}
+          <Link
+            href="/api#mcp"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            /api docs
+          </Link>{" "}
+          for Claude Code CLI syntax, the full tool list, and stdio-only client setup.
+        </p>
+      </section>
     </main>
   );
 }
@@ -535,6 +565,20 @@ function UsageChart({
 }
 
 const API_BASE = "https://datacenters.world/api/v1";
+
+function buildMcpConfig(activeKeys: { key_prefix: string }[]): string {
+  const keyToken = activeKeys.length === 1 ? activeKeys[0].key_prefix : "dcw_…";
+  return `{
+  "mcpServers": {
+    "datacenters-world": {
+      "url": "https://datacenters.world/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${keyToken}"
+      }
+    }
+  }
+}`;
+}
 
 function buildHowToSample(activeKeys: { key_prefix: string }[]) {
   const keyToken = activeKeys.length === 1 ? activeKeys[0].key_prefix : "dcw_…";
