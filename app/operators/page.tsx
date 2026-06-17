@@ -6,13 +6,14 @@ import { jsonForHtml } from "@/lib/json-ld";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Data center operators",
+  title: "Data Center Operators Worldwide — Ranked by Facility Count",
   description:
-    "Every data center operator tracked by datacenters.world, ranked by facility count. Equinix, Digital Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS, and the long tail of regional providers.",
+    "Every tracked data center (data centre) operator worldwide, ranked by facility count. Equinix, Digital Realty, NTT, DataBank, Cologix, CoreSite, CyrusOne, QTS, and 1,000+ more. Browse the full list.",
   alternates: { canonical: "/operators" },
   openGraph: {
-    title: "Data center operators · datacenters.world",
-    description: "Every tracked operator, ranked by facility count.",
+    title: "Data Center Operators Worldwide — Ranked by Facility Count",
+    description:
+      "Every tracked operator ranked by facility count. Equinix, Digital Realty, NTT, DataBank, and 1,000+ more.",
     type: "website",
     url: "/operators",
   },

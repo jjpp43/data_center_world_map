@@ -8,13 +8,14 @@ export const revalidate = 3600;
 const TOP_N = 500;
 
 export const metadata: Metadata = {
-  title: "Networks (ASNs)",
+  title: "Networks (ASNs) — 34,732 in Tracked Data Centers",
   description:
-    "Every PeeringDB-registered network present in at least one tracked data center. Google AS15169, AWS AS16509, Cloudflare AS13335, and 30,000+ more.",
+    "Every PeeringDB-registered network present in a tracked data center — Google AS15169, AWS AS16509, Cloudflare AS13335, Microsoft AS8075, and 30,000+ more. Ranked by data center footprint.",
   alternates: { canonical: "/networks" },
   openGraph: {
-    title: "Networks · datacenters.world",
-    description: "Every PeeringDB network ranked by data-center footprint.",
+    title: "Networks (ASNs) — 34,732 in Tracked Data Centers",
+    description:
+      "Every PeeringDB-registered network — Google, AWS, Cloudflare, Microsoft, and 30,000+ more — ranked by data center footprint.",
     type: "website",
     url: "/networks",
   },

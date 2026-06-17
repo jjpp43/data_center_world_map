@@ -28,20 +28,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!detail) return { title: "Network not found" };
   const { network, facilities, country_breakdown } = detail;
 
-  const description = `AS${network.asn} ${network.name} is a${
-    network.info_type ? ` ${network.info_type.toLowerCase()}` : ""
-  } network present in ${facilities.length} colocation facilit${
+  const facCount = facilities.length.toLocaleString();
+  const title = `AS${network.asn} ${network.name} — ${facCount} Data Center${
+    facilities.length === 1 ? "" : "s"
+  }, ${country_breakdown.length} ${country_breakdown.length === 1 ? "Country" : "Countries"}`;
+  const description = `${network.name} (AS${network.asn})${
+    network.info_type ? ` is a ${network.info_type.toLowerCase()} network` : ""
+  } present in ${facCount} colocation facilit${
     facilities.length === 1 ? "y" : "ies"
   } across ${country_breakdown.length} countr${
     country_breakdown.length === 1 ? "y" : "ies"
-  }. Full facility presence list and routing-policy metadata.`;
+  }. See the full facility list, routing policy, and peering data.`;
   const canonical = `/networks/${network.asn}`;
   return {
-    title: `AS${network.asn} ${network.name} — network footprint`,
+    title,
     description,
     alternates: { canonical },
-    openGraph: { title: `AS${network.asn} ${network.name}`, description, type: "website", url: canonical },
-    twitter: { card: "summary_large_image", title: `AS${network.asn} ${network.name}`, description },
+    openGraph: { title, description, type: "website", url: canonical },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 

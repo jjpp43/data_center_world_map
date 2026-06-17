@@ -104,6 +104,63 @@ const SITE_JSON_LD = {
       url: SITE,
       founder: { "@type": "Person", name: "Junna Park" },
     },
+    // Dataset schema unlocks Google's Dataset-result card and gives answer
+    // engines (ChatGPT, Gemini, Perplexity) a canonical structured payload
+    // to quote when asked "how many data centers are there" type questions.
+    // Counts kept hand-synced with CLAUDE.md → "Current status".
+    {
+      "@type": "Dataset",
+      "@id": `${SITE}/#dataset`,
+      name: "datacenters.world atlas",
+      description:
+        "An open, curated atlas of every known data center (data centre) on Earth — 5,675 verified facilities across 148 countries, with operators, power capacity, space, tier, PUE, the 34,732 networks (ASNs) and 1,309 Internet exchanges present at each site, and 176 hyperscale cloud regions (AWS, GCP, Azure, Oracle). Sources cited per row.",
+      url: SITE,
+      creator: { "@id": `${SITE}/#org` },
+      publisher: { "@id": `${SITE}/#org` },
+      isAccessibleForFree: true,
+      keywords: [
+        "data center map",
+        "data centre map",
+        "data centers worldwide",
+        "data centres worldwide",
+        "colocation directory",
+        "PeeringDB",
+        "Equinix",
+        "Digital Realty",
+        "Internet exchange points",
+        "IXP",
+        "cloud regions",
+      ],
+      spatialCoverage: "Worldwide",
+      variableMeasured: [
+        "Facility name",
+        "Operator",
+        "Geographic coordinates (latitude, longitude)",
+        "Country and city",
+        "Power capacity (MW)",
+        "Space (sqft)",
+        "Uptime Institute tier",
+        "PUE",
+        "Networks (ASNs) present",
+        "Internet exchanges present",
+        "Cloud regions",
+      ],
+      distribution: [
+        {
+          "@type": "DataDownload",
+          encodingFormat: "application/json",
+          contentUrl: `${SITE}/api/v1/facilities`,
+          name: "Facilities API (JSON)",
+        },
+        {
+          "@type": "DataDownload",
+          encodingFormat: "text/csv",
+          contentUrl: `${SITE}/api/v1/facilities?format=csv`,
+          name: "Facilities API (CSV)",
+        },
+      ],
+      includedInDataCatalog: { "@id": `${SITE}/#website` },
+    },
   ],
 };
 

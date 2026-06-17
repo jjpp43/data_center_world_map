@@ -7,13 +7,14 @@ import { jsonForHtml } from "@/lib/json-ld";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Data center metros",
+  title: "Data Center Metros — Top 30 Worldwide Ranked",
   description:
-    "Every major data center metropolitan area worldwide — Northern Virginia, Frankfurt, Singapore, Tokyo, and 50+ more. Ranked by facility count.",
+    "Every major data center (data centre) metro worldwide — Northern Virginia, Frankfurt, Singapore, Tokyo, London, Amsterdam, and 24 more. Ranked by facility count.",
   alternates: { canonical: "/metros" },
   openGraph: {
-    title: "Data center metros · datacenters.world",
-    description: "Every major data-center metro worldwide, ranked by facility count.",
+    title: "Data Center Metros — Top 30 Worldwide Ranked",
+    description:
+      "Every major data center metro worldwide — Northern Virginia, Frankfurt, Singapore, Tokyo, and 26 more.",
     type: "website",
     url: "/metros",
   },

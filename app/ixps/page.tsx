@@ -7,13 +7,14 @@ import { jsonForHtml } from "@/lib/json-ld";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Internet exchange points (IXPs)",
+  title: "Internet Exchange Points (IXPs) — All 1,309 Worldwide",
   description:
-    "Every tracked Internet Exchange Point worldwide — DE-CIX, AMS-IX, LINX, IX.br, and 1,300+ more. Ranked by network membership count.",
+    "Every tracked Internet Exchange Point worldwide — DE-CIX, AMS-IX, LINX, IX.br, and 1,305 more. Ranked by network membership count.",
   alternates: { canonical: "/ixps" },
   openGraph: {
-    title: "Internet exchange points · datacenters.world",
-    description: "Every tracked IXP worldwide, ranked by member networks.",
+    title: "Internet Exchange Points (IXPs) — All 1,309 Worldwide",
+    description:
+      "Every tracked IXP worldwide — DE-CIX, AMS-IX, LINX, IX.br, and 1,305 more. Ranked by network membership count.",
     type: "website",
     url: "/ixps",
   },

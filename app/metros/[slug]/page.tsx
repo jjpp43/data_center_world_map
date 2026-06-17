@@ -22,20 +22,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!detail) return { title: "Metro not found" };
   const { metro, facilities, operator_ranking, total_power_mw } = detail;
   const country = countryName(metro.country);
-  const description = `${facilities.length.toLocaleString()} data center${
-    facilities.length === 1 ? "" : "s"
-  } in the ${metro.name} metro (${country}) operated by ${operator_ranking.length} distinct operator${
+  const count = facilities.length.toLocaleString();
+  const power = total_power_mw ? Math.round(total_power_mw).toLocaleString() : null;
+  const title = `${metro.name} Data Centers — ${count} Facilities, Top Operators`;
+  const description = `${count} data centers (data centres) in the ${metro.name} metro (${country}) — ${operator_ranking.length} operator${
     operator_ranking.length === 1 ? "" : "s"
-  }${
-    total_power_mw ? `, totaling ${Math.round(total_power_mw).toLocaleString()} MW of published power capacity` : ""
-  }. Full facility list with operators, network density, and specs.`;
+  }${power ? `, ${power} MW capacity` : ""}. Browse the map with networks, IXPs, and power.`;
   const canonical = `/metros/${slug}`;
   return {
-    title: `Data centers in ${metro.name}`,
+    title,
     description,
     alternates: { canonical },
-    openGraph: { title: `Data centers in ${metro.name}`, description, type: "website", url: canonical },
-    twitter: { card: "summary_large_image", title: `Data centers in ${metro.name}`, description },
+    openGraph: { title, description, type: "website", url: canonical },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 

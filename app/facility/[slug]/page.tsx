@@ -215,8 +215,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await loadFacilityMeta(slug);
   if (!data) return { title: "Facility not found" };
-  const op = data.operator ?? "Unknown operator";
-  const title = `${data.name} · ${op}`;
+  // Value-prop title: location + the four fact buckets users came for.
+  // Drops the "· {operator}" suffix that was eating SERP real estate;
+  // the operator is already in data.name for most rows.
+  const locale = data.city ? ` (${data.city})` : "";
+  const title = `${data.name}${locale} — Specs, Power, Networks, IXPs`;
   const description = buildSummary({
     name: data.name,
     operator: data.operator,

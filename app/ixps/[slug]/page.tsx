@@ -26,19 +26,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? `${ixp.city}${ixp.country ? `, ${countryName(ixp.country)}` : ""}`
     : ixp.country
     ? countryName(ixp.country)
-    : "the global internet";
-  const description = `${ixp.name} is an Internet Exchange Point serving ${where}, with ${
-    ixp.net_count != null ? ixp.net_count.toLocaleString() : "an unspecified number of"
-  } member networks across ${facilities.length} colocation facilit${
+    : "Global";
+  const memberCount = ixp.net_count != null ? ixp.net_count.toLocaleString() : null;
+  const facCount = facilities.length.toLocaleString();
+  const title = memberCount
+    ? `${ixp.name} — ${memberCount} Networks, ${facCount} Facilities`
+    : `${ixp.name} — Internet Exchange Point in ${where}`;
+  const description = `${ixp.name} is an Internet Exchange Point (IXP) in ${where}${
+    memberCount ? `, with ${memberCount} member networks` : ""
+  } across ${facCount} colocation facilit${
     facilities.length === 1 ? "y" : "ies"
-  }. Full member-facility list and peering data.`;
+  }. Browse the full member-facility map and peering data.`;
   const canonical = `/ixps/${slug}`;
   return {
-    title: `${ixp.name} — Internet Exchange Point`,
+    title,
     description,
     alternates: { canonical },
-    openGraph: { title: ixp.name, description, type: "website", url: canonical },
-    twitter: { card: "summary_large_image", title: ixp.name, description },
+    openGraph: { title, description, type: "website", url: canonical },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 

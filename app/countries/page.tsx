@@ -7,13 +7,14 @@ import { jsonForHtml } from "@/lib/json-ld";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Data centers by country",
+  title: "Data Centers by Country — All 148 Countries Ranked (Free Map)",
   description:
-    "Data center counts and capacity for every country with at least one tracked facility on datacenters.world. Ranked by facility count.",
+    "Data center (data centre) counts and capacity for every country with a tracked facility — 148 countries, 5,675 facilities. Browse the map ranked by count.",
   alternates: { canonical: "/countries" },
   openGraph: {
-    title: "Data centers by country · datacenters.world",
-    description: "Every tracked country, ranked by facility count.",
+    title: "Data Centers by Country — All 148 Countries Ranked",
+    description:
+      "Data center counts and capacity for every country — 148 countries, 5,675 facilities.",
     type: "website",
     url: "/countries",
   },

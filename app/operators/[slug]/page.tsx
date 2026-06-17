@@ -35,18 +35,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const op = await findOperatorBySlug(slug);
   if (!op) return { title: "Operator not found" };
-  const description = `${op.name} operates ${op.facility_count} data center${
-    op.facility_count === 1 ? "" : "s"
-  } across ${op.countries} countr${op.countries === 1 ? "y" : "ies"}${
-    op.total_power_mw ? ` totaling ${Math.round(op.total_power_mw).toLocaleString()} MW of published capacity` : ""
-  }. Full facility list with locations, power, and network presence.`;
+  const count = op.facility_count.toLocaleString();
+  const countryLabel = op.countries === 1 ? "Country" : "Countries";
+  const power = op.total_power_mw ? Math.round(op.total_power_mw).toLocaleString() : null;
+  // Numeric-lead title for CTR. Keeps count + scope in the first ~50 chars
+  // so the SERP snippet survives mobile truncation.
+  const title = `${op.name} Data Centers — All ${count} Facilities in ${op.countries} ${countryLabel}`;
+  const description = `${count} verified ${op.name} data centers (data centres) across ${op.countries} ${
+    op.countries === 1 ? "country" : "countries"
+  }${power ? `, ${power} MW combined capacity` : ""}. Browse the map with power, networks, IXPs, and source citations.`;
   const canonical = `/operators/${slug}`;
   return {
-    title: `${op.name} data centers`,
+    title,
     description,
     alternates: { canonical },
-    openGraph: { title: `${op.name} data centers`, description, type: "website", url: canonical },
-    twitter: { card: "summary_large_image", title: `${op.name} data centers`, description },
+    openGraph: { title, description, type: "website", url: canonical },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
