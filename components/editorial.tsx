@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { AccountPill } from "./AccountPill";
 
 export function Stat({
@@ -318,8 +319,13 @@ export function EditorialHeader({
 }: {
   active: "about" | "methodology" | "api";
 }) {
+  // Client-side Link nav (not <a href>) so the layout persists across
+  // about/methodology/api hops. Raw <a> would full-reload each click,
+  // which re-runs the inline theme bootstrap and races React hydration
+  // — the visible symptom was a light-mode flash after a couple of nav
+  // clicks.
   const link = (href: string, label: string, current: boolean) => (
-    <a
+    <Link
       href={href}
       className={`text-sm font-medium transition-colors ${
         current
@@ -328,19 +334,19 @@ export function EditorialHeader({
       }`}
     >
       {label}
-    </a>
+    </Link>
   );
 
   return (
     <header className="sticky top-0 z-10 border-b border-zinc-200/60 bg-white/75 backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-950/75">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-6 px-6 py-3.5">
         <div className="flex items-center gap-5">
-          <a
+          <Link
             href="/"
             className="flex items-center gap-1.5 rounded-full border border-zinc-200/60 bg-white/80 px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
           >
             <ArrowLeftIcon /> Map
-          </a>
+          </Link>
           <nav className="flex items-center gap-5">
             {link("/about", "About", active === "about")}
             {link("/methodology", "Methodology", active === "methodology")}
@@ -348,9 +354,9 @@ export function EditorialHeader({
           </nav>
         </div>
         <div className="flex items-center gap-5">
-          <a href="/" className="text-sm font-semibold tracking-tight">
+          <Link href="/" className="text-sm font-semibold tracking-tight">
             datacenters<span className="text-blue-500 dark:text-blue-400">.world</span>
-          </a>
+          </Link>
           <AccountPill />
         </div>
       </div>
