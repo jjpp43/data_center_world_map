@@ -1,10 +1,10 @@
 # Data Center World Map — Project Context
 
-Public map of every known data center on Earth — single Mapbox view with 2D ↔ 3D toggle. Solo project by Junna Park. Default view: US, dark, globe.
+Public map of every known data center on Earth — single Mapbox view with 2D ↔ 3D toggle. Solo project by Junna Park. Default view: US, dark, globe. **Canonical host is `www.datacenters.world`** — apex 308s to it (matters for raw curl: needs `-L --post308`, or just hit `www.` directly).
 
 ## Current status
 
-Phases 1–14 shipped. Migrations `0001–0017` applied. No user submissions — curated/scraped dataset only.
+Phases 1–14 shipped. Migrations `0001–0017` applied. MCP smoke-tested green. No user submissions — curated/scraped dataset only.
 
 - **5,675** facilities · **34,732** networks · **1,309** IXPs · **176** cloud regions · **57,206** net↔fac · **4,134** ix↔fac
 - Sources: PeeringDB 5,256 · OSM-only 95 · operator pages 230 · Iron Mountain 4+19 · Google 58 · Meta 32. Microsoft deferred (region-grain only).
@@ -21,7 +21,7 @@ Phases 1–14 shipped. Migrations `0001–0017` applied. No user submissions —
 | Hosting | Vercel, edge-cached, CSP/HSTS/X-Frame in `next.config.ts` |
 | Scrapers | Separate Node 22 subproject. Playwright for Vercel-checkpoint sites |
 | Analytics | PostHog Cloud, client-only, proxied via `/ingest/*` |
-| AI access | MCP server at `/api/mcp` via `mcp-handler` + `@modelcontextprotocol/sdk` + `zod` |
+| AI access | MCP at `/api/mcp` via `mcp-handler` + `@modelcontextprotocol/sdk` + `zod` |
 | Security | `npm run check:security` (also `prebuild`) |
 
 ## Data model
@@ -35,13 +35,15 @@ cloud_regions (176)           ← separate table, separate map layer
 api_keys, subscriptions, api_key_usage_daily   ← auth-scoped via RLS
 ```
 
-**Dedup primitive**: `match_data_center(operator, name, lat, lng, radius_m)` — exact `(operator, name)` OR PostGIS `ST_DWithin`. **Warning**: spatial branch matches *across operators* — OK for first ingest, **wrong** for orphan/Iron Mountain/hyperscale canonicalization. Those use a 3-tier strict matcher (exact name → `operator ILIKE 'X%' AND name ILIKE 'Y%'` → operator+code regex, no spatial). See `scripts/canonicalize-orphans.ts` and `scripts/ingest-*.ts`.
+**Dedup primitive**: `match_data_center(operator, name, lat, lng, radius_m)` — exact `(operator, name)` OR PostGIS `ST_DWithin`. **Warning**: spatial branch matches *across operators* — OK for first ingest, **wrong** for orphan/Iron Mountain/hyperscale canonicalization. Those use a 3-tier strict matcher (exact name → operator+name prefix → operator+code regex, no spatial). See `scripts/canonicalize-orphans.ts` and `scripts/ingest-*.ts`.
 
 ## UI
 
 Full-bleed map (desktop). Below `md`: `<MobileHome>` search-first list (no interactive mobile map by design). Dark default, light theme via `dcw-theme` cookie. Favicon: `app/icon.png` (512×512 🚀, auto-emitted by Next App Router).
 
 **Theme**: inline pre-paint script in `app/layout.tsx` toggles `.dark` on `<html>` before hydration. Home page keeps `classList` in sync after hydration. Server pages don't read the cookie — that's what enables ISR.
+
+**Hydration invariant**: `<html>` has `suppressHydrationWarning` so React 19 doesn't strip the bootstrap-added `.dark` class as a SSR/client mismatch. Editorial nav (`components/editorial.tsx`'s `EditorialHeader`) uses `next/link` `<Link>` — **not** raw `<a href>`. Raw `<a>` caused full reloads that re-ran the bootstrap and raced hydration → light-mode flash on second nav click.
 
 **SEO (homepage)**: Mapbox canvas has no crawlable text, so `app/page.tsx` includes an `sr-only` `<h1>` + paragraph with both "data centers" and "data centres" spellings. Invisible to users, fully crawlable. Metadata `keywords` + description in `app/layout.tsx` also include British spellings. Don't remove.
 
@@ -53,21 +55,15 @@ Full-bleed map (desktop). Below `md`: `<MobileHome>` search-first list (no inter
 - **Marker click** → 400px right-slide `FacilityPanel` → `/facility/[slug]`.
 - **Cloud region click** → Mapbox popup.
 
-**Map light style** is tinted at runtime by `tintLightBase()` in `components/Map.tsx` — `background` + `land*` fills overridden to `#e7eaf0` so the basemap reads distinct from white overlays. Dark style untouched.
-
-**Overlays** all use `bg-white/95` + `border-zinc-300/80` in light mode.
+**Map light style** is tinted at runtime by `tintLightBase()` in `components/Map.tsx` — `background` + `land*` fills overridden to `#e7eaf0` so the basemap reads distinct from white overlays. Dark style untouched. **Overlays** all use `bg-white/95` + `border-zinc-300/80` in light mode.
 
 **Marker density scaling**: radius +0–8px from `network_count`, glow opacity 0.35→0.92, `circle-sort-key: network_count`. Cluster glow scales by `clusterProperties.sum_networks`.
 
-**Cloud colors**: AWS `#ff9d2e` · Google (wire value `gcp`) `#a855f7` · Azure `#3aa0e6` · Oracle `#ff5757`. **Display label is "Google"** in the UI/docs/Dataset schema; the wire value stays `gcp` because it's the database key + API param + URL state + MCP enum.
+**Cloud colors**: AWS `#ff9d2e` · Google (wire value `gcp`) `#a855f7` · Azure `#3aa0e6` · Oracle `#ff5757`. **Display label is "Google"** in UI/docs/Dataset schema; the wire value stays `gcp` because it's the DB key + API param + URL state + MCP enum.
 
 ## Editorial design system
 
-`/about`, `/methodology`, `/api`, `/operators/`, `/countries/`, `/insights/` share vocabulary. Primitives in `components/editorial.tsx`: `<Stat>`, `<MatrixRow>`, `<Source>`, `<Gap>`, `<RankedRow>`, `<EditorialHeader>`.
-
-- Floating-glass cards (`backdrop-blur-md` + semi-transparent + subtle indigo glow)
-- Geist Mono numerics
-- **Color semantics**: indigo = decorative/inputs · emerald = live/verified/outputs · blue = interactive · amber = pending/incomplete
+`/about`, `/methodology`, `/api`, `/operators/`, `/countries/`, `/insights/` share vocabulary. Primitives in `components/editorial.tsx`: `<Stat>`, `<MatrixRow>`, `<Source>`, `<Gap>`, `<RankedRow>`, `<EditorialHeader>`. Floating-glass cards (`backdrop-blur-md` + semi-transparent + indigo glow), Geist Mono numerics. **Color semantics**: indigo = decorative/inputs · emerald = live/verified/outputs · blue = interactive · amber = pending/incomplete.
 
 ## URL state
 
@@ -94,19 +90,19 @@ Helpers in `lib/api.ts`: `jsonResponse`, `csvResponse`, `errorResponse`, `intern
 
 **Auth gate** (`proxy.ts`, matches `/api/v1/:path*` + `/api/mcp`): no Bearer → 401. Valid Bearer → `validate_and_charge_api_key` RPC, sets `X-RateLimit-{Tier,Limit,Remaining}`. Over quota → 429. **Per-instance negative-token cache (60s TTL, 1024 entry cap)** short-circuits known-invalid hashes so token-spray attacks don't amplify into Supabase egress. Web Crypto SHA-256 → works in Edge or Node.
 
-**Tiers (monthly)**: Free 1,000 · Pro 10,000 ($9.99) · Team 50,000 ($39.99) · Enterprise 5M. Both paid tiers ship 3-day trial. **Sync invariant**: quotas live in `lib/api-keys.ts` AND migration 0012/0017's `validate_and_charge_api_key` CASE — must match.
+**Tiers (monthly)**: Free 1,000 · Pro 10,000 ($9.99) · Team 50,000 ($39.99) · Enterprise 5M. Both paid tiers ship 3-day trial. **Sync invariant**: quotas live in `lib/api-keys.ts` AND `validate_and_charge_api_key` CASE (migrations 0012/0017) — must match.
 
-**MCP client config** (Claude Desktop / Cursor / Claude Code): `{"mcpServers":{"datacenters-world":{"url":"https://datacenters.world/api/mcp","headers":{"Authorization":"Bearer dcw_…"}}}}`. Each tool call = 1 quota charge (no batching). Tools live in `app/api/[transport]/route.ts`; basePath `/api`, SSE disabled (Mar-2025 spec deprecated it).
+**MCP client config** (Claude Desktop / Cursor / Claude Code): `{"mcpServers":{"datacenters-world":{"url":"https://www.datacenters.world/api/mcp","headers":{"Authorization":"Bearer dcw_…"}}}}`. Each tool call = 1 quota charge today. Tools live in `app/api/[transport]/route.ts`; basePath `/api`, SSE disabled (Mar-2025 spec deprecated it).
 
-**Docs at `/api`**: chapter-style with sticky sidebar, scroll-spy (IntersectionObserver), JS/Python/cURL tabs, response field tables. Section 5 is MCP (client config + tool table). Files: `app/api/{page,ApiNav,CodeTabs}.tsx`. Dashboard mirrors a single MCP config snippet in "Use from AI tools (MCP)".
+**Docs at `/api`**: chapter-style with sticky sidebar, scroll-spy (IntersectionObserver), JS/Python/cURL tabs, response field tables. Section 5 is MCP (client config + tool table). Files: `app/api/{page,ApiNav,CodeTabs}.tsx`. CodeTabs uses an icon button (clipboard / check) — not a "Copy" text label. Dashboard mirrors a single MCP config snippet in "Use from AI tools (MCP)".
 
 ## Project layout
 
 ```
 app/
 ├── page.tsx                          map (client) + sr-only SEO H1/p + <MobileHome>
-├── layout.tsx                        Geist + WebSite/Organization/Dataset JSON-LD + inline theme + SessionProvider + PostHog
-├── icon.png                          512x512 favicon (rocket)
+├── layout.tsx                        Geist + WebSite/Organization/Dataset JSON-LD + inline theme + SessionProvider + PostHog. <html suppressHydrationWarning>
+├── icon.png                          512×512 favicon (🚀)
 ├── facility/[slug]/page.tsx          SSR detail (ISR 7d, unstable_cache per slug); FAQ + Place JSON-LD
 ├── about, methodology, api/...       editorial (ISR)
 ├── api/v1/{facilities,operators,countries,cloud-regions}/route.ts
@@ -132,7 +128,6 @@ lib/  supabase (server/admin/browser), supabase-server (cookie-aware),
       api-data (cached loaders shared by /api/v1 + /api/mcp),
       json-ld (jsonForHtml — escape `<` before injecting),
       types, url-state, countries, operators, *-data, density, insights-data
-      → all heavy loaders wrapped in unstable_cache (24h, tags data-centers/networks/ixes)
 
 scripts/  ingest, ingest-{ironmountain,google,meta}, canonicalize-orphans,
           build-geojson (prebuild), _trigger-rebuild, audit-quality,
@@ -147,11 +142,9 @@ scrapers/                             Node 22 subproject
 
 Supabase egress is the dominant cost constraint. Three layers:
 
-**1. Map data → static-baked.** `scripts/build-geojson.ts` runs from `prebuild`, writes `public/{facilities,cloud-regions}.geojson` (~1.9 MB + 41 KB). Homepage fetches CDN-only. Runtime function never touches Supabase for map data. Headers: `public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800`.
-
-**2. SSR pages → ISR.** Per-slug pages (`/facility`, `/operators`, `/countries`, `/metros`, `/ixps`, `/networks`, `/density`) use `revalidate = 604800` (7d). Index pages 3600–86400. Sitemap 86400. **Invariant**: no `getTheme()`/`cookies()` in server pages — that silently disables `revalidate`.
-
-**3. Data fetches → matviews + `unstable_cache`.** Aggregations read from `country_summary`, `operator_summary`, `facility_density` (single 148-row read instead of paginated raw scans). Every loader in `lib/*-data.ts` + `lib/operators.ts` + `lib/density.ts` + `lib/api-data.ts` wrapped in `unstable_cache(fn, key, { revalidate: 86400, tags: [...] })`. **Every per-slug page render, every `/api/v1/*` request, and every `/api/mcp` tool call hits the same cached loaders** — one Supabase pass per (loader, args) per 24h globally. Tags: `data-centers`, `networks`, `ixes`.
+1. **Map data → static-baked.** `scripts/build-geojson.ts` runs from `prebuild`, writes `public/{facilities,cloud-regions}.geojson` (~1.9 MB + 41 KB). Runtime function never touches Supabase for map data. Headers: `public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800`.
+2. **SSR pages → ISR.** Per-slug pages (`/facility`, `/operators`, `/countries`, `/metros`, `/ixps`, `/networks`, `/density`) `revalidate = 604800` (7d). Index pages 3600–86400. Sitemap 86400. **Invariant**: no `getTheme()`/`cookies()` in server pages — that silently disables `revalidate`.
+3. **Data fetches → matviews + `unstable_cache`.** Aggregations read from `country_summary`, `operator_summary`, `facility_density` (single-row reads, not paginated scans). Every loader in `lib/*-data.ts` + `lib/operators.ts` + `lib/density.ts` + `lib/api-data.ts` wrapped in `unstable_cache(fn, key, { revalidate: 86400, tags: [...] })`. **Every per-slug page render, /api/v1/* request, and /api/mcp tool call** shares the same cache. One Supabase pass per (loader, args) per 24h globally. Tags: `data-centers`, `networks`, `ixes`.
 
 Matviews refreshed by `refresh_summary_views()` RPC (concurrent). Ingest scripts call it before `triggerRebuild()` after `--apply`.
 
@@ -161,15 +154,14 @@ Matviews refreshed by `refresh_summary_views()` RPC (concurrent). Ingest scripts
 
 ## Migrations summary
 
-`0001–0006` schema + PostGIS + RLS · `0007` api_keys + anon throttle · `0008` subscriptions · `0009` monthly quotas · `0010` drop anon tier · `0011` `api_key_usage_daily` · `0012` Free 500→1,000 · `0013` canonicalize 8 operator variants · `0014` backfill 34 NULL operators · `0015` anchor quota cycle (signup anniversary free / billing period paid) · `0016` matviews + `refresh_summary_views()` · `0017` `#variable_conflict use_column` fix for `validate_and_charge_api_key` (the OUT column `key_id` collided with `api_key_usage_daily.key_id` in the INSERT/ON CONFLICT — broke every API + MCP call with silent 401).
+`0001–0006` schema + PostGIS + RLS · `0007` api_keys + anon throttle · `0008` subscriptions · `0009` monthly quotas · `0010` drop anon tier · `0011` `api_key_usage_daily` · `0012` Free 500→1,000 · `0013` canonicalize 8 operator variants · `0014` backfill 34 NULL operators · `0015` anchor quota cycle (signup-anniversary free / billing-period paid) · `0016` matviews + `refresh_summary_views()` · `0017` `#variable_conflict use_column` for `validate_and_charge_api_key` — the OUT col `key_id` collided with `api_key_usage_daily.key_id` in INSERT/ON CONFLICT, broke every API + MCP call with silent 401 until applied.
 
 ## Build phases (history)
 
-1–11 ✅: MVP → DB+PeeringDB → OSM/cloud regions/nets/IXes → operator pages → AEO/SEO (5) → public API+docs (5a) → monetization (5b: Polar.sh) → orphan canonicalization (9) → pivots (10: metros/ixps/networks/density/insights) → hyperscale buildings (11: Google+58, Meta+32). **Polar over Stripe**: KR-bank payout + merchant-of-record VAT. Fees ~4% + 40¢.
-
-12 ✅ MCP server at `/api/mcp` — Streamable HTTP, 5 tools, shares auth + quota path with REST. Single Supabase-dedup cache shared with REST via `lib/api-data.ts`.
-13 ✅ SEO/AEO pass — CTR-optimized title/description templates across per-slug + index pages (numeric lead + dual spelling), Dataset schema on homepage @graph for Google rich results + answer-engine citations.
-14 ✅ Security hardening — see Security section invariants.
+1–11 ✅: MVP → DB+PeeringDB → OSM/cloud regions/nets/IXes → operator pages → AEO/SEO (5) → public API+docs (5a) → monetization (5b: Polar.sh — KR-bank payout + MoR VAT; fees ~4% + 40¢) → orphan canonicalization (9) → pivots (10: metros/ixps/networks/density/insights) → hyperscale buildings (11: Google+58, Meta+32).
+12 ✅ MCP at `/api/mcp` — Streamable HTTP, 5 tools, shares auth + quota + cache with REST via `lib/api-data.ts`.
+13 ✅ SEO/AEO — CTR-tuned title/description templates across per-slug + index pages (numeric lead + dual spelling) + Dataset schema on homepage for Google rich results + answer-engine citations.
+14 ✅ Security hardening + hydration fix — see Security invariants below.
 
 ## Workflow
 
@@ -195,15 +187,14 @@ Ingest order: cloud regions → PeeringDB facilities → OSM → operator pages 
 - **No try/catch** around code that can't fail. Validate only at boundaries.
 - **Server Components by default.** `'use client'` only when needed.
 - **No event handlers in Server Component props** (Next 16 enforces). Extract a Client Component.
-- **No co-author lines in commits.**
-- **No emojis in code** unless asked.
+- **No co-author lines in commits. No emojis in code** unless asked.
 
 ## Mapbox notes (v3.8+)
 
-- `setProjection('globe'|'mercator')` — no reinit
-- After `setStyle()`, custom layers re-added on `'style.load'`. Use a `dataRef` (closures capture stale data).
+- `setProjection('globe'|'mercator')` — no reinit.
+- After `setStyle()`, re-add custom layers on `'style.load'`. Use a `dataRef` (closures capture stale data).
 - Skip initial `setStyle` on mount (`lastStyleRef` pattern) — constructor already set it; redundant call races style.load → flicker.
-- Glow layers added *before* center layers → render behind.
+- Glow layers added *before* center layers render behind.
 - `circle-sort-key` (layout): higher = on top, within layer.
 - `clusterProperties`: `{ sum_networks: ["+", ["coalesce", ["get", "network_count"], 0]] }`
 - **Expression gotcha**: `["zoom"]` is only a top-level input to `interpolate`/`step`. For zoom+property scaling, nest interpolates.
@@ -216,28 +207,28 @@ Ingest order: cloud regions → PeeringDB facilities → OSM → operator pages 
 NEXT_PUBLIC_MAPBOX_TOKEN=pk....
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...           # ingest + Polar webhook only — see check-security allowlist
+SUPABASE_SERVICE_ROLE_KEY=...           # ingest + Polar webhook only — check-security allowlist
 NEXT_PUBLIC_SITE_URL=https://datacenters.world
 
 # Monetization
 POLAR_ACCESS_TOKEN=polar_oat_...
 POLAR_WEBHOOK_SECRET=whsec_...
-POLAR_PRO_PRODUCT_ID=...                # if unset, /dashboard shows "Coming soon"
+POLAR_PRO_PRODUCT_ID=...                # unset → /dashboard shows "Coming soon"
 POLAR_TEAM_PRODUCT_ID=...
 POLAR_API_BASE=https://api.polar.sh     # optional (sandbox URL for testing)
 
 # Cache / rebuild orchestration
 VERCEL_DEPLOY_HOOK_URL=...              # ingest + cron POST here. Unset → triggerRebuild no-op.
-CRON_SECRET=...                         # gates /api/cron/refresh-geojson. Unset → 500 (fails closed).
+CRON_SECRET=...                         # /api/cron/refresh-geojson. Unset → 500 (fails closed).
 
 # Analytics (optional)
 NEXT_PUBLIC_POSTHOG_KEY=phc_...
 NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 ```
 
-GitHub repo secret (for backup workflow only): `SUPABASE_DB_URL` = session-pooler URL.
+GitHub repo secret (backup workflow only): `SUPABASE_DB_URL` = session-pooler URL.
 
-**PostHog wiring** (`components/PostHog.tsx`): client-only. Identifies signed-in users via supabaseBrowser `onAuthStateChange`. Autocapture on; one named event: `key_generated`. `person_profiles: "identified_only"` to stay under free-tier event quota. **Reverse proxy** `/ingest/*` → `us-assets.i.posthog.com` + `us.i.posthog.com` so ad-blockers see same-origin.
+**PostHog wiring** (`components/PostHog.tsx`): client-only. Identifies on supabaseBrowser `onAuthStateChange`. Autocapture on; one named event: `key_generated`. `person_profiles: "identified_only"` to stay under free-tier event quota. **Reverse proxy** `/ingest/*` → `us-assets.i.posthog.com` + `us.i.posthog.com` so ad-blockers see same-origin.
 
 ## Security
 
@@ -246,36 +237,33 @@ RLS on every public table (public-read on data; auth-scoped via `auth.uid()` on 
 `scripts/check-security.mjs` (prebuild) blocks: `supabaseAdmin`/`SUPABASE_SERVICE_ROLE_KEY` outside allowlist (`lib/supabase.ts`, `scripts/`, `app/api/webhooks/`), any `NEXT_PUBLIC_*SERVICE_ROLE*`, any non-extension public table without RLS.
 
 **Hardening invariants (don't regress)**:
-- **JSON-LD**: always use `jsonForHtml()` from `lib/json-ld.ts` when embedding JSON in a `<script>` — escapes `<` so scraped values containing `</script>` can't break out.
-- **CSV exports**: `escapeCsvCell` in `lib/api.ts` prefixes cells starting with `=+-@\t\r` with a tick so Excel/Sheets don't execute scraped data as formulas.
+- **JSON-LD**: always use `jsonForHtml()` from `lib/json-ld.ts` for `<script>`-embedded JSON — escapes `<` so scraped values containing `</script>` can't break out.
+- **CSV exports**: `escapeCsvCell` in `lib/api.ts` prefixes cells starting with `=+-@\t\r` with a tick (Excel/Sheets formula execution).
 - **`/api/v1/*` Cache-Control is `private`** — `public` would let the CDN cache per-user `X-RateLimit-*` headers across keys.
 - **Error sanitization**: route handlers catch RPC errors → `internalError(scope, e)` from `lib/api.ts`. Never echo `error.message` directly (leaks PostgREST internals like table/column names).
 - **Slug shape gate** on `/api/v1/facilities/[slug]`: regex `[a-z0-9-]{1,100}` rejects junk before any `unstable_cache` round-trip / Supabase hit.
-- **Open-redirect guard** in `/auth/callback`: `safeNext()` rejects anything not starting with `/`, and rejects `//` / `/\` to block protocol-relative + path-traversal sneaks.
-- **Cron auth fails closed**: if `CRON_SECRET` is unset, `/api/cron/refresh-geojson` returns 500. Compare uses constant-time loop.
+- **Open-redirect guard** in `/auth/callback`: `safeNext()` rejects anything not starting with `/`, and rejects `//` / `/\`.
+- **Cron auth fails closed**: unset `CRON_SECRET` → 500. Compare uses constant-time loop.
 - **Negative-token cache** in `proxy.ts` (60s TTL, 1024 cap) short-circuits known-invalid Bearer hashes.
+- **`<html suppressHydrationWarning>`** + editorial nav uses `next/link` `<Link>` (not raw `<a>`). Without both, React 19 strips the bootstrap `.dark` class on second nav.
 
 ## First-time deploy
 
-1. Apply migrations `0001–0017`
-2. Enable GitHub provider in Supabase Auth
-3. Register GitHub OAuth app → callback at **Supabase's** `https://<ref>.supabase.co/auth/v1/callback` (not our `/auth/callback`)
-4. Supabase Auth → URL Configuration: Site URL = prod, allowlist `localhost:3000/**` + `datacenters.world/**`
-5. Set `NEXT_PUBLIC_SITE_URL` in Vercel
-6. Create Pro + Team products in Polar (3-day trial, no card)
-7. Set Polar env vars + redeploy
-8. Register Polar webhook → `/api/webhooks/polar`, format=**Raw**, events `subscription.{created,updated,active,canceled,revoked}`
-9. Vercel → Git → Deploy Hooks (main) → set as `VERCEL_DEPLOY_HOOK_URL`. Set `CRON_SECRET` (32 random bytes). Redeploy.
-10. GitHub repo → Secrets → `SUPABASE_DB_URL` (session-pooler URL) for backup workflow.
+1. Apply migrations `0001–0017`.
+2. Enable GitHub provider in Supabase Auth; register GitHub OAuth app with callback at **Supabase's** `https://<ref>.supabase.co/auth/v1/callback` (not our `/auth/callback`).
+3. Supabase Auth → URL Configuration: Site URL = prod, allowlist `localhost:3000/**` + `datacenters.world/**`.
+4. Set `NEXT_PUBLIC_SITE_URL` in Vercel; create Pro + Team products in Polar (3-day trial, no card); set Polar env vars + redeploy.
+5. Register Polar webhook → `/api/webhooks/polar`, format=**Raw**, events `subscription.{created,updated,active,canceled,revoked}`.
+6. Vercel → Git → Deploy Hooks (main) → set as `VERCEL_DEPLOY_HOOK_URL`. Set `CRON_SECRET` (32 random bytes). Redeploy.
+7. GitHub repo → Secrets → `SUPABASE_DB_URL` (session-pooler URL) for backup workflow.
 
 ## Out of scope / known limitations
 
 - PeeringDB spec gap: tier/year_built ≈ 0%. Operator pages closed power/space partially.
-- Microsoft Azure buildings deferred: only region-grain published.
+- Microsoft Azure buildings deferred (only region-grain published).
 - Coverage gap vs DataCenterMap (~2,600 US missing): PeeringDB scope is interconnect-relevant only.
 - No interactive mobile map (intentional — `<MobileHome>` list fallback).
-- No user submissions (intentional).
-- No photos / footprints populated (columns exist).
+- No user submissions (intentional). No photos / footprints populated (columns exist).
 - Photorealistic 3D rejected — stylized only.
 - datacentermap.com / Cloudscene scraping forbidden by ToS.
 - CSP `script-src 'unsafe-inline'` retained — nonces would force dynamic rendering and break ISR. JSON-LD XSS is closed at the injection site via `jsonForHtml()`, so `'unsafe-inline'` is now defense-in-depth, not load-bearing.
@@ -291,10 +279,10 @@ RLS on every public table (public-read on data; auth-scoped via `auth.uid()` on 
 
 ## Open improvements
 
-**MCP follow-ups**
-- More tools: `find_facilities_near(lat, lng, radius_km)`, `list_ixps(country?, min_facilities?)`, `get_network(asn)`. Each pairs naturally with an existing tool.
-- Skip quota charging for protocol-overhead JSON-RPC methods (`initialize`, `tools/list`, `notifications/*`) — ~2-3 wasted charges per chat session today. ~20 lines in `proxy.ts` to inspect the JSON body.
-- Submit to MCP directories (Anthropic catalog, smithery.ai) once tools are stable.
+**MCP follow-ups** (next session)
+- Skip quota charging for protocol-overhead JSON-RPC methods (`initialize`, `tools/list`, `notifications/*`). Today's smoke test consumed 3/1000 free quota for one logical session. ~20 lines in `proxy.ts` to inspect the JSON body before charging.
+- More tools: `find_facilities_near(lat, lng, radius_km)` (PostGIS `ST_DWithin`, infra already exists), `list_ixps(country?, min_facilities?)`, `get_network(asn)`.
+- Submit to MCP directories (Anthropic catalog, smithery.ai) once toolset is wider.
 
 **Performance / cost**
 - Vector tiles (.mvt) for map data — 5–10× smaller payload, but needs `pg_tileserv` or build-time tile gen.
