@@ -801,7 +801,7 @@ function Section({
           <span className="font-mono text-5xl font-light leading-none tabular-nums text-indigo-500 dark:text-indigo-400">
             {String(number).padStart(2, "0")}
           </span>
-          <h2 className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-zinc-900 dark:text-zinc-50">
+          <h2 className="font-mono text-xl font-semibold uppercase tracking-[0.12em] text-zinc-900 dark:text-zinc-50">
             {title}
           </h2>
         </div>
