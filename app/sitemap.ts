@@ -78,6 +78,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE}/methodology`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE}/api`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE}/launch/mcp`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE}/operators`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE}/countries`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE}/metros`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },

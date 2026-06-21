@@ -66,6 +66,53 @@ async function rpc<T>(fn: string, body: Record<string, unknown>): Promise<T | nu
   return res.json() as Promise<T>;
 }
 
+// Streamable-HTTP MCP sessions issue several JSON-RPC POSTs that aren't
+// tool calls — protocol handshake, capability discovery, and fire-and-forget
+// notifications. Charging quota for those burns Free-tier credits before the
+// agent does any useful work, so we still validate the key (to gate access
+// and emit X-RateLimit-* headers) but pass p_charge=false to the RPC.
+const MCP_NO_CHARGE_METHODS = new Set([
+  "initialize",
+  "ping",
+  "tools/list",
+  "prompts/list",
+  "resources/list",
+  "resources/templates/list",
+]);
+
+function isNoChargeMcpMethod(method: unknown): boolean {
+  if (typeof method !== "string") return false;
+  if (method.startsWith("notifications/")) return true;
+  return MCP_NO_CHARGE_METHODS.has(method);
+}
+
+async function shouldChargeMcpRequest(req: NextRequest): Promise<boolean> {
+  // Streamable HTTP carries JSON-RPC only in POST bodies. GET/DELETE land
+  // here for stream lifecycle (SSE disabled in our server) — never billable.
+  if (req.method !== "POST") return false;
+
+  let body: unknown;
+  try {
+    body = await req.clone().json();
+  } catch {
+    return true;
+  }
+
+  if (Array.isArray(body)) {
+    return body.some((entry) => {
+      const method =
+        typeof entry === "object" && entry !== null
+          ? (entry as { method?: unknown }).method
+          : undefined;
+      return !isNoChargeMcpMethod(method);
+    });
+  }
+  if (typeof body === "object" && body !== null) {
+    return !isNoChargeMcpMethod((body as { method?: unknown }).method);
+  }
+  return true;
+}
+
 function applyRateHeaders(
   res: NextResponse,
   remaining: number,
@@ -110,7 +157,12 @@ export async function proxy(req: NextRequest) {
   if (isKnownInvalid(hash)) {
     return jsonError(401, "Invalid or revoked API key");
   }
-  const rows = await rpc<ValidateRow[]>("validate_and_charge_api_key", { p_hash: hash });
+  const isMcp = req.nextUrl.pathname === "/api/mcp";
+  const charge = isMcp ? await shouldChargeMcpRequest(req) : true;
+  const rows = await rpc<ValidateRow[]>("validate_and_charge_api_key", {
+    p_hash: hash,
+    p_charge: charge,
+  });
   const row = rows?.[0];
   if (!row) {
     rememberInvalid(hash);
