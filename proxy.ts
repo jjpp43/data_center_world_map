@@ -86,31 +86,66 @@ function isNoChargeMcpMethod(method: unknown): boolean {
   return MCP_NO_CHARGE_METHODS.has(method);
 }
 
-async function shouldChargeMcpRequest(req: NextRequest): Promise<boolean> {
-  // Streamable HTTP carries JSON-RPC only in POST bodies. GET/DELETE land
-  // here for stream lifecycle (SSE disabled in our server) — never billable.
-  if (req.method !== "POST") return false;
+type McpClassification =
+  | { kind: "charge" }
+  | { kind: "skip" }
+  | { kind: "reject"; status: number; message: string };
+
+function methodOf(entry: unknown): unknown {
+  if (typeof entry !== "object" || entry === null) return undefined;
+  return (entry as { method?: unknown }).method;
+}
+
+// Pre-validate /api/mcp POSTs before auth/charging. Anything that can't
+// reach a tool — wrong Accept header, unparseable body, missing JSON-RPC
+// method — is rejected directly without touching Supabase. The handler
+// would otherwise 400/406 *after* proxy.ts had already charged the key.
+async function classifyMcpRequest(req: NextRequest): Promise<McpClassification> {
+  // GET/DELETE on the MCP route are stream lifecycle (SSE disabled here),
+  // never carry JSON-RPC bodies, never billable.
+  if (req.method !== "POST") return { kind: "skip" };
+
+  const accept = req.headers.get("accept") ?? "";
+  if (!accept.includes("application/json") || !accept.includes("text/event-stream")) {
+    return {
+      kind: "reject",
+      status: 406,
+      message:
+        "MCP requests must include 'application/json, text/event-stream' in Accept",
+    };
+  }
 
   let body: unknown;
   try {
     body = await req.clone().json();
   } catch {
-    return true;
+    return { kind: "reject", status: 400, message: "Request body must be valid JSON" };
   }
 
   if (Array.isArray(body)) {
-    return body.some((entry) => {
-      const method =
-        typeof entry === "object" && entry !== null
-          ? (entry as { method?: unknown }).method
-          : undefined;
-      return !isNoChargeMcpMethod(method);
-    });
+    for (const entry of body) {
+      if (typeof methodOf(entry) !== "string") {
+        return {
+          kind: "reject",
+          status: 400,
+          message: "JSON-RPC batch entry missing method string",
+        };
+      }
+    }
+    return body.some((e) => !isNoChargeMcpMethod(methodOf(e)))
+      ? { kind: "charge" }
+      : { kind: "skip" };
   }
-  if (typeof body === "object" && body !== null) {
-    return !isNoChargeMcpMethod((body as { method?: unknown }).method);
+
+  const method = methodOf(body);
+  if (typeof method !== "string") {
+    return {
+      kind: "reject",
+      status: 400,
+      message: "JSON-RPC request missing method string",
+    };
   }
-  return true;
+  return isNoChargeMcpMethod(method) ? { kind: "skip" } : { kind: "charge" };
 }
 
 function applyRateHeaders(
@@ -142,6 +177,15 @@ export async function proxy(req: NextRequest) {
   // Preflight still bypasses everything — route handlers reply OPTIONS.
   if (req.method === "OPTIONS") return NextResponse.next();
 
+  const isMcp = req.nextUrl.pathname === "/api/mcp";
+  let mcp: McpClassification | null = null;
+  if (isMcp) {
+    mcp = await classifyMcpRequest(req);
+    if (mcp.kind === "reject") {
+      return jsonError(mcp.status, mcp.message);
+    }
+  }
+
   const auth = req.headers.get("authorization");
   const bearer = auth?.toLowerCase().startsWith("bearer ")
     ? auth.slice(7).trim()
@@ -157,8 +201,7 @@ export async function proxy(req: NextRequest) {
   if (isKnownInvalid(hash)) {
     return jsonError(401, "Invalid or revoked API key");
   }
-  const isMcp = req.nextUrl.pathname === "/api/mcp";
-  const charge = isMcp ? await shouldChargeMcpRequest(req) : true;
+  const charge = isMcp ? mcp!.kind === "charge" : true;
   const rows = await rpc<ValidateRow[]>("validate_and_charge_api_key", {
     p_hash: hash,
     p_charge: charge,

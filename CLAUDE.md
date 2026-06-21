@@ -245,6 +245,7 @@ RLS on every public table (public-read on data; auth-scoped via `auth.uid()` on 
 - **Open-redirect guard** in `/auth/callback`: `safeNext()` rejects anything not starting with `/`, and rejects `//` / `/\`.
 - **Cron auth fails closed**: unset `CRON_SECRET` → 500. Compare uses constant-time loop.
 - **Negative-token cache** in `proxy.ts` (60s TTL, 1024 cap) short-circuits known-invalid Bearer hashes.
+- **MCP pre-validation**: `classifyMcpRequest` in `proxy.ts` rejects malformed `/api/mcp` POSTs (bad/missing `Accept`, unparseable body, missing JSON-RPC `method`) with 400/406 *before* auth and *before* any Supabase call. Stops bad clients from silently burning the key owner's quota on requests that would 4xx at the handler anyway.
 - **`<html suppressHydrationWarning>`** + editorial nav uses `next/link` `<Link>` (not raw `<a>`). Without both, React 19 strips the bootstrap `.dark` class on second nav.
 
 ## First-time deploy
