@@ -6,6 +6,17 @@ import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
 import { InfoToggle } from "@/components/InfoToggle";
 import { jsonForHtml } from "@/lib/json-ld";
+import { loadTopFacilitySlugs } from "@/lib/facilities-data";
+
+// Pre-render the same top-N facilities that ship in the sitemap. Long-tail
+// pages still resolve on demand (no dynamicParams=false), but the heavy-traffic
+// head is generated at build time so first-hit bot crawls don't burn ISR writes.
+const PRERENDER_TOP_N = 500;
+
+export async function generateStaticParams() {
+  const slugs = await loadTopFacilitySlugs(PRERENDER_TOP_N);
+  return slugs.map((slug) => ({ slug }));
+}
 
 const INFO: Record<string, string> = {
   "Power redundancy":
@@ -155,7 +166,7 @@ function buildSummary(args: {
   return `${args.name} is a data center operated by ${op}${where ? ` in ${where}` : ""}.${specBlurb}${presenceBlurb}`;
 }
 
-export const revalidate = 604800;
+export const revalidate = 2_592_000;
 
 const loadFacilityMeta = unstable_cache(
   async (slug: string) => {

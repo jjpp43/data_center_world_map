@@ -7,6 +7,7 @@ import { countrySlug } from "@/lib/countries";
 import { loadMetroSummaries } from "@/lib/metros-data";
 import { loadIxpSummaries } from "@/lib/ixps-data";
 import { loadNetworkSummaries } from "@/lib/networks-data";
+import { loadTopFacilitySlugs } from "@/lib/facilities-data";
 import { TIERS } from "@/lib/density";
 import { INSIGHTS } from "@/lib/insights-data";
 
@@ -29,44 +30,29 @@ const SITEMAP_CAPS = {
 type FacSlugRow = {
   slug: string;
   updated_at: string | null;
-  network_count: number;
 };
 
-const loadTopFacilitySlugs = unstable_cache(
+const loadTopFacilitiesWithStamps = unstable_cache(
   async (): Promise<FacSlugRow[]> => {
+    const slugs = await loadTopFacilitySlugs(SITEMAP_CAPS.facilities);
+    if (slugs.length === 0) return [];
     const sb = supabaseServer();
-    const { data, error } = await sb
-      .from("facility_density")
-      .select("slug, network_count")
-      .order("network_count", { ascending: false })
-      .limit(SITEMAP_CAPS.facilities)
-      .returns<{ slug: string; network_count: number }[]>();
-    if (error) throw error;
-    const top = data ?? [];
-    if (top.length === 0) return [];
     const { data: stamps } = await sb
       .from("data_centers")
       .select("slug, updated_at")
-      .in(
-        "slug",
-        top.map((r) => r.slug),
-      )
+      .in("slug", slugs)
       .returns<{ slug: string; updated_at: string | null }[]>();
     const stampBySlug = new Map((stamps ?? []).map((s) => [s.slug, s.updated_at]));
-    return top.map((r) => ({
-      slug: r.slug,
-      network_count: r.network_count,
-      updated_at: stampBySlug.get(r.slug) ?? null,
-    }));
+    return slugs.map((slug) => ({ slug, updated_at: stampBySlug.get(slug) ?? null }));
   },
-  ["sitemap-top-facility-slugs-v1"],
+  ["sitemap-top-facility-slugs-v2"],
   { revalidate: 86_400, tags: ["data-centers"] },
 );
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const [facilities, operators, countries, metros, ixps, networks] = await Promise.all([
-    loadTopFacilitySlugs(),
+    loadTopFacilitiesWithStamps(),
     loadOperatorSummaries(),
     loadCountrySummaries(),
     loadMetroSummaries(),
