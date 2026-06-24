@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { countryFlag, countryName } from "@/lib/countries";
+import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { loadCountrySummaries } from "@/lib/countries-data";
 import { jsonForHtml } from "@/lib/json-ld";
 
@@ -38,7 +38,7 @@ export default async function CountriesIndex() {
       itemListElement: countries.slice(0, 50).map((c, i) => ({
         "@type": "ListItem",
         position: i + 1,
-        url: `/countries/${c.code.toLowerCase()}`,
+        url: `/countries/${countrySlug(c.code)}`,
         name: countryName(c.code),
       })),
     },
@@ -70,7 +70,7 @@ export default async function CountriesIndex() {
                   {String(i + 1).padStart(3, "0")}
                 </span>
                 <span className="text-base leading-none">{countryFlag(c.code)}</span>
-                <Link href={`/countries/${c.code.toLowerCase()}`} className="truncate text-zinc-900 hover:underline dark:text-zinc-100">
+                <Link href={`/countries/${countrySlug(c.code)}`} className="truncate text-zinc-900 hover:underline dark:text-zinc-100">
                   {countryName(c.code)}
                 </Link>
               </div>

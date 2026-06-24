@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
-import { countryFlag, countryName } from "@/lib/countries";
+import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { findOperatorBySlug, loadOperatorSummaries } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
 
@@ -153,7 +153,7 @@ export default async function OperatorPage({ params }: Props) {
           <section key={country} className="mt-10">
             <h2 className="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
               <span className="text-base leading-none">{countryFlag(country)}</span>
-              <Link href={`/countries/${country.toLowerCase()}`} className="hover:underline">
+              <Link href={`/countries/${countrySlug(country)}`} className="hover:underline">
                 {countryName(country)}
               </Link>
               <span className="text-xs text-zinc-500">({list.length})</span>

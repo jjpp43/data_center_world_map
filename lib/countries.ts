@@ -14,6 +14,16 @@ export function countryName(code: string): string {
   return nameLookup?.of(code) ?? code;
 }
 
+export function countrySlug(code: string): string {
+  if (!code) return "";
+  return countryName(code)
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function countryFlag(code: string): string {
   if (code.length !== 2) return "";
   const upper = code.toUpperCase();

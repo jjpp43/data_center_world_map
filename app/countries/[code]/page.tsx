@@ -1,10 +1,15 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
-import { countryFlag, countryName } from "@/lib/countries";
-import { findCountryByCode, loadCountrySummaries } from "@/lib/countries-data";
+import { countryFlag, countryName, countrySlug } from "@/lib/countries";
+import {
+  findCountryByCode,
+  findCountryBySlug,
+  loadCountrySummaries,
+  type CountrySummary,
+} from "@/lib/countries-data";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
 
@@ -29,13 +34,27 @@ type Facility = {
 
 export async function generateStaticParams() {
   const all = await loadCountrySummaries();
-  return all.map((c) => ({ code: c.code.toLowerCase() }));
+  return all.map((c) => ({ code: countrySlug(c.code) }));
+}
+
+// Resolve param as name-slug first (canonical), fall back to ISO code (legacy
+// URLs Google has indexed). Page handler 308-redirects the ISO-code form to
+// the canonical slug.
+async function resolveCountry(
+  param: string,
+): Promise<{ country: CountrySummary; canonicalSlug: string; isCanonical: boolean } | null> {
+  const bySlug = await findCountryBySlug(param);
+  if (bySlug) return { country: bySlug, canonicalSlug: countrySlug(bySlug.code), isCanonical: true };
+  const byCode = await findCountryByCode(param);
+  if (byCode) return { country: byCode, canonicalSlug: countrySlug(byCode.code), isCanonical: false };
+  return null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { code } = await params;
-  const c = await findCountryByCode(code);
-  if (!c) return { title: "Country not found" };
+  const resolved = await resolveCountry(code);
+  if (!resolved) return { title: "Country not found" };
+  const { country: c, canonicalSlug } = resolved;
   const name = countryName(c.code);
   const count = c.facility_count.toLocaleString();
   const power = c.total_power_mw ? Math.round(c.total_power_mw).toLocaleString() : null;
@@ -43,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = `${count} verified data centers (data centres) in ${name} from ${c.operators} operator${
     c.operators === 1 ? "" : "s"
   }${power ? `, ${power} MW combined capacity` : ""}. Browse the map with power, networks, IXPs, and tier ratings.`;
-  const canonical = `/countries/${code.toLowerCase()}`;
+  const canonical = `/countries/${canonicalSlug}`;
   return {
     title,
     description,
@@ -81,8 +100,10 @@ const loadFacilitiesForCountry = unstable_cache(
 
 export default async function CountryPage({ params }: Props) {
   const { code } = await params;
-  const c = await findCountryByCode(code);
-  if (!c) notFound();
+  const resolved = await resolveCountry(code);
+  if (!resolved) notFound();
+  if (!resolved.isCanonical) permanentRedirect(`/countries/${resolved.canonicalSlug}`);
+  const c = resolved.country;
   const upper = c.code;
   const name = countryName(upper);
 
@@ -115,7 +136,7 @@ export default async function CountryPage({ params }: Props) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "@id": `/countries/${upper.toLowerCase()}`,
+    "@id": `/countries/${resolved.canonicalSlug}`,
     name: `Data centers in ${name}`,
     description: summary,
     isPartOf: { "@type": "WebSite", name: "datacenters.world", url: "https://datacenters.world/" },

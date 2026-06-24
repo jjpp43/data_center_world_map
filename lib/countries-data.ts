@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { supabaseServer } from "./supabase";
+import { countrySlug } from "./countries";
 
 export interface CountrySummary {
   code: string;
@@ -43,4 +44,10 @@ export async function findCountryByCode(code: string): Promise<CountrySummary | 
   if (!/^[A-Z]{2}$/.test(upper)) return null;
   const all = await loadCountrySummaries();
   return all.find((c) => c.code === upper) ?? null;
+}
+
+export async function findCountryBySlug(slug: string): Promise<CountrySummary | null> {
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) return null;
+  const all = await loadCountrySummaries();
+  return all.find((c) => countrySlug(c.code) === slug) ?? null;
 }

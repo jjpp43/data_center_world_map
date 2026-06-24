@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { countryFlag, countryName } from "@/lib/countries";
+import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { loadIxpDetail, loadIxpSummaries } from "@/lib/ixps-data";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
@@ -117,7 +117,7 @@ export default async function IxpPage({ params }: Props) {
             <>
               <span>·</span>
               <Link
-                href={`/countries/${ixp.country.toLowerCase()}`}
+                href={`/countries/${countrySlug(ixp.country)}`}
                 className="hover:text-zinc-700 hover:underline dark:hover:text-zinc-300"
               >
                 {countryName(ixp.country)}

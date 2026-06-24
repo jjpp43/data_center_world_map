@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { countryFlag, countryName } from "@/lib/countries";
+import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { TIERS, loadDensityTier, type DensityTier } from "@/lib/density";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
@@ -108,7 +108,7 @@ export default async function TierPage({ params }: Props) {
               {countryRanking.slice(0, 30).map((c) => (
                 <Link
                   key={c.country}
-                  href={`/countries/${c.country.toLowerCase()}`}
+                  href={`/countries/${countrySlug(c.country)}`}
                   className="flex items-center gap-1.5 rounded-full border border-zinc-200/70 bg-white/60 px-2.5 py-1 text-xs hover:border-zinc-300 dark:border-zinc-800/60 dark:bg-zinc-900/40 dark:hover:border-zinc-700"
                 >
                   <span className="text-sm leading-none">{countryFlag(c.country)}</span>

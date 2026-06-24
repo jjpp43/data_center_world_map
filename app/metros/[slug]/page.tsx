@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { countryFlag, countryName } from "@/lib/countries";
+import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { METROS, loadMetroDetail } from "@/lib/metros-data";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
@@ -93,7 +93,7 @@ export default async function MetroPage({ params }: Props) {
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500">
           <span>Metro</span>
           <span>·</span>
-          <Link href={`/countries/${metro.country.toLowerCase()}`} className="hover:text-zinc-700 hover:underline dark:hover:text-zinc-300">
+          <Link href={`/countries/${countrySlug(metro.country)}`} className="hover:text-zinc-700 hover:underline dark:hover:text-zinc-300">
             {country}
           </Link>
         </div>
@@ -190,7 +190,7 @@ export default async function MetroPage({ params }: Props) {
           <Link href="/metros" className="hover:underline">
             ← All metros
           </Link>
-          <Link href={`/countries/${metro.country.toLowerCase()}`} className="hover:underline">
+          <Link href={`/countries/${countrySlug(metro.country)}`} className="hover:underline">
             All facilities in {country} →
           </Link>
         </div>

@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { supabaseServer } from "@/lib/supabase";
 import { loadOperatorSummaries } from "@/lib/operators";
 import { loadCountrySummaries } from "@/lib/countries-data";
+import { countrySlug } from "@/lib/countries";
 import { loadMetroSummaries } from "@/lib/metros-data";
 import { loadIxpSummaries } from "@/lib/ixps-data";
 import { loadNetworkSummaries } from "@/lib/networks-data";
@@ -121,7 +122,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
   const countryEntries: MetadataRoute.Sitemap = countries.map((c) => ({
-    url: `${SITE}/countries/${c.code.toLowerCase()}`,
+    url: `${SITE}/countries/${countrySlug(c.code)}`,
     lastModified: now,
     changeFrequency: "weekly",
     priority: 0.7,
