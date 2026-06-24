@@ -32,13 +32,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `AS${network.asn} ${network.name} — ${facCount} Data Center${
     facilities.length === 1 ? "" : "s"
   }, ${country_breakdown.length} ${country_breakdown.length === 1 ? "Country" : "Countries"}`;
-  const description = `${network.name} (AS${network.asn})${
-    network.info_type ? ` is a ${network.info_type.toLowerCase()} network` : ""
-  } present in ${facCount} colocation facilit${
-    facilities.length === 1 ? "y" : "ies"
+  const year = new Date().getFullYear();
+  const description = `AS${network.asn} ${network.name} present in ${facCount} data center${
+    facilities.length === 1 ? "" : "s"
   } across ${country_breakdown.length} countr${
     country_breakdown.length === 1 ? "y" : "ies"
-  }. See the full facility list, routing policy, and peering data.`;
+  } — full facility list, routing policy, peering data, updated ${year}.`;
   const canonical = `/networks/${network.asn}`;
   return {
     title,

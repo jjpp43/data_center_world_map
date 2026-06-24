@@ -41,9 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Numeric-lead title for CTR. Keeps count + scope in the first ~50 chars
   // so the SERP snippet survives mobile truncation.
   const title = `${op.name} Data Centers — All ${count} Facilities in ${op.countries} ${countryLabel}`;
-  const description = `${count} verified ${op.name} data centers (data centres) across ${op.countries} ${
+  const year = new Date().getFullYear();
+  const description = `All ${count} ${op.name} data centers mapped across ${op.countries} ${
     op.countries === 1 ? "country" : "countries"
-  }${power ? `, ${power} MW combined capacity` : ""}. Browse the map with power, networks, IXPs, and source citations.`;
+  }${power ? `, ${power} MW capacity` : ""}, live network and IXP data, updated ${year}.`;
   const canonical = `/operators/${slug}`;
   return {
     title,

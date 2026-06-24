@@ -32,11 +32,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = memberCount
     ? `${ixp.name} — ${memberCount} Networks, ${facCount} Facilities`
     : `${ixp.name} — Internet Exchange Point in ${where}`;
-  const description = `${ixp.name} is an Internet Exchange Point (IXP) in ${where}${
-    memberCount ? `, with ${memberCount} member networks` : ""
-  } across ${facCount} colocation facilit${
-    facilities.length === 1 ? "y" : "ies"
-  }. Browse the full member-facility map and peering data.`;
+  const year = new Date().getFullYear();
+  const description = memberCount
+    ? `${memberCount} networks peer at ${ixp.name} (${where}) across ${facCount} facilit${
+        facilities.length === 1 ? "y" : "ies"
+      } — live member list, routing data, updated ${year}.`
+    : `${ixp.name} is an Internet Exchange Point in ${where} across ${facCount} facilit${
+        facilities.length === 1 ? "y" : "ies"
+      } — live member list, peering data, updated ${year}.`;
   const canonical = `/ixps/${slug}`;
   return {
     title,

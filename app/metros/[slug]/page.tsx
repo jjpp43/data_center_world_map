@@ -25,9 +25,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const count = facilities.length.toLocaleString();
   const power = total_power_mw ? Math.round(total_power_mw).toLocaleString() : null;
   const title = `${metro.name} Data Centers — ${count} Facilities, Top Operators`;
-  const description = `${count} data centers (data centres) in the ${metro.name} metro (${country}) — ${operator_ranking.length} operator${
+  const year = new Date().getFullYear();
+  const description = `All ${count} ${metro.name} data centers mapped — ${operator_ranking.length} operator${
     operator_ranking.length === 1 ? "" : "s"
-  }${power ? `, ${power} MW capacity` : ""}. Browse the map with networks, IXPs, and power.`;
+  }${power ? `, ${power} MW capacity` : ""}, live network and IXP data, updated ${year}.`;
   const canonical = `/metros/${slug}`;
   return {
     title,

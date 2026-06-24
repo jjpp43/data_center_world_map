@@ -59,9 +59,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const count = c.facility_count.toLocaleString();
   const power = c.total_power_mw ? Math.round(c.total_power_mw).toLocaleString() : null;
   const title = `${name} Data Centers — All ${count} Facilities (Free Map)`;
-  const description = `${count} verified data centers (data centres) in ${name} from ${c.operators} operator${
+  const year = new Date().getFullYear();
+  const description = `All ${count} ${name} data centers mapped — ${c.operators} operator${
     c.operators === 1 ? "" : "s"
-  }${power ? `, ${power} MW combined capacity` : ""}. Browse the map with power, networks, IXPs, and tier ratings.`;
+  }${power ? `, ${power} MW capacity` : ""}, live network and IXP data, updated ${year}.`;
   const canonical = `/countries/${canonicalSlug}`;
   return {
     title,
