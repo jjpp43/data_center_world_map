@@ -118,6 +118,7 @@ const SITE_JSON_LD = {
       creator: { "@id": `${SITE}/#org` },
       publisher: { "@id": `${SITE}/#org` },
       isAccessibleForFree: true,
+      license: "https://creativecommons.org/licenses/by-sa/4.0/",
       keywords: [
         "data center map",
         "data centre map",
@@ -159,7 +160,11 @@ const SITE_JSON_LD = {
           name: "Facilities API (CSV)",
         },
       ],
-      includedInDataCatalog: { "@id": `${SITE}/#website` },
+      includedInDataCatalog: {
+        "@type": "DataCatalog",
+        name: "datacenters.world",
+        url: SITE,
+      },
     },
   ],
 };
