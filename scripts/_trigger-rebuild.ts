@@ -23,9 +23,20 @@ export async function refreshSummaryViews(): Promise<void> {
 
 /**
  * Fire the Vercel Deploy Hook so a new build picks up the data we just wrote.
+ *
+ * Opt-in via `--rebuild`. Every deploy nukes `unstable_cache`, which forces a
+ * fresh ISR write on the next hit to every per-slug page — ~40k catalog-wide
+ * writes per rebuild. Default to off; ingested data still appears within 24h
+ * via `revalidate: 86_400` on every loader. Use `--rebuild` only when you
+ * actually need the data live now (demo, urgent fix).
+ *
  * No-op if VERCEL_DEPLOY_HOOK_URL isn't set — keeps local dev free of friction.
  */
 export async function triggerRebuild(reason: string): Promise<void> {
+  if (!process.argv.includes("--rebuild")) {
+    console.log(`  (skipping Vercel rebuild — pass --rebuild to force one. Data will land within 24h via ISR revalidate.)`);
+    return;
+  }
   const url = process.env.VERCEL_DEPLOY_HOOK_URL;
   if (!url) {
     console.log(`  (skipping Vercel rebuild — VERCEL_DEPLOY_HOOK_URL not set)`);
