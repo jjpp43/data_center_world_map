@@ -146,9 +146,11 @@ Supabase egress is the dominant cost constraint. Three layers:
 2. **SSR pages → ISR.** Per-slug pages (`/facility`, `/operators`, `/countries`, `/metros`, `/ixps`, `/networks`, `/density`) `revalidate = 604800` (7d). Index pages 3600–86400. Sitemap 86400. **Invariant**: no `getTheme()`/`cookies()` in server pages — that silently disables `revalidate`.
 3. **Data fetches → matviews + `unstable_cache`.** Aggregations read from `country_summary`, `operator_summary`, `facility_density` (single-row reads, not paginated scans). Every loader in `lib/*-data.ts` + `lib/operators.ts` + `lib/density.ts` + `lib/api-data.ts` wrapped in `unstable_cache(fn, key, { revalidate: 86400, tags: [...] })`. **Every per-slug page render, /api/v1/* request, and /api/mcp tool call** shares the same cache. One Supabase pass per (loader, args) per 24h globally. Tags: `data-centers`, `networks`, `ixes`.
 
-Matviews refreshed by `refresh_summary_views()` RPC (concurrent). Ingest scripts call it before `triggerRebuild()` after `--apply`.
+Matviews refreshed by `refresh_summary_views()` RPC (concurrent). Ingest scripts call it on `--apply`; `triggerRebuild()` is opt-in via `--rebuild`.
 
-**Refresh cadence**: every deploy invalidates `unstable_cache`. Ingest `--apply` → `triggerRebuild()` → `VERCEL_DEPLOY_HOOK_URL`. Weekly Vercel cron does the same for drift. Unset locally → `triggerRebuild` is a no-op.
+**Refresh cadence**: every deploy invalidates `unstable_cache`, which forces a fresh ISR write on the next hit to every per-slug page — ~40k catalog-wide writes per rebuild. So `triggerRebuild()` defaults off and no-ops without `--rebuild` (data still lands within 24h via `revalidate: 86_400`). Pass `--rebuild` only when you actually need data live now. Weekly Vercel cron triggers a deploy to re-bake geojson; that's the steady-state cache-nuke baseline. Unset `VERCEL_DEPLOY_HOOK_URL` locally → `triggerRebuild` no-ops regardless.
+
+**Indexable head vs long-tail**: `lib/indexable.ts` is the single source of truth for sitemap caps + min-facility thresholds (facilities 500, operators 200, ixps 100, networks 100). `sitemap.ts` imports the constants; per-slug pages (`/facility`, `/operators`, `/ixps`, `/networks`) call `is*Indexable()` in `generateMetadata` and emit `robots: { index: false, follow: true }` for anything outside the head. Stops bots walking 15k+ low-value URLs and burning ISR writes for pages that can't rank. Countries + metros are uncapped — always indexable.
 
 **Backup**: `.github/workflows/backup.yml` weekly `pg_dump` (Sundays 04:00 UTC), 90-day retention. Needs `SUPABASE_DB_URL` repo secret (session-pooler URL).
 
@@ -168,7 +170,7 @@ Matviews refreshed by `refresh_summary_views()` RPC (concurrent). Ingest scripts
 ```bash
 npm run dev
 npm run build                                   # prebuild: check:security + build-geojson
-npm run ingest                                  # re-ingest scrapers/out/*.jsonl + triggerRebuild
+npm run ingest                                  # re-ingest scrapers/out/*.jsonl (add -- --rebuild to deploy)
 npm run audit:quality
 npm run canonicalize:orphans -- --apply
 npm run ingest:{ironmountain,google,meta} -- --apply
@@ -218,7 +220,7 @@ POLAR_TEAM_PRODUCT_ID=...
 POLAR_API_BASE=https://api.polar.sh     # optional (sandbox URL for testing)
 
 # Cache / rebuild orchestration
-VERCEL_DEPLOY_HOOK_URL=...              # ingest + cron POST here. Unset → triggerRebuild no-op.
+VERCEL_DEPLOY_HOOK_URL=...              # cron + opt-in `--rebuild` ingests POST here. Unset → no-op.
 CRON_SECRET=...                         # /api/cron/refresh-geojson. Unset → 500 (fails closed).
 
 # Analytics (optional)
@@ -289,7 +291,7 @@ RLS on every public table (public-read on data; auth-scoped via `auth.uid()` on 
 - Pre-generate facility OG images at build (top-500).
 
 **SEO**
-- `noindex` long-tail per-slug pages (anything outside the sitemap caps). Stops Google indexing 15k+ low-value URLs while keeping pages reachable. Single helper `lib/indexable.ts` keyed off the same thresholds as `sitemap.ts`.
+- ~~`noindex` long-tail per-slug pages~~ ✅ shipped — `lib/indexable.ts` + wired into facility/operators/ixps/networks pages.
 
 **Growth / monetization**
 - 5c-1: newsletter capture on `/about` (Resend / Buttondown).
