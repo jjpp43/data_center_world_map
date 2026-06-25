@@ -10,22 +10,16 @@ import { loadNetworkSummaries } from "@/lib/networks-data";
 import { loadTopFacilitySlugs } from "@/lib/facilities-data";
 import { TIERS } from "@/lib/density";
 import { INSIGHTS } from "@/lib/insights-data";
+import {
+  INDEXABLE_CAPS,
+  IXP_MIN_FACILITIES,
+  NETWORK_MIN_FACILITIES,
+  OPERATOR_MIN_FACILITIES,
+} from "@/lib/indexable";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
 
 export const revalidate = 86400;
-
-// Crawl-budget caps. Long-tail URLs (the 5,675 - 500 = 5,175 quietest
-// facilities, the 1,000+ tail operators, etc.) still resolve on demand —
-// we just don't push them into Google's queue. This focuses crawl budget
-// on high-value pages and keeps Vercel ISR writes + Supabase egress bounded
-// when bots discover the site.
-const SITEMAP_CAPS = {
-  facilities: 500,
-  operators: 200,
-  ixps: 100,
-  networks: 100,
-} as const;
 
 type FacSlugRow = {
   slug: string;
@@ -34,7 +28,9 @@ type FacSlugRow = {
 
 const loadTopFacilitiesWithStamps = unstable_cache(
   async (): Promise<FacSlugRow[]> => {
-    const slugs = await loadTopFacilitySlugs(SITEMAP_CAPS.facilities);
+    const slugs = await loadTopFacilitySlugs(INDEXABLE_CAPS.facilities);
+    // Note: this loader is still keyed on `sitemap-top-facility-slugs-v2`
+    // — bump if the caps change so the cached array is regenerated.
     if (slugs.length === 0) return [];
     const sb = supabaseServer();
     const { data: stamps } = await sb
@@ -98,8 +94,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // on demand but stay out of the sitemap to focus Google's crawl budget on
   // pages that can actually rank.
   const operatorEntries: MetadataRoute.Sitemap = operators
-    .filter((o) => o.facility_count >= 2 && o.slug.length > 0)
-    .slice(0, SITEMAP_CAPS.operators)
+    .filter((o) => o.facility_count >= OPERATOR_MIN_FACILITIES && o.slug.length > 0)
+    .slice(0, INDEXABLE_CAPS.operators)
     .map((o) => ({
       url: `${SITE}/operators/${o.slug}`,
       lastModified: now,
@@ -122,8 +118,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const ixpEntries: MetadataRoute.Sitemap = ixps
-    .filter((i) => i.facility_count > 0)
-    .slice(0, SITEMAP_CAPS.ixps)
+    .filter((i) => i.facility_count >= IXP_MIN_FACILITIES)
+    .slice(0, INDEXABLE_CAPS.ixps)
     .map((i) => ({
       url: `${SITE}/ixps/${i.slug}`,
       lastModified: now,
@@ -132,8 +128,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
   const networkEntries: MetadataRoute.Sitemap = networks
-    .filter((n) => n.facility_count >= 2)
-    .slice(0, SITEMAP_CAPS.networks)
+    .filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES)
+    .slice(0, INDEXABLE_CAPS.networks)
     .map((n) => ({
       url: `${SITE}/networks/${n.asn}`,
       lastModified: now,

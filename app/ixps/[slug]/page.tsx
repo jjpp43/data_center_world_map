@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { loadIxpDetail, loadIxpSummaries } from "@/lib/ixps-data";
+import { isIndexableIxp, NOINDEX_ROBOTS } from "@/lib/indexable";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
 
@@ -41,10 +42,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         facilities.length === 1 ? "y" : "ies"
       } — live member list, peering data, updated ${year}.`;
   const canonical = `/ixps/${slug}`;
+  const indexable = await isIndexableIxp(slug);
   return {
     title,
     description,
     alternates: { canonical },
+    ...(indexable ? {} : { robots: NOINDEX_ROBOTS }),
     openGraph: { title, description, type: "website", url: canonical },
     twitter: { card: "summary_large_image", title, description },
   };

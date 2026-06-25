@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { findOperatorBySlug, loadOperatorSummaries } from "@/lib/operators";
+import { isIndexableOperator, NOINDEX_ROBOTS } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 604800;
@@ -46,10 +47,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     op.countries === 1 ? "country" : "countries"
   }${power ? `, ${power} MW capacity` : ""}, live network and IXP data, updated ${year}.`;
   const canonical = `/operators/${slug}`;
+  const indexable = await isIndexableOperator(slug);
   return {
     title,
     description,
     alternates: { canonical },
+    ...(indexable ? {} : { robots: NOINDEX_ROBOTS }),
     openGraph: { title, description, type: "website", url: canonical },
     twitter: { card: "summary_large_image", title, description },
   };

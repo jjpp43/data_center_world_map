@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { loadNetworkDetail, loadNetworkSummaries } from "@/lib/networks-data";
+import { isIndexableNetwork, NOINDEX_ROBOTS } from "@/lib/indexable";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
 
@@ -39,10 +40,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     country_breakdown.length === 1 ? "y" : "ies"
   } — full facility list, routing policy, peering data, updated ${year}.`;
   const canonical = `/networks/${network.asn}`;
+  const indexable = await isIndexableNetwork(network.asn);
   return {
     title,
     description,
     alternates: { canonical },
+    ...(indexable ? {} : { robots: NOINDEX_ROBOTS }),
     openGraph: { title, description, type: "website", url: canonical },
     twitter: { card: "summary_large_image", title, description },
   };

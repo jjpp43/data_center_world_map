@@ -7,6 +7,7 @@ import { countryFlag, countryName } from "@/lib/countries";
 import { InfoToggle } from "@/components/InfoToggle";
 import { jsonForHtml } from "@/lib/json-ld";
 import { loadTopFacilitySlugs } from "@/lib/facilities-data";
+import { isIndexableFacility, NOINDEX_ROBOTS } from "@/lib/indexable";
 
 // Pre-render the same top-N facilities that ship in the sitemap. Long-tail
 // pages still resolve on demand (no dynamicParams=false), but the heavy-traffic
@@ -241,10 +242,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     tier: data.tier,
   });
   const canonical = `/facility/${slug}`;
+  const indexable = await isIndexableFacility(slug);
   return {
     title,
     description,
     alternates: { canonical },
+    ...(indexable ? {} : { robots: NOINDEX_ROBOTS }),
     openGraph: {
       title,
       description,
