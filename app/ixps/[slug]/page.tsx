@@ -9,6 +9,10 @@ import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 604800;
 
+// Captured once at module load so descriptions render byte-identically
+// across revalidations within a year — keeps ISR write-skip working.
+const YEAR = new Date().getFullYear();
+
 type Props = {
   params: Promise<{ slug: string }>;
 };
@@ -33,14 +37,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = memberCount
     ? `${ixp.name} — ${memberCount} Networks, ${facCount} Facilities`
     : `${ixp.name} — Internet Exchange Point in ${where}`;
-  const year = new Date().getFullYear();
   const description = memberCount
     ? `${memberCount} networks peer at ${ixp.name} (${where}) across ${facCount} facilit${
         facilities.length === 1 ? "y" : "ies"
-      } — live member list, routing data, updated ${year}.`
+      } — live member list, routing data, updated ${YEAR}.`
     : `${ixp.name} is an Internet Exchange Point in ${where} across ${facCount} facilit${
         facilities.length === 1 ? "y" : "ies"
-      } — live member list, peering data, updated ${year}.`;
+      } — live member list, peering data, updated ${YEAR}.`;
   const canonical = `/ixps/${slug}`;
   const indexable = await isIndexableIxp(slug);
   return {

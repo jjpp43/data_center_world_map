@@ -9,6 +9,10 @@ import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 604800;
 
+// Captured once at module load so descriptions render byte-identically
+// across revalidations within a year — keeps ISR write-skip working.
+const YEAR = new Date().getFullYear();
+
 type Props = {
   params: Promise<{ asn: string }>;
 };
@@ -33,12 +37,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `AS${network.asn} ${network.name} — ${facCount} Data Center${
     facilities.length === 1 ? "" : "s"
   }, ${country_breakdown.length} ${country_breakdown.length === 1 ? "Country" : "Countries"}`;
-  const year = new Date().getFullYear();
   const description = `AS${network.asn} ${network.name} present in ${facCount} data center${
     facilities.length === 1 ? "" : "s"
   } across ${country_breakdown.length} countr${
     country_breakdown.length === 1 ? "y" : "ies"
-  } — full facility list, routing policy, peering data, updated ${year}.`;
+  } — full facility list, routing policy, peering data, updated ${YEAR}.`;
   const canonical = `/networks/${network.asn}`;
   const indexable = await isIndexableNetwork(network.asn);
   return {

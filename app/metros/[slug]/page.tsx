@@ -8,6 +8,10 @@ import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 604800;
 
+// Captured once at module load so descriptions render byte-identically
+// across revalidations within a year — keeps ISR write-skip working.
+const YEAR = new Date().getFullYear();
+
 type Props = {
   params: Promise<{ slug: string }>;
 };
@@ -25,10 +29,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const count = facilities.length.toLocaleString();
   const power = total_power_mw ? Math.round(total_power_mw).toLocaleString() : null;
   const title = `${metro.name} Data Centers — ${count} Facilities, Top Operators`;
-  const year = new Date().getFullYear();
   const description = `All ${count} ${metro.name} data centers mapped — ${operator_ranking.length} operator${
     operator_ranking.length === 1 ? "" : "s"
-  }${power ? `, ${power} MW capacity` : ""}, live network and IXP data, updated ${year}.`;
+  }${power ? `, ${power} MW capacity` : ""}, live network and IXP data, updated ${YEAR}.`;
   const canonical = `/metros/${slug}`;
   return {
     title,

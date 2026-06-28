@@ -46,7 +46,6 @@ const loadTopFacilitiesWithStamps = unstable_cache(
 );
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   const [facilities, operators, countries, metros, ixps, networks] = await Promise.all([
     loadTopFacilitiesWithStamps(),
     loadOperatorSummaries(),
@@ -56,28 +55,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     loadNetworkSummaries(),
   ]);
 
+  // lastModified only set on entries with a real data-driven timestamp
+  // (facility `updated_at`). Stamping `new Date()` everywhere flips the
+  // sitemap bytes on every revalidation and burns an ISR write per cycle
+  // without giving Google any real freshness signal.
   const staticEntries: MetadataRoute.Sitemap = [
-    { url: `${SITE}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
-    { url: `${SITE}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE}/methodology`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE}/api`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE}/launch/mcp`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE}/operators`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/countries`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/metros`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/ixps`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/networks`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/density`, lastModified: now, changeFrequency: "weekly", priority: 0.75 },
-    { url: `${SITE}/insights`, lastModified: now, changeFrequency: "weekly", priority: 0.75 },
+    { url: `${SITE}/`, changeFrequency: "daily", priority: 1 },
+    { url: `${SITE}/about`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE}/methodology`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE}/api`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE}/launch/mcp`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE}/operators`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/countries`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/metros`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/ixps`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/networks`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/density`, changeFrequency: "weekly", priority: 0.75 },
+    { url: `${SITE}/insights`, changeFrequency: "weekly", priority: 0.75 },
     ...TIERS.map((t) => ({
       url: `${SITE}/density/${t.slug}`,
-      lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),
     ...INSIGHTS.map((i) => ({
       url: `${SITE}/insights/${i.slug}`,
-      lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
@@ -85,7 +86,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const facilityEntries: MetadataRoute.Sitemap = facilities.map((r) => ({
     url: `${SITE}/facility/${r.slug}`,
-    lastModified: r.updated_at ? new Date(r.updated_at) : now,
+    ...(r.updated_at ? { lastModified: new Date(r.updated_at) } : {}),
     changeFrequency: "weekly",
     priority: 0.6,
   }));
@@ -98,21 +99,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .slice(0, INDEXABLE_CAPS.operators)
     .map((o) => ({
       url: `${SITE}/operators/${o.slug}`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.7,
     }));
 
   const countryEntries: MetadataRoute.Sitemap = countries.map((c) => ({
     url: `${SITE}/countries/${countrySlug(c.code)}`,
-    lastModified: now,
     changeFrequency: "weekly",
     priority: 0.7,
   }));
 
   const metroEntries: MetadataRoute.Sitemap = metros.map((m) => ({
     url: `${SITE}/metros/${m.slug}`,
-    lastModified: now,
     changeFrequency: "weekly",
     priority: 0.75,
   }));
@@ -122,7 +120,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .slice(0, INDEXABLE_CAPS.ixps)
     .map((i) => ({
       url: `${SITE}/ixps/${i.slug}`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.65,
     }));
@@ -132,7 +129,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .slice(0, INDEXABLE_CAPS.networks)
     .map((n) => ({
       url: `${SITE}/networks/${n.asn}`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.6,
     }));

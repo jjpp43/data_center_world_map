@@ -10,6 +10,10 @@ import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 604800;
 
+// Captured once at module load so descriptions render byte-identically
+// across revalidations within a year — keeps ISR write-skip working.
+const YEAR = new Date().getFullYear();
+
 type Props = {
   params: Promise<{ slug: string }>;
 };
@@ -42,10 +46,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Numeric-lead title for CTR. Keeps count + scope in the first ~50 chars
   // so the SERP snippet survives mobile truncation.
   const title = `${op.name} Data Centers — All ${count} Facilities in ${op.countries} ${countryLabel}`;
-  const year = new Date().getFullYear();
   const description = `All ${count} ${op.name} data centers mapped across ${op.countries} ${
     op.countries === 1 ? "country" : "countries"
-  }${power ? `, ${power} MW capacity` : ""}, live network and IXP data, updated ${year}.`;
+  }${power ? `, ${power} MW capacity` : ""}, live network and IXP data, updated ${YEAR}.`;
   const canonical = `/operators/${slug}`;
   const indexable = await isIndexableOperator(slug);
   return {
