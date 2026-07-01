@@ -1,13 +1,15 @@
 import { supabaseServer } from "./supabase";
-import { loadTopFacilitySlugs } from "./facilities-data";
 import { loadOperatorSummaries } from "./operators";
 import { loadIxpSummaries } from "./ixps-data";
 
 /**
- * Crawl-budget caps. Must match `app/sitemap.ts` exactly — anything outside
- * these is `noindex,follow` so bots stop walking 15k+ low-value URLs and
- * burning ISR writes for pages that can't rank anyway. Pages still render
- * on demand for direct hits.
+ * Sitemap / crawl-budget caps. Must match `app/sitemap.ts` exactly — they
+ * bound how many long-tail URLs we advertise in the sitemap so bots don't
+ * prioritise walking 15k+ pages. Being outside a cap only lowers crawl
+ * priority; it does NOT `noindex` the page (the sitemap is a hint, not a
+ * gate). Facilities are the exception: every real facility page is indexable
+ * (see `isFacilityIndexable`) because they're the primary rankable content —
+ * `facilities` here caps only the sitemap slice, not indexability.
  */
 export const INDEXABLE_CAPS = {
   facilities: 500,
@@ -26,19 +28,9 @@ export const NETWORK_MIN_FACILITIES = 2;
 // full 34k-network blob is ~13MB and exceeds Next's 2MB cache cap, so every
 // call re-fetches from Supabase → OOM during build. These promises dedupe
 // to a single fetch per build worker (and per function instance at runtime).
-let facilitySetPromise: Promise<Set<string>> | null = null;
 let operatorSetPromise: Promise<Set<string>> | null = null;
 let ixpSetPromise: Promise<Set<string>> | null = null;
 let networkSetPromise: Promise<Set<number>> | null = null;
-
-function getFacilitySet(): Promise<Set<string>> {
-  if (!facilitySetPromise) {
-    facilitySetPromise = loadTopFacilitySlugs(INDEXABLE_CAPS.facilities).then(
-      (slugs) => new Set(slugs),
-    );
-  }
-  return facilitySetPromise;
-}
 
 function getOperatorSet(): Promise<Set<string>> {
   if (!operatorSetPromise) {
@@ -108,8 +100,25 @@ function getNetworkSet(): Promise<Set<number>> {
   return networkSetPromise;
 }
 
-export async function isIndexableFacility(slug: string): Promise<boolean> {
-  return (await getFacilitySet()).has(slug);
+/**
+ * A facility page is indexable when it represents a real, mappable data
+ * center — i.e. it has coordinates. This restores the full catalog to the
+ * index (the known-good pre-noindex state): every facility page is unique
+ * (operator + location + specs + network/IXP lists) and can rank on
+ * long-tail queries. Only null-island / stub rows are gated off. Facility
+ * pages are NOT throttled by a top-N crawl cap — that would deindex ~91% of
+ * the catalog and tank impressions. Crawl budget for facilities is managed
+ * purely via the sitemap slice (`INDEXABLE_CAPS.facilities`).
+ */
+export function isFacilityIndexable(
+  lat: number | null | undefined,
+  lng: number | null | undefined,
+): boolean {
+  return (
+    typeof lat === "number" &&
+    typeof lng === "number" &&
+    !(lat === 0 && lng === 0)
+  );
 }
 
 export async function isIndexableOperator(slug: string): Promise<boolean> {

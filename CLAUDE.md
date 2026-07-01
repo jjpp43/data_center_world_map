@@ -150,7 +150,7 @@ Matviews refreshed by `refresh_summary_views()` RPC (concurrent). Ingest scripts
 
 **Refresh cadence**: every deploy invalidates `unstable_cache`, which forces a fresh ISR write on the next hit to every per-slug page — ~40k catalog-wide writes per rebuild. So `triggerRebuild()` defaults off and no-ops without `--rebuild` (data still lands within 24h via `revalidate: 86_400`). Pass `--rebuild` only when you actually need data live now. Weekly Vercel cron triggers a deploy to re-bake geojson; that's the steady-state cache-nuke baseline. Unset `VERCEL_DEPLOY_HOOK_URL` locally → `triggerRebuild` no-ops regardless.
 
-**Indexable head vs long-tail**: `lib/indexable.ts` is the single source of truth for sitemap caps + min-facility thresholds (facilities 500, operators 200, ixps 100, networks 100). `sitemap.ts` imports the constants; per-slug pages (`/facility`, `/operators`, `/ixps`, `/networks`) call `is*Indexable()` in `generateMetadata` and emit `robots: { index: false, follow: true }` for anything outside the head. Stops bots walking 15k+ low-value URLs and burning ISR writes for pages that can't rank. Countries + metros are uncapped — always indexable.
+**Indexable head vs long-tail**: `lib/indexable.ts` is the single source of truth for sitemap caps + min-facility thresholds (facilities 500, operators 200, ixps 100, networks 100). `sitemap.ts` imports the constants for the sitemap slice. **Facilities are fully indexable** — every real facility page (coords present, via `isFacilityIndexable(lat,lng)`) emits `index: true`; the `facilities: 500` cap is a *sitemap crawl-budget hint only*, not an index gate. This reverses an earlier over-correction (commit f9e3832) that `noindex`'d ~91% of facility pages and tanked GSC impressions — `noindex,follow` never saved ISR writes anyway (bots still fetch+render to see the tag; writes are bounded by `revalidate: 30d` + `triggerRebuild` default-off). `/operators`, `/ixps`, `/networks` still call `isIndexable*()` in `generateMetadata` and `noindex` genuinely thin pages outside their caps. Countries + metros are uncapped — always indexable.
 
 **Backup**: `.github/workflows/backup.yml` weekly `pg_dump` (Sundays 04:00 UTC), 90-day retention. Needs `SUPABASE_DB_URL` repo secret (session-pooler URL).
 
@@ -291,7 +291,7 @@ RLS on every public table (public-read on data; auth-scoped via `auth.uid()` on 
 - Pre-generate facility OG images at build (top-500).
 
 **SEO**
-- ~~`noindex` long-tail per-slug pages~~ ✅ shipped — `lib/indexable.ts` + wired into facility/operators/ixps/networks pages.
+- ~~`noindex` long-tail per-slug pages~~ ✅ shipped, then narrowed — facilities reverted to fully indexable (SEO recovery); `noindex` now only on thin operators/ixps/networks outside their caps.
 
 **Growth / monetization**
 - 5c-1: newsletter capture on `/about` (Resend / Buttondown).

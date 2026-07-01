@@ -7,7 +7,7 @@ import { countryFlag, countryName } from "@/lib/countries";
 import { InfoToggle } from "@/components/InfoToggle";
 import { jsonForHtml } from "@/lib/json-ld";
 import { loadTopFacilitySlugs } from "@/lib/facilities-data";
-import { isIndexableFacility, NOINDEX_ROBOTS } from "@/lib/indexable";
+import { isFacilityIndexable, NOINDEX_ROBOTS } from "@/lib/indexable";
 
 // Pre-render the same top-N facilities that ship in the sitemap. Long-tail
 // pages still resolve on demand (no dynamicParams=false), but the heavy-traffic
@@ -174,12 +174,12 @@ const loadFacilityMeta = unstable_cache(
     const sb = supabaseServer();
     const { data } = await sb
       .from("data_centers")
-      .select("name, operator, code, city, country, power_mw, space_sqft, tier")
+      .select("name, operator, code, city, country, lat, lng, power_mw, space_sqft, tier")
       .eq("slug", slug)
       .maybeSingle();
     return data;
   },
-  ["facility-meta-v1"],
+  ["facility-meta-v2"],
   { revalidate: 86_400, tags: ["data-centers"] },
 );
 
@@ -242,7 +242,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     tier: data.tier,
   });
   const canonical = `/facility/${slug}`;
-  const indexable = await isIndexableFacility(slug);
+  const indexable = isFacilityIndexable(data.lat, data.lng);
   return {
     title,
     description,
