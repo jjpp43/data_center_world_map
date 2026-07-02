@@ -8,6 +8,8 @@ import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 604800;
 
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
+
 // Captured once at module load so descriptions render byte-identically
 // across revalidations within a year — keeps ISR write-skip working.
 const YEAR = new Date().getFullYear();
@@ -77,9 +79,20 @@ export default async function MetroPage({ params }: Props) {
     },
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { name: "Home", item: `${SITE}/` },
+      { name: "Metros", item: `${SITE}/metros` },
+      { name: metro.name, item: `${SITE}/metros/${metro.slug}` },
+    ].map((it, i) => ({ "@type": "ListItem", position: i + 1, name: it.name, item: it.item })),
+  };
+
   return (
     <div className={`min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForHtml(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForHtml(breadcrumbJsonLd) }} />
       <header className="sticky top-0 z-10 border-b border-zinc-200/70 bg-white/80 backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">
           <Link

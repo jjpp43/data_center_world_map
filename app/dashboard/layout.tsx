@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import { supabaseAuthServer } from "@/lib/supabase-server";
+
+// Auth-gated account area — keep out of the index (thin to crawlers, redirects
+// to /login when signed out). follow:false since there's nothing to crawl.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const sb = await supabaseAuthServer();

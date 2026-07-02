@@ -3,11 +3,14 @@ import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
-import { countryFlag, countryName } from "@/lib/countries";
+import { countryFlag, countryName, countrySlug } from "@/lib/countries";
+import { operatorSlug } from "@/lib/operators";
 import { InfoToggle } from "@/components/InfoToggle";
 import { jsonForHtml } from "@/lib/json-ld";
 import { loadTopFacilitySlugs } from "@/lib/facilities-data";
 import { isFacilityIndexable, NOINDEX_ROBOTS } from "@/lib/indexable";
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
 
 // Pre-render the same top-N facilities that ship in the sitemap. Long-tail
 // pages still resolve on demand (no dynamicParams=false), but the heavy-traffic
@@ -292,6 +295,7 @@ export default async function FacilityPage({ params }: Props) {
 
   const jsonLd = buildPlaceJsonLd(dc, networks.length, ixes.length);
   const faqJsonLd = buildFaqJsonLd(dc, networks.length, ixes, sources ?? []);
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(dc);
 
   return (
     <div
@@ -300,6 +304,10 @@ export default async function FacilityPage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonForHtml(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonForHtml(breadcrumbJsonLd) }}
       />
       {faqJsonLd && (
         <script
@@ -323,7 +331,16 @@ export default async function FacilityPage({ params }: Props) {
 
       <main className="mx-auto max-w-4xl px-6 py-10">
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-900 dark:text-zinc-500">
-          <span>{dc.operator ?? "Unknown operator"}</span>
+          {dc.operator && operatorSlug(dc.operator) ? (
+            <Link
+              href={`/operators/${operatorSlug(dc.operator)}`}
+              className="hover:text-zinc-700 hover:underline dark:hover:text-zinc-300"
+            >
+              {dc.operator}
+            </Link>
+          ) : (
+            <span>{dc.operator ?? "Unknown operator"}</span>
+          )}
           {dc.code && (
             <span className="rounded bg-zinc-100 dark:bg-zinc-800/70 px-1.5 py-0.5 font-mono text-[10px] text-zinc-300">
               {dc.code}
@@ -337,7 +354,15 @@ export default async function FacilityPage({ params }: Props) {
           <div className="flex items-center gap-2 text-sm text-zinc-400">
             <span className="text-base leading-none">{countryFlag(dc.country)}</span>
             <span>
-              {[dc.city, dc.region, countryName(dc.country)].filter(Boolean).join(", ")}
+              {[dc.city, dc.region].filter(Boolean).length > 0 && (
+                <>{[dc.city, dc.region].filter(Boolean).join(", ")}, </>
+              )}
+              <Link
+                href={`/countries/${countrySlug(dc.country)}`}
+                className="hover:text-zinc-600 hover:underline dark:hover:text-zinc-300"
+              >
+                {countryName(dc.country)}
+              </Link>
             </span>
           </div>
         </div>
@@ -641,6 +666,25 @@ function SecurityBlockView({ security }: { security: SecurityBlock }) {
   );
 }
 
+function buildBreadcrumbJsonLd(dc: DataCenter) {
+  const items: Array<{ name: string; item: string }> = [
+    { name: "Home", item: `${SITE}/` },
+    { name: "Countries", item: `${SITE}/countries` },
+    { name: countryName(dc.country), item: `${SITE}/countries/${countrySlug(dc.country)}` },
+    { name: dc.name, item: `${SITE}/facility/${dc.slug}` },
+  ];
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      item: it.item,
+    })),
+  };
+}
+
 function buildPlaceJsonLd(dc: DataCenter, networkCount: number, ixCount: number) {
   const props: Array<{ "@type": "PropertyValue"; name: string; value: string | number; unitText?: string }> = [];
   const push = (name: string, value: string | number | null | undefined, unitText?: string) => {
@@ -683,9 +727,9 @@ function buildPlaceJsonLd(dc: DataCenter, networkCount: number, ixCount: number)
   return {
     "@context": "https://schema.org",
     "@type": "Place",
-    "@id": `/facility/${dc.slug}`,
+    "@id": `${SITE}/facility/${dc.slug}`,
     name: dc.name,
-    url: `/facility/${dc.slug}`,
+    url: `${SITE}/facility/${dc.slug}`,
     description: `${dc.name}${dc.operator ? `, a data center operated by ${dc.operator}` : ""}${
       dc.city || dc.country ? ` in ${[dc.city, countryName(dc.country)].filter(Boolean).join(", ")}` : ""
     }.`,

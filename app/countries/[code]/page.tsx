@@ -15,6 +15,8 @@ import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 604800;
 
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
+
 // Captured once at module load so descriptions render byte-identically
 // across revalidations within a year — keeps ISR write-skip working.
 const YEAR = new Date().getFullYear();
@@ -157,9 +159,20 @@ export default async function CountryPage({ params }: Props) {
     },
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { name: "Home", item: `${SITE}/` },
+      { name: "Countries", item: `${SITE}/countries` },
+      { name, item: `${SITE}/countries/${resolved.canonicalSlug}` },
+    ].map((it, i) => ({ "@type": "ListItem", position: i + 1, name: it.name, item: it.item })),
+  };
+
   return (
     <div className={`min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForHtml(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForHtml(breadcrumbJsonLd) }} />
       <SimpleHeader />
       <main className="mx-auto max-w-4xl px-6 py-10">
         <div className="text-xs uppercase tracking-wider text-zinc-500">Country</div>
