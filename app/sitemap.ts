@@ -7,7 +7,6 @@ import { countrySlug } from "@/lib/countries";
 import { loadMetroSummaries } from "@/lib/metros-data";
 import { loadIxpSummaries } from "@/lib/ixps-data";
 import { loadNetworkSummaries } from "@/lib/networks-data";
-import { loadTopFacilitySlugs } from "@/lib/facilities-data";
 import { TIERS } from "@/lib/density";
 import { INSIGHTS } from "@/lib/insights-data";
 import {
@@ -15,6 +14,7 @@ import {
   IXP_MIN_FACILITIES,
   NETWORK_MIN_FACILITIES,
   OPERATOR_MIN_FACILITIES,
+  isFacilityIndexable,
 } from "@/lib/indexable";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
@@ -26,28 +26,49 @@ type FacSlugRow = {
   updated_at: string | null;
 };
 
-const loadTopFacilitiesWithStamps = unstable_cache(
+// Every indexable facility page (coords present) is advertised in the sitemap,
+// not just a top-N slice — facility pages are the primary rankable content and
+// each is unique, so we want Google to discover and (re)crawl all of them. This
+// is also what pulls the ~5k long-tail pages out of the June noindex regression:
+// they're `index,follow` again but have no other signal prompting a re-crawl.
+// One paginated scan of (slug, updated_at, lat, lng) per 24h; timestamps are
+// read inline because a top-N `.in(slug, …)` lookup would exceed the request
+// URL limit at full-catalog size. The lat/lng filter mirrors isFacilityIndexable
+// so we never list a coord-less page that renders noindex.
+const loadIndexableFacilitiesWithStamps = unstable_cache(
   async (): Promise<FacSlugRow[]> => {
-    const slugs = await loadTopFacilitySlugs(INDEXABLE_CAPS.facilities);
-    // Note: this loader is still keyed on `sitemap-top-facility-slugs-v2`
-    // — bump if the caps change so the cached array is regenerated.
-    if (slugs.length === 0) return [];
     const sb = supabaseServer();
-    const { data: stamps } = await sb
-      .from("data_centers")
-      .select("slug, updated_at")
-      .in("slug", slugs)
-      .returns<{ slug: string; updated_at: string | null }[]>();
-    const stampBySlug = new Map((stamps ?? []).map((s) => [s.slug, s.updated_at]));
-    return slugs.map((slug) => ({ slug, updated_at: stampBySlug.get(slug) ?? null }));
+    type Row = {
+      slug: string;
+      updated_at: string | null;
+      lat: number | null;
+      lng: number | null;
+    };
+    const rows: Row[] = [];
+    for (let from = 0; from < 100_000; from += 1000) {
+      const { data, error } = await sb
+        .from("data_centers")
+        .select("slug, updated_at, lat, lng")
+        .neq("status", "decommissioned")
+        .order("slug")
+        .range(from, from + 999)
+        .returns<Row[]>();
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      rows.push(...data);
+      if (data.length < 1000) break;
+    }
+    return rows
+      .filter((r) => isFacilityIndexable(r.lat, r.lng))
+      .map((r) => ({ slug: r.slug, updated_at: r.updated_at }));
   },
-  ["sitemap-top-facility-slugs-v2"],
+  ["sitemap-indexable-facility-slugs-v1"],
   { revalidate: 86_400, tags: ["data-centers"] },
 );
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [facilities, operators, countries, metros, ixps, networks] = await Promise.all([
-    loadTopFacilitiesWithStamps(),
+    loadIndexableFacilitiesWithStamps(),
     loadOperatorSummaries(),
     loadCountrySummaries(),
     loadMetroSummaries(),

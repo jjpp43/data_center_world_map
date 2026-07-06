@@ -5,14 +5,13 @@ import { loadIxpSummaries } from "./ixps-data";
 /**
  * Sitemap / crawl-budget caps. Must match `app/sitemap.ts` exactly — they
  * bound how many long-tail URLs we advertise in the sitemap so bots don't
- * prioritise walking 15k+ pages. Being outside a cap only lowers crawl
+ * prioritise walking 15k+ thin pages. Being outside a cap only lowers crawl
  * priority; it does NOT `noindex` the page (the sitemap is a hint, not a
- * gate). Facilities are the exception: every real facility page is indexable
- * (see `isFacilityIndexable`) because they're the primary rankable content —
- * `facilities` here caps only the sitemap slice, not indexability.
+ * gate). Facilities are the exception and are NOT capped here: every real
+ * facility page (coords present, see `isFacilityIndexable`) is the primary
+ * rankable content, so `app/sitemap.ts` lists the full indexable set.
  */
 export const INDEXABLE_CAPS = {
-  facilities: 500,
   operators: 200,
   ixps: 100,
   networks: 100,
@@ -107,8 +106,8 @@ function getNetworkSet(): Promise<Set<number>> {
  * (operator + location + specs + network/IXP lists) and can rank on
  * long-tail queries. Only null-island / stub rows are gated off. Facility
  * pages are NOT throttled by a top-N crawl cap — that would deindex ~91% of
- * the catalog and tank impressions. Crawl budget for facilities is managed
- * purely via the sitemap slice (`INDEXABLE_CAPS.facilities`).
+ * the catalog and tank impressions. `app/sitemap.ts` lists the full indexable
+ * set (no facilities cap) so every restored page has a re-crawl signal.
  */
 export function isFacilityIndexable(
   lat: number | null | undefined,
