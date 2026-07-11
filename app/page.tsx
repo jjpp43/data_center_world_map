@@ -152,7 +152,10 @@ function featureToFacility(f: GeoJSON.Feature): Facility {
     slug: p.slug,
     name: p.name,
     operator: p.operator,
-    city: p.city,
+    // build-geojson omits city when null in the DB (14 facilities); default to
+    // "" so it matches the `city: string` type and search filters that call
+    // `.toLowerCase()` don't throw and crash the client page.
+    city: p.city ?? "",
     country: p.country,
     lat,
     lng,
