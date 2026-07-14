@@ -1,4 +1,6 @@
 import type { NextConfig } from "next";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 const SUPABASE_HOST = (() => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -85,6 +87,25 @@ const OPERATOR_ALIASES: Record<string, string> = {
   "digital-realty-trust": "digital-realty",
 };
 
+// Facility slugs that Google has indexed but that no longer resolve, mapped to
+// their current canonical slug. Facility slugs historically baked in the
+// (volatile) city token, so a re-scrape that changed/dropped a city could
+// strand an already-indexed URL as a 404. This map 308-redirects the dead URL
+// to the live page at the routing layer — no function invocation, no Supabase
+// read, no ISR write — so ranking equity transfers instead of dying on a 404.
+// Populated by `npm run reconcile:404 -- --csv <GSC export>`; hand-auditable.
+const FACILITY_SLUG_REDIRECTS: Record<string, string> = (() => {
+  try {
+    const raw = readFileSync(
+      path.join(process.cwd(), "data/facility-slug-redirects.json"),
+      "utf8",
+    );
+    return JSON.parse(raw) as Record<string, string>;
+  } catch {
+    return {};
+  }
+})();
+
 const GEOJSON_CACHE = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800";
 
 const nextConfig: NextConfig = {
@@ -101,11 +122,19 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
-    return Object.entries(OPERATOR_ALIASES).map(([from, to]) => ({
+    const operatorRedirects = Object.entries(OPERATOR_ALIASES).map(([from, to]) => ({
       source: `/operators/${from}`,
       destination: `/operators/${to}`,
       permanent: true,
     }));
+    const facilityRedirects = Object.entries(FACILITY_SLUG_REDIRECTS)
+      .filter(([from, to]) => from && to && from !== to)
+      .map(([from, to]) => ({
+        source: `/facility/${from}`,
+        destination: `/facility/${to}`,
+        permanent: true,
+      }));
+    return [...operatorRedirects, ...facilityRedirects];
   },
   // Reverse-proxy PostHog through our own domain so ad-blockers (uBlock,
   // Brave, etc.) that target *.posthog.com don't drop events from dev-heavy
