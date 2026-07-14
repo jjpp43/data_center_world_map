@@ -9,6 +9,7 @@
     "start": "next start",
     "ingest": "tsx --env-file=.env.local scripts/ingest.ts",
     "audit:quality": "tsx --env-file=.env.local scripts/audit-quality.ts",
+    "backfill:dr": "tsx --env-file=.env.local scripts/backfill-digitalrealty-specs.ts",
     "canonicalize:orphans": "tsx --env-file=.env.local scripts/canonicalize-orphans.ts",
     "ingest:ironmountain": "tsx --env-file=.env.local scripts/ingest-ironmountain.ts",
     "ingest:google": "tsx --env-file=.env.local scripts/ingest-google.ts",
