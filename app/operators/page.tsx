@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { loadOperatorSummaries } from "@/lib/operators";
+import { INDEXABLE_CAPS, OPERATOR_MIN_FACILITIES } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 3600;
@@ -8,7 +9,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Data Center Operators Worldwide — Ranked by Facility Count",
   description:
-    "Every tracked data center (data centre) operator worldwide, ranked by facility count. Equinix, Digital Realty, NTT, DataBank, Cologix, CoreSite, CyrusOne, QTS, and 1,000+ more. Browse the full list.",
+    "Every tracked data center (data centre) operator worldwide, ranked by facility count. Equinix, Digital Realty, NTT, DataBank, Cologix, CoreSite, CyrusOne, QTS, and 1,000+ more. Ranked by facility count.",
   alternates: { canonical: "/operators" },
   openGraph: {
     title: "Data Center Operators Worldwide — Ranked by Facility Count",
@@ -21,6 +22,12 @@ export const metadata: Metadata = {
 
 export default async function OperatorsIndex() {
   const ops = await loadOperatorSummaries();
+  // Only link the set that can actually be indexed. Linking the full 1,000+
+  // put ~800 noindex pages into crawl discovery, each costing an ISR write on
+  // first fetch and unable to rank. Long-tail slugs still resolve directly.
+  const listed = ops
+    .filter((o) => o.facility_count >= OPERATOR_MIN_FACILITIES && o.slug.length > 0)
+    .slice(0, INDEXABLE_CAPS.operators);
   const totalFacilities = ops.reduce((sum, o) => sum + o.facility_count, 0);
   const totalMw = ops.reduce((sum, o) => sum + (o.total_power_mw ?? 0), 0);
   const summary = `${ops.length.toLocaleString()} data center operators run ${totalFacilities.toLocaleString()} facilities tracked on datacenters.world${
@@ -36,8 +43,8 @@ export default async function OperatorsIndex() {
     isPartOf: { "@type": "WebSite", name: "datacenters.world", url: "https://datacenters.world/" },
     mainEntity: {
       "@type": "ItemList",
-      numberOfItems: ops.length,
-      itemListElement: ops.slice(0, 50).map((o, i) => ({
+      numberOfItems: listed.length,
+      itemListElement: listed.slice(0, 50).map((o, i) => ({
         "@type": "ListItem",
         position: i + 1,
         url: `/operators/${o.slug}`,
@@ -68,7 +75,7 @@ export default async function OperatorsIndex() {
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-700 dark:text-zinc-300">{summary}</p>
 
         <ul className="mt-8 divide-y divide-zinc-200/70 rounded-2xl border border-zinc-200/70 bg-white/60 dark:divide-zinc-800/60 dark:border-zinc-800/60 dark:bg-zinc-900/40">
-          {ops.map((o, i) => (
+          {listed.map((o, i) => (
             <li key={`${o.slug}-${i}`} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="w-8 font-mono text-[10px] tabular-nums text-zinc-400">
@@ -93,6 +100,13 @@ export default async function OperatorsIndex() {
             </li>
           ))}
         </ul>
+
+        <p className="mt-6 text-xs text-zinc-500">
+          Showing the top {INDEXABLE_CAPS.operators} of {ops.length.toLocaleString()} tracked
+          operators by facility count. Every operator is reachable at{" "}
+          <span className="font-mono">/operators/[slug]</span> directly — the API exposes the full
+          set.
+        </p>
       </main>
     </div>
   );

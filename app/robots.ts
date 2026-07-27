@@ -28,8 +28,11 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Perplexity-User", ...baseRule },
       { userAgent: "Google-Extended", ...baseRule },
       { userAgent: "Applebot-Extended", ...baseRule },
-      { userAgent: "Bytespider", ...baseRule },
-      { userAgent: "Meta-ExternalAgent", ...baseRule },
+      // Blocked, not welcomed. Both walk thousands of unique URLs/day; every
+      // first fetch of a per-slug page is a full ISR render + write unit, and
+      // neither feeds a search or answer surface we can be cited in.
+      { userAgent: "Bytespider", disallow: ["/"] },
+      { userAgent: "Meta-ExternalAgent", disallow: ["/"] },
     ],
     sitemap: `${SITE}/sitemap.xml`,
     host: SITE,

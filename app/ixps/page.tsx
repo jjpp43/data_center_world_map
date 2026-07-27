@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { countryFlag, countryName } from "@/lib/countries";
 import { loadIxpSummaries } from "@/lib/ixps-data";
+import { INDEXABLE_CAPS, IXP_MIN_FACILITIES } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 3600;
@@ -23,6 +24,12 @@ export const metadata: Metadata = {
 export default async function IxpsIndex() {
   const ixps = await loadIxpSummaries();
   const withMembers = ixps.filter((i) => i.facility_count > 0 || (i.net_count ?? 0) > 0);
+  // Match isIndexableIxp(). Linking all 1,237 fed ~1,136 noindex pages into
+  // crawl discovery — each one a full ISR render on first fetch, none able to
+  // rank. Slugs outside the cap still resolve directly.
+  const listed = withMembers
+    .filter((i) => i.facility_count >= IXP_MIN_FACILITIES)
+    .slice(0, INDEXABLE_CAPS.ixps);
   const totalNets = withMembers.reduce((sum, i) => sum + (i.net_count ?? 0), 0);
   const summary = `${withMembers.length.toLocaleString()} tracked Internet Exchange Points across ${
     new Set(withMembers.map((i) => i.country).filter(Boolean)).size
@@ -37,8 +44,8 @@ export default async function IxpsIndex() {
     isPartOf: { "@type": "WebSite", name: "datacenters.world", url: "https://datacenters.world/" },
     mainEntity: {
       "@type": "ItemList",
-      numberOfItems: withMembers.length,
-      itemListElement: withMembers.slice(0, 100).map((i, idx) => ({
+      numberOfItems: listed.length,
+      itemListElement: listed.slice(0, 100).map((i, idx) => ({
         "@type": "ListItem",
         position: idx + 1,
         url: `/ixps/${i.slug}`,
@@ -73,7 +80,7 @@ export default async function IxpsIndex() {
         </p>
 
         <ul className="mt-8 divide-y divide-zinc-200/70 rounded-2xl border border-zinc-200/70 bg-white/60 dark:divide-zinc-800/60 dark:border-zinc-800/60 dark:bg-zinc-900/40">
-          {withMembers.map((i, idx) => (
+          {listed.map((i, idx) => (
             <li key={i.ix_id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="w-10 font-mono text-[10px] tabular-nums text-zinc-400">
@@ -104,6 +111,12 @@ export default async function IxpsIndex() {
             </li>
           ))}
         </ul>
+
+        <p className="mt-6 text-xs text-zinc-500">
+          Showing the top {INDEXABLE_CAPS.ixps} of {withMembers.length.toLocaleString()} tracked
+          IXPs by facility presence. Every IXP is reachable at{" "}
+          <span className="font-mono">/ixps/[slug]</span> directly — the API exposes the full set.
+        </p>
       </main>
     </div>
   );
