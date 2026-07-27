@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
-import { loadNetworkDetail, loadNetworkSummaries } from "@/lib/networks-data";
+import { loadNetworkDetail, loadTopNetworks } from "@/lib/networks-data";
 import { isIndexableNetwork, NOINDEX_ROBOTS } from "@/lib/indexable";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 604800;
+// 30d, matching /facility. Aggregate pages only change on ingest (which can
+// --rebuild), so a 7d cycle was spending 4x the ISR writes for no freshness.
+export const revalidate = 2_592_000;
 
 // Captured once at module load so descriptions render byte-identically
 // across revalidations within a year — keeps ISR write-skip working.
@@ -18,11 +20,8 @@ type Props = {
 };
 
 export async function generateStaticParams() {
-  const all = await loadNetworkSummaries();
-  return all
-    .filter((n) => n.facility_count >= 2)
-    .slice(0, 500)
-    .map((n) => ({ asn: String(n.asn) }));
+  const { top } = await loadTopNetworks(500);
+  return top.filter((n) => n.facility_count >= 2).map((n) => ({ asn: String(n.asn) }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

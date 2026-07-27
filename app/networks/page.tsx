@@ -1,11 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { loadNetworkSummaries } from "@/lib/networks-data";
+import { loadTopNetworks } from "@/lib/networks-data";
+import { INDEXABLE_CAPS, NETWORK_MIN_FACILITIES } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 3600;
 
-const TOP_N = 500;
+// Match isIndexableNetwork(). Was 500, which fed ~400 noindex ASN pages into
+// crawl discovery — each a full ISR render on first fetch, none able to rank.
+const TOP_N = INDEXABLE_CAPS.networks;
 
 export const metadata: Metadata = {
   title: "Networks (ASNs) — 34,732 in Tracked Data Centers",
@@ -27,11 +30,10 @@ function infoTypeBadge(type: string | null): string {
 }
 
 export default async function NetworksIndex() {
-  const all = await loadNetworkSummaries();
-  const withFacilities = all.filter((n) => n.facility_count > 0);
-  const top = withFacilities.slice(0, TOP_N);
+  const { total, top: ranked } = await loadTopNetworks(TOP_N);
+  const top = ranked.filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES);
 
-  const summary = `${withFacilities.length.toLocaleString()} networks have a tracked presence in at least one data-center facility. The full list is 34,000+ and addressable by ASN — this page shows the top ${TOP_N.toLocaleString()} by data-center footprint.`;
+  const summary = `${total.toLocaleString()} networks have a tracked presence in at least one data-center facility. The full list is 34,000+ and addressable by ASN — this page shows the top ${TOP_N.toLocaleString()} by data-center footprint.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -110,7 +112,7 @@ export default async function NetworksIndex() {
         </ul>
 
         <p className="mt-6 text-xs text-zinc-500">
-          Showing top {TOP_N.toLocaleString()} of {withFacilities.length.toLocaleString()} networks
+          Showing top {TOP_N.toLocaleString()} of {total.toLocaleString()} networks
           with facility presence. Every PeeringDB ASN with ≥2 facility presences is reachable at{" "}
           <span className="font-mono">/networks/[asn]</span> directly — the sitemap and API expose
           the full set.

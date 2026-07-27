@@ -35,55 +35,71 @@ interface NetRawRow {
   networks_at_facility: Array<{ count: number }> | null;
 }
 
+export interface NetworkListItem {
+  asn: number;
+  name: string;
+  info_type: string | null;
+  info_traffic: string | null;
+  facility_count: number;
+}
+
+interface NetSlimRow {
+  asn: number;
+  name: string;
+  info_type: string | null;
+  info_traffic: string | null;
+  networks_at_facility: Array<{ count: number }> | null;
+}
+
 /**
- * Pull every PeeringDB network with its facility-presence count. Sorted by
- * facility_count desc so the index page can slice the top N without resorting.
- * The full 34k network space includes a long tail of single- or zero-facility
- * networks; sitemap/index filter on >= the threshold callers pass in.
+ * Top-N networks by facility footprint, plus how many have any presence at
+ * all. Every consumer (index page, generateStaticParams, sitemap) only ever
+ * wanted a ranked head slice, but loadNetworkSummaries() returned all 34,732
+ * networks × 13 columns = 13.4MB — over Next's 2MB data-cache cap, so
+ * `unstable_cache` silently refused to store it and every render re-pulled the
+ * whole table from Supabase. Caching the *slice* instead of the source keeps
+ * the payload in the KB range so the 30d TTL actually applies. The wide fetch
+ * still happens, but only on a genuine cache miss.
  */
-async function fetchNetworkSummaries(): Promise<NetworkSummary[]> {
+async function fetchTopNetworks(
+  limit: number,
+): Promise<{ total: number; top: NetworkListItem[] }> {
   const sb = supabaseServer();
-  const rows: NetRawRow[] = [];
+  const rows: NetSlimRow[] = [];
   for (let from = 0; from < 100_000; from += 1000) {
     const { data, error } = await sb
       .from("networks")
-      .select(
-        "id, net_id, asn, name, aka, name_long, website, info_type, info_scope, info_traffic, info_ratio, info_ipv6, policy_general, networks_at_facility(count)",
-      )
+      .select("asn, name, info_type, info_traffic, networks_at_facility(count)")
       .order("asn")
       .range(from, from + 999)
-      .returns<NetRawRow[]>();
+      .returns<NetSlimRow[]>();
     if (error) throw error;
     if (!data || data.length === 0) break;
     rows.push(...data);
     if (data.length < 1000) break;
   }
 
-  return rows
+  const withPresence = rows
     .map((r) => ({
       asn: r.asn,
-      net_id: r.net_id,
-      uuid: r.id,
       name: r.name,
-      aka: r.aka,
-      name_long: r.name_long,
-      website: r.website,
       info_type: r.info_type,
-      info_scope: r.info_scope,
       info_traffic: r.info_traffic,
-      info_ratio: r.info_ratio,
-      info_ipv6: r.info_ipv6,
-      policy_general: r.policy_general,
       facility_count: r.networks_at_facility?.[0]?.count ?? 0,
     }))
+    .filter((n) => n.facility_count > 0)
     .sort((a, b) => b.facility_count - a.facility_count || a.asn - b.asn);
+
+  return { total: withPresence.length, top: withPresence.slice(0, limit) };
 }
 
-export const loadNetworkSummaries = unstable_cache(
-  fetchNetworkSummaries,
-  ["network-summaries-v1"],
-  { revalidate: 86_400, tags: ["networks"] },
-);
+export function loadTopNetworks(limit: number) {
+  return unstable_cache(
+    () => fetchTopNetworks(limit),
+    ["top-networks-v1", String(limit)],
+    { revalidate: 2_592_000, tags: ["networks"] },
+  )();
+}
 
 export interface NetworkDetail {
   network: NetworkSummary;

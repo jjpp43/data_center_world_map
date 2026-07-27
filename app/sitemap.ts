@@ -6,7 +6,7 @@ import { loadCountrySummaries } from "@/lib/countries-data";
 import { countrySlug } from "@/lib/countries";
 import { loadMetroSummaries } from "@/lib/metros-data";
 import { loadIxpSummaries } from "@/lib/ixps-data";
-import { loadNetworkSummaries } from "@/lib/networks-data";
+import { loadTopNetworks } from "@/lib/networks-data";
 import { TIERS } from "@/lib/density";
 import { INSIGHTS } from "@/lib/insights-data";
 import {
@@ -73,7 +73,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     loadCountrySummaries(),
     loadMetroSummaries(),
     loadIxpSummaries(),
-    loadNetworkSummaries(),
+    loadTopNetworks(INDEXABLE_CAPS.networks),
   ]);
 
   // lastModified only set on entries with a real data-driven timestamp
@@ -145,9 +145,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.65,
     }));
 
-  const networkEntries: MetadataRoute.Sitemap = networks
+  const networkEntries: MetadataRoute.Sitemap = networks.top
     .filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES)
-    .slice(0, INDEXABLE_CAPS.networks)
     .map((n) => ({
       url: `${SITE}/networks/${n.asn}`,
       changeFrequency: "weekly",
