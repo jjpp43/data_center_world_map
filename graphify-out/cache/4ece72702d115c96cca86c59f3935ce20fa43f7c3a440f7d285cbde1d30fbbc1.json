@@ -1,1 +1,0 @@
-{"nodes": [{"id": "infotoggle", "label": "InfoToggle.tsx", "file_type": "code", "source_file": "components/InfoToggle.tsx", "source_location": "L1"}], "edges": [{"source": "infotoggle", "target": "react", "relation": "imports_from", "confidence": "EXTRACTED", "source_file": "components/InfoToggle.tsx", "source_location": "L3", "weight": 1.0}]}

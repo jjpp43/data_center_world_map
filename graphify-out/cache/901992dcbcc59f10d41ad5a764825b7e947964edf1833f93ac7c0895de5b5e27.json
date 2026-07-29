@@ -1,1 +1,0 @@
-{"nodes": [{"id": "legend", "label": "Legend.tsx", "file_type": "code", "source_file": "components/Legend.tsx", "source_location": "L1"}], "edges": [{"source": "legend", "target": "react", "relation": "imports_from", "confidence": "EXTRACTED", "source_file": "components/Legend.tsx", "source_location": "L3", "weight": 1.0}]}

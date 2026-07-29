@@ -49,3 +49,4 @@ next-env.d.ts
 # Committing would just create noisy diffs on every data change.
 /public/facilities.geojson
 /public/cloud-regions.geojson
+/graphify-out/
