@@ -8,7 +8,9 @@ import { findOperatorBySlug, loadOperatorSummaries } from "@/lib/operators";
 import { isIndexableOperator, NOINDEX_ROBOTS } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 604800;
+// 30d, matching /facility. Aggregate pages only change on ingest (which can
+// --rebuild), so a 7d cycle was spending 4x the ISR writes for no freshness.
+export const revalidate = 2_592_000;
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
 
@@ -86,7 +88,7 @@ const loadFacilitiesForOperator = unstable_cache(
     return facilities;
   },
   ["operator-facilities-v1"],
-  { revalidate: 86_400, tags: ["data-centers"] },
+  { revalidate: 2_592_000, tags: ["data-centers"] },
 );
 
 export default async function OperatorPage({ params }: Props) {

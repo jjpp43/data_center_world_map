@@ -177,13 +177,15 @@ const loadFacilityMeta = unstable_cache(
     const sb = supabaseServer();
     const { data } = await sb
       .from("data_centers")
-      .select("name, operator, code, city, country, lat, lng, power_mw, space_sqft, tier")
+      .select(
+        "name, operator, code, city, country, lat, lng, power_mw, space_sqft, tier, networks_at_facility(count), ixes_at_facility(count)",
+      )
       .eq("slug", slug)
       .maybeSingle();
     return data;
   },
-  ["facility-meta-v2"],
-  { revalidate: 86_400, tags: ["data-centers"] },
+  ["facility-meta-v3"],
+  { revalidate: 2_592_000, tags: ["data-centers"] },
 );
 
 const loadFacilityDetail = unstable_cache(
@@ -223,18 +225,35 @@ const loadFacilityDetail = unstable_cache(
     return { dc, sources: sources ?? [], nafRows: nafRows ?? [], iafRows: iafRows ?? [] };
   },
   ["facility-detail-v1"],
-  { revalidate: 86_400, tags: ["data-centers"] },
+  { revalidate: 2_592_000, tags: ["data-centers"] },
 );
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await loadFacilityMeta(slug);
   if (!data) return { title: "Facility not found" };
-  // Value-prop title: location + the four fact buckets users came for.
-  // Drops the "· {operator}" suffix that was eating SERP real estate;
-  // the operator is already in data.name for most rows.
+  // Value-prop title built from facts this facility ACTUALLY has. The old
+  // template promised "Specs, Power, Networks, IXPs" on all 5,675 pages, but
+  // 43% of them carry none of the four ("No published specs", zero networks,
+  // zero IXPs) — a title/content mismatch Google answers by rewriting the
+  // title, and a CTR trap that bounces the clicks it does win. Facilities with
+  // nothing to promise fall back to a plain location title, which is honest
+  // and still carries the query terms people search ("<name> data center").
+  // Numeric lead is retained where there IS a number, per the CTR pattern.
   const locale = data.city ? ` (${data.city})` : "";
-  const title = `${data.name}${locale} — Specs, Power, Networks, IXPs`;
+  const netCount = data.networks_at_facility?.[0]?.count ?? 0;
+  const ixCount = data.ixes_at_facility?.[0]?.count ?? 0;
+  const facts: string[] = [];
+  if (netCount > 0) facts.push(`${netCount} Network${netCount === 1 ? "" : "s"}`);
+  if (ixCount > 0) facts.push(`${ixCount} IXP${ixCount === 1 ? "" : "s"}`);
+  if (data.power_mw != null) facts.push("Power");
+  if (data.space_sqft != null || data.tier) facts.push("Specs");
+  const where = [data.city, countryName(data.country) ?? data.country]
+    .filter(Boolean)
+    .join(", ");
+  const title = facts.length
+    ? `${data.name}${locale} — ${facts.slice(0, 3).join(", ")}`
+    : `${data.name} Data Center — ${where || "Location & Operator"}`;
   const description = buildSummary({
     name: data.name,
     operator: data.operator,

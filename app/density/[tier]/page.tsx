@@ -6,7 +6,9 @@ import { TIERS, loadDensityTier, type DensityTier } from "@/lib/density";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 604800;
+// 30d, matching /facility. Aggregate pages only change on ingest (which can
+// --rebuild), so a 7d cycle was spending 4x the ISR writes for no freshness.
+export const revalidate = 2_592_000;
 
 type Props = {
   params: Promise<{ tier: string }>;

@@ -171,7 +171,7 @@ const loadAllFacilities = unstable_cache(
     return rows;
   },
   ["metro-facilities-v2"],
-  { revalidate: 86_400, tags: ["data-centers"] },
+  { revalidate: 2_592_000, tags: ["data-centers"] },
 );
 
 export async function loadMetroSummaries(): Promise<MetroSummary[]> {

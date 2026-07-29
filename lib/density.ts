@@ -88,7 +88,7 @@ const loadAllWithNetworkCount = unstable_cache(
     return rows;
   },
   ["density-facilities-v2"],
-  { revalidate: 86_400, tags: ["data-centers"] },
+  { revalidate: 2_592_000, tags: ["data-centers"] },
 );
 
 export interface DensityIndex {

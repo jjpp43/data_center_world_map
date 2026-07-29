@@ -102,8 +102,8 @@ app/
 ├── page.tsx                          map (client) + sr-only SEO H1/p + <MobileHome>
 ├── layout.tsx                        Geist + WebSite/Organization/Dataset JSON-LD + inline theme + SessionProvider + PostHog. <html suppressHydrationWarning>
 ├── icon.png                          512×512 favicon
-├── facility/[slug]/page.tsx          SSR detail (ISR 7d, per-slug unstable_cache); Place + FAQ + Breadcrumb JSON-LD; links operator+country
-├── operators|countries|metros|ixps|networks|density|insights/...  ISR 7d per-slug; Breadcrumb JSON-LD on [slug]
+├── facility/[slug]/page.tsx          SSR detail (ISR 30d, per-slug unstable_cache); Place + FAQ + Breadcrumb JSON-LD; links operator+country
+├── operators|countries|metros|ixps|networks|density|insights/...  ISR 30d per-slug; Breadcrumb JSON-LD on [slug]
 ├── about, methodology, api/...       editorial (ISR)
 ├── api/v1/{facilities,operators,countries,cloud-regions}/route.ts
 ├── api/[transport]/route.ts          MCP server (5 tools)
@@ -135,8 +135,8 @@ supabase/migrations/0001–0018.sql · scrapers/ (Node 22 subproject)
 Supabase egress is the dominant cost. Three layers:
 
 1. **Map data → static-baked.** `scripts/build-geojson.ts` (prebuild) writes `public/{facilities,cloud-regions}.geojson` (~1.9 MB + 41 KB); runtime never touches Supabase for map data. Headers `public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800`.
-2. **SSR pages → ISR.** Per-slug (`/facility`, `/operators`, `/countries`, `/metros`, `/ixps`, `/networks`, `/density`) `revalidate = 604800` (7d). Index 3600–86400. Sitemap 86400. **Invariant**: no `getTheme()`/`cookies()` in server pages — silently disables `revalidate`. Also no `new Date()` in rendered output (module-load `YEAR` const only) — non-deterministic bytes force an ISR write every cycle.
-3. **Data fetches → matviews + `unstable_cache`.** Aggregations read `country_summary`, `operator_summary`, `facility_density` (single-row, not paginated scans). Every loader in `lib/*-data.ts` + `operators.ts` + `density.ts` + `api-data.ts` wrapped `unstable_cache(fn, key, { revalidate: 86400, tags })`. Shared by every per-slug render, `/api/v1/*`, and MCP call → one Supabase pass per (loader, args) per 24h. Tags: `data-centers`, `networks`, `ixes`.
+2. **SSR pages → ISR.** Per-slug (`/facility`, `/operators`, `/countries`, `/metros`, `/ixps`, `/networks`, `/density`) `revalidate = 2_592_000` (30d). Index 3600–86400. Sitemap 86400. **Invariant**: no `getTheme()`/`cookies()` in server pages — silently disables `revalidate`. Also no `new Date()` in rendered output (module-load `YEAR` const only) — non-deterministic bytes force an ISR write every cycle. **Effective revalidate = min(segment `revalidate`, inner `unstable_cache` TTL)** — a 30d page reading a 24h loader regenerates every 24h. Verify with the Revalidate column in `next build` output, not the source constant.
+3. **Data fetches → matviews + `unstable_cache`.** Aggregations read `country_summary`, `operator_summary`, `facility_density` (single-row, not paginated scans). Every loader in `lib/*-data.ts` + `operators.ts` + `density.ts` wrapped `unstable_cache(fn, key, { revalidate: 2_592_000, tags })` (30d — must match the segment `revalidate` above or it clamps it). `lib/api-data.ts` stays at 86400: REST/MCP are the documented 24h-freshness surface and aren't ISR-billed. Tags: `data-centers`, `networks`, `ixes` — declared but **no `revalidateTag()` caller exists**; freshness comes from deploys (weekly cron) + TTL.
 
 Matviews refreshed by `refresh_summary_views()` RPC (concurrent); ingest calls it on `--apply`. **Refresh cadence**: every deploy invalidates `unstable_cache` → fresh ISR write on next hit to every per-slug page (~40k writes/rebuild). So `triggerRebuild()` defaults off, no-ops without `--rebuild` (data lands within 24h via `revalidate`); unset `VERCEL_DEPLOY_HOOK_URL` → no-op regardless. Weekly Vercel cron redeploys to re-bake geojson = steady-state cache-nuke baseline.
 

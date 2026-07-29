@@ -52,7 +52,7 @@ async function fetchOperatorSummaries(): Promise<OperatorSummary[]> {
 export const loadOperatorSummaries = unstable_cache(
   fetchOperatorSummaries,
   ["operator-summaries-v1"],
-  { revalidate: 86_400, tags: ["data-centers"] },
+  { revalidate: 2_592_000, tags: ["data-centers"] },
 );
 
 /**

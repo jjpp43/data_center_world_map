@@ -107,11 +107,24 @@ records. Easier to stream-ingest and diff.
 - **Coordinates**: WGS84 decimal degrees, 6 decimals max. `lat ∈ [-90, 90]`, `lng ∈ [-180, 180]`. Reject any record outside these bounds.
 - **Country**: ISO-3166-1 alpha-2 uppercase (`US`, `GB`, `DE`). Convert long names with a standard library; never invent codes.
 - **Timestamps**: ISO 8601 UTC with `Z` suffix. Never local time, never naïve.
-- **Slug**: lowercase, ASCII, kebab-case. Formula: `slugify(${operator}-${name}-${city})`. Must be deterministic so re-runs produce the same slug.
+- **Slug**: lowercase, ASCII, kebab-case. Formula: `slugify(${operator}-${name}-${city})`. Must be deterministic so re-runs produce the same slug. **Scope: location sources only** (this brief — PeeringDB, OSM). These slugs create canonical `data_centers` rows and become public URLs, so they are permanent — `scripts/ingest.ts` only writes a slug when inserting a new row, never on match. Other briefs use different formulas for records that never create a canonical row; see the table below.
 - **Unknown values**: use JSON `null`. Never the strings `"unknown"`, `"N/A"`, `""`, or the number `0`.
 - **Status enum**: use exact lowercase strings. If a source uses a different word ("live", "active") map it to `"operational"`.
 - **`raw` field**: store the original upstream payload as-received. This is the escape hatch for later re-processing.
 - **One record per facility**: if you combine data for the same building from two sources, emit a single record with two entries in `sources[]`.
+
+### Slug formulas by source (not all the same — by design)
+
+| Source | Slug built in | Formula | Creates canonical row? |
+|---|---|---|---|
+| PeeringDB, OSM | `scrapers/{peeringdb,osm}.ts` | `slugify(operator-name-city)` | **Yes** — slug is the public URL |
+| Equinix, Digital Realty, CoreSite, Cologix, DataBank, CyrusOne, QTS | `scrapers/<operator>.ts` (brief: `scrapers/scrape-agent-operator-pages.md`) | `slugify(operator-code-city)` | No — enrichment only |
+| Google, Meta | `scrapers/{google,meta}.ts` | `{operator}-{slugify(city)}-{country}` (lowercase ISO code) | **Yes** — city-grain buildings |
+| Iron Mountain | `scrapers/ironmountain.ts` | `ironmountain-{code}-{url-slug}`, 240-char cap; code omitted if absent | **Yes** |
+
+Every row except the operator pages produces a public URL, and those slugs are permanent once written: `ingest.ts` sets `slug` only inside the insert-new branch, and `ingest-{google,meta,ironmountain}.ts` skip records whose slug already exists.
+
+Operator-page slugs are local record IDs — used for JSONL sort order, cache filenames (`./cache/<op>/<slug>.html`), and the orphan log. `ingestOperatorPages()` matches on operator + name + coordinates (then operator + name prefix, then operator + code regex) and never reads or writes the slug column; it only writes `code`, spec fields, tier, connectivity counts, certifications, security, and `datasheet_url`. So a facility can legitimately carry `equinix-ld8-london` in `facilities.equinix.jsonl` while its canonical row is slugged from the PeeringDB name — that is not a mismatch to reconcile.
 
 ## Sources — what to scrape, where, how
 

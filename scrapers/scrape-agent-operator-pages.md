@@ -285,6 +285,8 @@ parse the spec block, (5) emit one JSONL line per facility.
     - `digital-realty-iad17-ashburn`
     - `coresite-la1-los-angeles`
 
+    This uses `code`, not `name` — it intentionally differs from the `slugify(${operator}-${name}-${city})` rule in `scrape-agent.md`, which governs location sources. **Operator-page slugs never reach the database.** They are local record IDs for JSONL sort order, cache filenames, and the orphan log. `ingestOperatorPages()` in `scripts/ingest.ts` matches each record to an existing canonical row by operator + name + coordinates (then operator + name prefix, then operator + code regex) and writes only spec/connectivity/certification fields — never `slug`. Don't try to make the two formulas agree; see the slug-formula table in `scrape-agent.md`.
+
 ## Deliverables
 
 1. One JSONL file per operator in `./out/`.

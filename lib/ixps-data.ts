@@ -92,7 +92,7 @@ async function fetchIxpSummaries(): Promise<IxpSummary[]> {
 export const loadIxpSummaries = unstable_cache(
   fetchIxpSummaries,
   ["ixp-summaries-v1"],
-  { revalidate: 86_400, tags: ["ixes"] },
+  { revalidate: 2_592_000, tags: ["ixes"] },
 );
 
 export interface IxpDetail {

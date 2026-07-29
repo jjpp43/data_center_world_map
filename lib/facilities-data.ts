@@ -14,5 +14,5 @@ export const loadTopFacilitySlugs = unstable_cache(
     return (data ?? []).map((r) => r.slug);
   },
   ["top-facility-slugs-v1"],
-  { revalidate: 86_400, tags: ["data-centers"] },
+  { revalidate: 2_592_000, tags: ["data-centers"] },
 );

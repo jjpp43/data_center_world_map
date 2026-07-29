@@ -36,7 +36,7 @@ async function fetchCountrySummaries(): Promise<CountrySummary[]> {
 export const loadCountrySummaries = unstable_cache(
   fetchCountrySummaries,
   ["country-summaries-v1"],
-  { revalidate: 86_400, tags: ["data-centers"] },
+  { revalidate: 2_592_000, tags: ["data-centers"] },
 );
 
 export async function findCountryByCode(code: string): Promise<CountrySummary | null> {

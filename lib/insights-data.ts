@@ -33,7 +33,7 @@ async function fetchFacilitiesWithCounts(): Promise<DenseFacility[]> {
 export const loadFacilitiesWithCounts = unstable_cache(
   fetchFacilitiesWithCounts,
   ["facilities-with-counts-v2"],
-  { revalidate: 86_400, tags: ["data-centers"] },
+  { revalidate: 2_592_000, tags: ["data-centers"] },
 );
 
 export interface InsightCard {

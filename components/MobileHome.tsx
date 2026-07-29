@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Facility } from "@/lib/types";
-import { countryFlag, countryName } from "@/lib/countries";
+import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 
 const PAGE_SIZE = 30;
 
@@ -185,7 +185,66 @@ export function MobileHome({ facilities }: Props) {
           search-first list. For the full experience, open this site on a larger screen.
         </p>
       </main>
+
+      <SiteFooter />
     </div>
+  );
+}
+
+const HUBS: [string, string][] = [
+  ["/countries", "Data centers by country"],
+  ["/metros", "By metro"],
+  ["/operators", "By operator"],
+  ["/ixps", "Internet exchanges"],
+  ["/networks", "Networks (ASNs)"],
+  ["/density", "Density rankings"],
+  ["/insights", "Insights"],
+  ["/api", "Free API"],
+];
+
+/**
+ * Crawlable link hub. The desktop home is a Mapbox canvas and `page.tsx` is a
+ * client component, so before this the homepage's server HTML linked only
+ * /about, /methodology and /api — the entire ~6.3k-URL catalog was orphaned and
+ * reachable to Google via sitemap alone, receiving no PageRank from the site's
+ * strongest page. These are plain static links (no data fetch, no ISR cost) and
+ * they sit in the served HTML at every viewport, since MobileHome is hidden by
+ * CSS rather than unmounted. Path to any facility is now home → hub → facility.
+ */
+function SiteFooter() {
+  return (
+    <footer className="mt-8 border-t border-zinc-200/70 px-4 py-8 dark:border-zinc-800/60">
+      <nav aria-label="Browse the data center directory">
+        <h2 className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+          Browse
+        </h2>
+        <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          {HUBS.map(([href, label]) => (
+            <li key={href}>
+              <Link href={href} className="text-zinc-600 hover:underline dark:text-zinc-400">
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        <h2 className="mt-6 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+          Top countries
+        </h2>
+        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          {QUICK_COUNTRIES.map((cc) => (
+            <li key={cc}>
+              <Link
+                href={`/countries/${countrySlug(cc)}`}
+                className="text-zinc-600 hover:underline dark:text-zinc-400"
+              >
+                {countryName(cc)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </footer>
   );
 }
 
