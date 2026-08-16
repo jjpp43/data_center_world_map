@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { loadDensityIndex } from "@/lib/density";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 3600;
+export const revalidate = 2_592_000;
 
 export const metadata: Metadata = {
   title: "Data centers by network density",
@@ -27,7 +27,7 @@ const ACCENT_BG: Record<string, string> = {
 export default async function DensityIndex() {
   const idx = await loadDensityIndex();
 
-  const summary = `${idx.total_classified.toLocaleString()} facilities classified by peering-network density. ${idx.total_quiet.toLocaleString()} additional facilities have no PeeringDB-registered networks and are not classified here.`;
+  const summary = `${idx.total_classified.toLocaleString("en-US")} facilities classified by peering-network density. ${idx.total_quiet.toLocaleString("en-US")} additional facilities have no PeeringDB-registered networks and are not classified here.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -92,7 +92,7 @@ export default async function DensityIndex() {
                   </h2>
                   <span className="font-mono text-xs tabular-nums text-zinc-500">{t.short}</span>
                   <span className="ml-auto font-mono text-base tabular-nums text-zinc-900 dark:text-zinc-100">
-                    {t.count.toLocaleString()}
+                    {t.count.toLocaleString("en-US")}
                   </span>
                 </div>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{t.blurb}</p>

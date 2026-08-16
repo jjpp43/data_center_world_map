@@ -12,25 +12,26 @@ import { useInitialSignedIn } from "./SessionProvider";
  * Signed-in:  glass pill that opens a dropdown menu (Dashboard, Billing,
  *             Sign out). Click-outside and Esc close the menu.
  *
- * Initial state is seeded from a cookie-presence hint set by the root layout
- * so returning visitors don't get a "Sign in" flash before the browser client
- * verifies the session. The browser client still runs onAuthStateChange to
- * keep the UI honest across tabs.
+ * Hydration uses a signed-out snapshot so ISR HTML matches the client
+ * first paint. After hydrate, a cookie-presence hint from SessionProvider
+ * flips to Account without waiting on getSession(); onAuthStateChange
+ * still confirms.
  */
 export function AccountPill() {
-  const initial = useInitialSignedIn();
-  const [signedIn, setSignedIn] = useState<boolean>(initial);
+  const hinted = useInitialSignedIn();
+  const [verified, setVerified] = useState<boolean | null>(null);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const signedIn = verified ?? hinted;
 
   useEffect(() => {
     const sb = supabaseBrowser();
     let active = true;
     sb.auth.getSession().then(({ data }) => {
-      if (active) setSignedIn(!!data.session);
+      if (active) setVerified(!!data.session);
     });
     const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
-      if (active) setSignedIn(!!session);
+      if (active) setVerified(!!session);
     });
     return () => {
       active = false;

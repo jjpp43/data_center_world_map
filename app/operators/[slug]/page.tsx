@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { findOperatorBySlug, loadOperatorSummaries } from "@/lib/operators";
-import { isIndexableOperator, NOINDEX_ROBOTS } from "@/lib/indexable";
+import { INDEXABLE_CAPS, OPERATOR_MIN_FACILITIES, isIndexableOperator, NOINDEX_ROBOTS } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
 // 30d, matching /facility. Aggregate pages only change on ingest (which can
@@ -35,18 +35,19 @@ type Facility = {
 
 export async function generateStaticParams() {
   const ops = await loadOperatorSummaries();
-  // Static-build only the head — long-tail operators with single facilities
-  // still render on demand via ISR but don't bloat the build.
-  return ops.filter((o) => o.facility_count >= 2).map((o) => ({ slug: o.slug }));
+  return ops
+    .filter((o) => o.facility_count >= OPERATOR_MIN_FACILITIES && o.slug.length > 0)
+    .slice(0, INDEXABLE_CAPS.operators)
+    .map((o) => ({ slug: o.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const op = await findOperatorBySlug(slug);
   if (!op) return { title: "Operator not found" };
-  const count = op.facility_count.toLocaleString();
+  const count = op.facility_count.toLocaleString("en-US");
   const countryLabel = op.countries === 1 ? "Country" : "Countries";
-  const power = op.total_power_mw ? Math.round(op.total_power_mw).toLocaleString() : null;
+  const power = op.total_power_mw ? Math.round(op.total_power_mw).toLocaleString("en-US") : null;
   // Numeric-lead title for CTR. Keeps count + scope in the first ~50 chars
   // so the SERP snippet survives mobile truncation.
   const title = `${op.name} Data Centers — All ${count} Facilities in ${op.countries} ${countryLabel}`;
@@ -117,8 +118,8 @@ export default async function OperatorPage({ params }: Props) {
   const summary = `${op.name} operates ${facilities.length} data center${
     facilities.length === 1 ? "" : "s"
   } across ${countriesSorted.length} countr${countriesSorted.length === 1 ? "y" : "ies"}${
-    totalMw > 0 ? `, with ${Math.round(totalMw).toLocaleString()} MW of published power capacity` : ""
-  }${totalSqft > 0 ? ` and ${totalSqft.toLocaleString()} sqft of published floor space` : ""}.`;
+    totalMw > 0 ? `, with ${Math.round(totalMw).toLocaleString("en-US")} MW of published power capacity` : ""
+  }${totalSqft > 0 ? ` and ${totalSqft.toLocaleString("en-US")} sqft of published floor space` : ""}.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -164,10 +165,10 @@ export default async function OperatorPage({ params }: Props) {
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-700 dark:text-zinc-300">{summary}</p>
 
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatBox label="Facilities" value={facilities.length.toLocaleString()} />
-          <StatBox label="Countries" value={countriesSorted.length.toLocaleString()} />
-          <StatBox label="Total power" value={totalMw > 0 ? `${Math.round(totalMw).toLocaleString()} MW` : "—"} />
-          <StatBox label="Total space" value={totalSqft > 0 ? `${Math.round(totalSqft / 1000).toLocaleString()}k sqft` : "—"} />
+          <StatBox label="Facilities" value={facilities.length.toLocaleString("en-US")} />
+          <StatBox label="Countries" value={countriesSorted.length.toLocaleString("en-US")} />
+          <StatBox label="Total power" value={totalMw > 0 ? `${Math.round(totalMw).toLocaleString("en-US")} MW` : "—"} />
+          <StatBox label="Total space" value={totalSqft > 0 ? `${Math.round(totalSqft / 1000).toLocaleString("en-US")}k sqft` : "—"} />
         </div>
 
         {countriesSorted.map(([country, list]) => (
@@ -195,7 +196,7 @@ export default async function OperatorPage({ params }: Props) {
                   </div>
                   <div className="flex shrink-0 items-center gap-3 text-xs tabular-nums text-zinc-500">
                     {f.power_mw != null && <span>{f.power_mw} MW</span>}
-                    {f.space_sqft != null && <span>{f.space_sqft.toLocaleString()} sqft</span>}
+                    {f.space_sqft != null && <span>{f.space_sqft.toLocaleString("en-US")} sqft</span>}
                     {f.status !== "operational" && <span>{f.status}</span>}
                   </div>
                 </li>

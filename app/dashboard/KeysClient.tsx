@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { captureEvent } from "@/components/PostHog";
 
 export function KeysClient({ reveal }: { reveal: string | null }) {
   const [shown, setShown] = useState(reveal);
@@ -10,7 +9,6 @@ export function KeysClient({ reveal }: { reveal: string | null }) {
 
   useEffect(() => {
     if (!reveal) return;
-    captureEvent("key_generated");
     const url = new URL(window.location.href);
     url.searchParams.delete("reveal");
     window.history.replaceState({}, "", url.toString());

@@ -210,4 +210,4 @@ Single-tenant enterprise (banks, retail, gov)           +500–800   multi-year
 
 ---
 
-Built by [Junna Park](https://github.com/jjpp43). Methodology and source attribution at [/methodology](https://datacenters.world/methodology).
+Methodology and source attribution at [/methodology](https://datacenters.world/methodology).

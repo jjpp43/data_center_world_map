@@ -12,13 +12,6 @@ const SUPABASE_HOST = (() => {
   }
 })();
 
-const POSTHOG_INGEST_HOST =
-  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
-const POSTHOG_ASSETS_HOST = POSTHOG_INGEST_HOST.replace(
-  /^https:\/\/([a-z]+)\.i\.posthog\.com$/,
-  "https://$1-assets.i.posthog.com",
-);
-
 const CSP_DIRECTIVES: Record<string, string[]> = {
   "default-src": ["'self'"],
   "script-src": [
@@ -27,7 +20,6 @@ const CSP_DIRECTIVES: Record<string, string[]> = {
     "'unsafe-eval'",
     "https://api.mapbox.com",
     "https://events.mapbox.com",
-    "https://*.i.posthog.com",
   ],
   "style-src": ["'self'", "'unsafe-inline'", "https://api.mapbox.com"],
   "img-src": ["'self'", "data:", "blob:", "https://api.mapbox.com", "https://*.tiles.mapbox.com"],
@@ -38,7 +30,6 @@ const CSP_DIRECTIVES: Record<string, string[]> = {
     "https://api.mapbox.com",
     "https://events.mapbox.com",
     "https://*.tiles.mapbox.com",
-    "https://*.i.posthog.com",
   ],
   "worker-src": ["'self'", "blob:"],
   "child-src": ["'self'", "blob:"],
@@ -135,21 +126,6 @@ const nextConfig: NextConfig = {
         permanent: true,
       }));
     return [...operatorRedirects, ...facilityRedirects];
-  },
-  // Reverse-proxy PostHog through our own domain so ad-blockers (uBlock,
-  // Brave, etc.) that target *.posthog.com don't drop events from dev-heavy
-  // visitors. Browser sees /ingest/*; Next forwards server-side.
-  async rewrites() {
-    return [
-      {
-        source: "/ingest/static/:path*",
-        destination: `${POSTHOG_ASSETS_HOST}/static/:path*`,
-      },
-      {
-        source: "/ingest/:path*",
-        destination: `${POSTHOG_INGEST_HOST}/:path*`,
-      },
-    ];
   },
 };
 

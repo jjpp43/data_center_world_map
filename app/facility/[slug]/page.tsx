@@ -160,12 +160,12 @@ function buildSummary(args: {
   const op = args.operator ?? "an unknown operator";
   const specBits: string[] = [];
   if (args.power_mw) specBits.push(`${args.power_mw} MW`);
-  if (args.space_sqft) specBits.push(`${args.space_sqft.toLocaleString()} sqft`);
+  if (args.space_sqft) specBits.push(`${args.space_sqft.toLocaleString("en-US")} sqft`);
   if (args.tier) specBits.push(`Tier ${args.tier}`);
   const specBlurb = specBits.length ? ` Published specs: ${specBits.join(" · ")}.` : "";
   const presenceBits: string[] = [];
-  if (args.networkCount) presenceBits.push(`${args.networkCount.toLocaleString()} network${args.networkCount === 1 ? "" : "s"}`);
-  if (args.ixCount) presenceBits.push(`${args.ixCount.toLocaleString()} Internet exchange${args.ixCount === 1 ? "" : "s"}`);
+  if (args.networkCount) presenceBits.push(`${args.networkCount.toLocaleString("en-US")} network${args.networkCount === 1 ? "" : "s"}`);
+  if (args.ixCount) presenceBits.push(`${args.ixCount.toLocaleString("en-US")} Internet exchange${args.ixCount === 1 ? "" : "s"}`);
   const presenceBlurb = presenceBits.length ? ` Hosts ${presenceBits.join(" and ")}.` : "";
   return `${args.name} is a data center operated by ${op}${where ? ` in ${where}` : ""}.${specBlurb}${presenceBlurb}`;
 }
@@ -572,10 +572,11 @@ export default async function FacilityPage({ params }: Props) {
                     </div>
                     <span className="text-xs text-zinc-900 dark:text-zinc-500">
                       fetched{" "}
-                      {new Date(s.fetched_at).toLocaleDateString(undefined, {
+                      {new Date(s.fetched_at).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
+                        timeZone: "UTC",
                       })}
                     </span>
                   </li>
@@ -611,7 +612,7 @@ function SpecBlock({ dc }: { dc: DataCenter }) {
     ["Power redundancy", dc.power_redundancy],
     ["Power distribution", dc.power_distribution],
     ["Total space", fmtSpace(dc.space_sqft, dc.space_sqm)],
-    ["Raised floor", dc.raised_floor_sqft ? `${dc.raised_floor_sqft.toLocaleString()} sqft` : null],
+    ["Raised floor", dc.raised_floor_sqft ? `${dc.raised_floor_sqft.toLocaleString("en-US")} sqft` : null],
     ["Site area", dc.site_acres ? `${dc.site_acres} acres` : null],
     ["Building", dc.building_description],
     ["Cabinet density", fmtCabinetRange(dc.min_cabinet_density_kw, dc.max_cabinet_density_kw)],
@@ -821,8 +822,8 @@ function buildFaqJsonLd(
 
   if (dc.space_sqft || dc.space_sqm) {
     const space = dc.space_sqft
-      ? `${dc.space_sqft.toLocaleString()} square feet${dc.space_sqm ? ` (${dc.space_sqm.toLocaleString()} sqm)` : ""}`
-      : `${dc.space_sqm!.toLocaleString()} square meters`;
+      ? `${dc.space_sqft.toLocaleString("en-US")} square feet${dc.space_sqm ? ` (${dc.space_sqm.toLocaleString("en-US")} sqm)` : ""}`
+      : `${dc.space_sqm!.toLocaleString("en-US")} square meters`;
     qa.push({
       q: `How large is ${dc.name}?`,
       a: `${dc.name} has ${space} of facility space.`,
@@ -839,7 +840,7 @@ function buildFaqJsonLd(
   if (networkCount > 0) {
     qa.push({
       q: `How many networks are present at ${dc.name}?`,
-      a: `${networkCount.toLocaleString()} network${networkCount === 1 ? " is" : "s are"} present at ${dc.name} according to PeeringDB, including carriers, ISPs, and content networks.`,
+      a: `${networkCount.toLocaleString("en-US")} network${networkCount === 1 ? " is" : "s are"} present at ${dc.name} according to PeeringDB, including carriers, ISPs, and content networks.`,
     });
   }
 
@@ -932,6 +933,13 @@ const SOURCE_LABEL: Record<string, string> = {
   "cyrusone-com": "CyrusOne",
   "qtsdatacenters-com": "QTS",
   "ironmountain-com": "Iron Mountain",
+  "google-com": "Google",
+  "meta-com": "Meta",
+  "h5datacenters-com": "H5 Data Centers",
+  "vantage-dc-com": "Vantage",
+  "aligneddc-com": "Aligned",
+  "nextdc-com": "NEXTDC",
+  "stackinfra-com": "STACK",
 };
 
 const OPERATOR_BADGE = "bg-amber-500/15 text-amber-300 ring-amber-500/30";
@@ -951,6 +959,13 @@ const SOURCE_COLOR: Record<string, string> = {
   "cyrusone-com": OPERATOR_BADGE,
   "qtsdatacenters-com": OPERATOR_BADGE,
   "ironmountain-com": OPERATOR_BADGE,
+  "google-com": OPERATOR_BADGE,
+  "meta-com": OPERATOR_BADGE,
+  "h5datacenters-com": OPERATOR_BADGE,
+  "vantage-dc-com": OPERATOR_BADGE,
+  "aligneddc-com": OPERATOR_BADGE,
+  "nextdc-com": OPERATOR_BADGE,
+  "stackinfra-com": OPERATOR_BADGE,
 };
 
 function SourceBadge({ source }: { source: string }) {
@@ -982,10 +997,10 @@ function fmtPower(mw: number | null): string | null {
 function fmtSpace(sqft: number | null, sqm: number | null): string | null {
   if (sqft != null) {
     return sqm != null
-      ? `${sqft.toLocaleString()} sqft / ${sqm.toLocaleString()} sqm`
-      : `${sqft.toLocaleString()} sqft`;
+      ? `${sqft.toLocaleString("en-US")} sqft / ${sqm.toLocaleString("en-US")} sqm`
+      : `${sqft.toLocaleString("en-US")} sqft`;
   }
-  if (sqm != null) return `${sqm.toLocaleString()} sqm`;
+  if (sqm != null) return `${sqm.toLocaleString("en-US")} sqm`;
   return null;
 }
 

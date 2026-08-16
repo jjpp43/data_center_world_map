@@ -4,7 +4,7 @@ import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { loadIxpSummaries } from "@/lib/ixps-data";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 86400;
+export const revalidate = 2_592_000;
 
 const TOP_N = 25;
 
@@ -41,7 +41,7 @@ export default async function LargestIxpsInsight() {
     "@type": "Article",
     headline: "The 25 largest Internet Exchange Points by membership",
     description: "Internet Exchanges ranked by member networks.",
-    author: { "@type": "Person", name: "Junna Park" },
+    author: { "@type": "Organization", name: "datacenters.world", url: "https://datacenters.world/" },
     isPartOf: { "@type": "WebSite", name: "datacenters.world", url: "https://datacenters.world/" },
     mainEntity: {
       "@type": "ItemList",
@@ -80,7 +80,7 @@ export default async function LargestIxpsInsight() {
           transit. The biggest IXPs anchor entire regional internets. Ranked by member-network
           count, the top 25 connect{" "}
           <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
-            {totalMembers.toLocaleString()}
+            {totalMembers.toLocaleString("en-US")}
           </span>{" "}
           aggregate network memberships across{" "}
           <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
@@ -96,7 +96,7 @@ export default async function LargestIxpsInsight() {
             </Link>{" "}
             with{" "}
             <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
-              {lead.net_count.toLocaleString()}
+              {lead.net_count.toLocaleString("en-US")}
             </span>{" "}
             member networks — a single peering fabric reaching most of the global routing graph.
           </p>
@@ -145,7 +145,7 @@ export default async function LargestIxpsInsight() {
                 </div>
                 <div className="flex shrink-0 items-center gap-3 text-xs tabular-nums">
                   <span className="font-mono text-zinc-900 dark:text-zinc-100">
-                    {(i.net_count ?? 0).toLocaleString()} networks
+                    {(i.net_count ?? 0).toLocaleString("en-US")} networks
                   </span>
                   {i.facility_count > 0 && (
                     <span className="text-zinc-500">

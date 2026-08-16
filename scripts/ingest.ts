@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
-import { refreshSummaryViews, triggerRebuild } from "./_trigger-rebuild";
+import { refreshSummaryViews, triggerCatalogFreshness } from "./_trigger-rebuild";
 
 const SCRAPERS_OUT = path.join(process.cwd(), "scrapers/out");
 const BATCH_SIZE = 500;
@@ -913,7 +913,7 @@ async function main() {
   await ingestPeeringdbIxfac();
   console.log("Done.");
   await refreshSummaryViews();
-  await triggerRebuild("ingest");
+  await triggerCatalogFreshness("ingest");
 }
 
 main().catch((e) => {

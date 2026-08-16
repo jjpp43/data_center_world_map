@@ -25,15 +25,7 @@ export function Legend({ cloudRegionsVisible, onCloudRegionsToggle }: Props) {
           <ul className="space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
             <li className="flex items-center gap-2">
               <Dot color="#4ade80" />
-              Operational
-            </li>
-            <li className="flex items-center gap-2">
-              <Dot color="#fbbf24" />
-              Under construction
-            </li>
-            <li className="flex items-center gap-2">
-              <Dot color="#94a3b8" />
-              Planned
+              Data centers
             </li>
           </ul>
 
@@ -50,19 +42,19 @@ export function Legend({ cloudRegionsVisible, onCloudRegionsToggle }: Props) {
             {cloudRegionsVisible && (
               <ul className="mt-1.5 ml-6 space-y-1 text-[11px] text-zinc-600 dark:text-zinc-400">
                 <li className="flex items-center gap-2">
-                  <Dot color="#ff9d2e" />
+                  <AreaSwatch color="#ff9d2e" />
                   AWS
                 </li>
                 <li className="flex items-center gap-2">
-                  <Dot color="#a855f7" />
-                  Google Cloud
+                  <AreaSwatch color="#a855f7" />
+                  Google
                 </li>
                 <li className="flex items-center gap-2">
-                  <Dot color="#3aa0e6" />
+                  <AreaSwatch color="#3aa0e6" />
                   Azure
                 </li>
                 <li className="flex items-center gap-2">
-                  <Dot color="#ff5757" />
+                  <AreaSwatch color="#ff5757" />
                   Oracle Cloud
                 </li>
               </ul>
@@ -78,9 +70,13 @@ export function Legend({ cloudRegionsVisible, onCloudRegionsToggle }: Props) {
         >
           <span className="flex -space-x-0.5">
             <Dot color="#4ade80" />
-            <Dot color="#fbbf24" />
-            <Dot color="#94a3b8" />
-            {cloudRegionsVisible && <Dot color="#3aa0e6" />}
+            {cloudRegionsVisible && (
+              <>
+                <AreaSwatch color="#ff9d2e" />
+                <AreaSwatch color="#a855f7" />
+                <AreaSwatch color="#3aa0e6" />
+              </>
+            )}
           </span>
           <span>Legend</span>
         </button>
@@ -96,6 +92,18 @@ function Dot({ color }: { color: string }) {
       style={{
         backgroundColor: color,
         boxShadow: `0 0 6px ${color}, 0 0 12px ${color}80`,
+      }}
+    />
+  );
+}
+
+function AreaSwatch({ color }: { color: string }) {
+  return (
+    <span
+      className="inline-block h-2.5 w-3.5 rounded-[2px]"
+      style={{
+        backgroundColor: `${color}33`,
+        boxShadow: `inset 0 0 0 1.5px ${color}`,
       }}
     />
   );

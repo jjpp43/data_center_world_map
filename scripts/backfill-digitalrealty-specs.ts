@@ -18,7 +18,7 @@
  *   npm run backfill:dr -- --apply --rebuild   # + force a Vercel deploy
  */
 import { createClient } from "@supabase/supabase-js";
-import { refreshSummaryViews, triggerRebuild } from "./_trigger-rebuild";
+import { refreshSummaryViews, triggerCatalogFreshness } from "./_trigger-rebuild";
 
 const APPLY = process.argv.includes("--apply");
 const OPERATOR = "Digital Realty";
@@ -239,7 +239,7 @@ async function main() {
   console.log(`  ${done}/${updates.length} committed`);
 
   await refreshSummaryViews();
-  await triggerRebuild("backfill-digitalrealty-specs");
+  await triggerCatalogFreshness("backfill-digitalrealty-specs");
 }
 
 main().catch((e) => {

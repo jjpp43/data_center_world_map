@@ -209,7 +209,6 @@ Anthropic's catalog lives at <https://docs.claude.com/en/docs/agents-and-tools/m
 and the submission process is the form linked there. Submit with:
 
 - Server name: `datacenters-world`
-- Maintainer: Junna Park
 - URL: `https://datacenters.world/api/mcp`
 - One-line description: as above
 - Use case: infrastructure / data center / networking research

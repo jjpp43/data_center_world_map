@@ -1,16 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
-
-/**
- * "Is the visitor likely signed in?" hint, derived from cookie presence on
- * mount. AccountPill uses it as the initial useState seed so signed-in users
- * don't see a "Sign in" flash before the browser client verifies the session.
- *
- * Reads cookies client-side so the root layout stays static (no cookies() call
- * server-side → enables ISR on pages beneath it). Not authoritative; the
- * browser client still runs getSession() to confirm and corrects if stale.
- */
+import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
 
 const SessionContext = createContext<{ initialSignedIn: boolean }>({
   initialSignedIn: false,
@@ -23,8 +13,16 @@ function detectFromCookie(): boolean {
     .some((c) => c.startsWith("sb-") && c.includes("-auth-token"));
 }
 
+function subscribe(): () => void {
+  return () => {};
+}
+
+function getServerSnapshot(): boolean {
+  return false;
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [initialSignedIn] = useState<boolean>(() => detectFromCookie());
+  const initialSignedIn = useSyncExternalStore(subscribe, detectFromCookie, getServerSnapshot);
   return (
     <SessionContext.Provider value={{ initialSignedIn }}>
       {children}

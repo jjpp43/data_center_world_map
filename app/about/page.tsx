@@ -2,9 +2,15 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName } from "@/lib/countries";
-import { EditorialHeader, Gap, RankedRow, SectionHeader, Stat } from "@/components/editorial";
+import {
+  EditorialShell,
+  Gap,
+  RankedRow,
+  SectionHeader,
+  sheetLink,
+} from "@/components/editorial";
 
-export const revalidate = 3600;
+export const revalidate = 2_592_000;
 
 export const metadata: Metadata = {
   title: "About",
@@ -84,155 +90,119 @@ export default async function AboutPage() {
   const stats = await loadStats();
   const maxCountry = stats.topCountries[0]?.[1] ?? 1;
   const maxOperator = stats.topUsOperators[0]?.[1] ?? 1;
+  const facilities = stats.facilitiesTotal.toLocaleString("en-US");
 
   return (
-    <div
-      className="min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
-    >
-      <EditorialHeader active="about" />
+    <EditorialShell active="about">
+      <h1 className="text-3xl font-semibold tracking-tight">About</h1>
+      <p className="mt-3 text-[15px] leading-7 text-zinc-600 dark:text-zinc-400">
+        An open atlas of every serious data center on Earth. Sourced, deduplicated, and built
+        to be more useful than the directories that came before it. Free to use, free to cite.{" "}
+        <Link href="/methodology" className={sheetLink}>
+          Read the methodology
+        </Link>
+        .
+      </p>
 
-      <main className="relative mx-auto max-w-5xl px-6 py-12">
-        <div
-          aria-hidden
-          className="dot-grid pointer-events-none absolute inset-x-0 top-0 -z-10 h-[480px]"
-        />
+      <section className="mt-14">
+        <SectionHeader>By the numbers</SectionHeader>
+        <dl className="mt-6 grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-4">
+          <LegendStat label="Data centers" value={facilities} />
+          <LegendStat label="Countries" value={stats.uniqueCountries.toString()} />
+          <LegendStat
+            label="Cloud regions"
+            value={stats.cloudRegions.toLocaleString("en-US")}
+          />
+          <LegendStat label="Networks · ASNs" value={stats.networks.toLocaleString("en-US")} />
+        </dl>
+        <p className="mt-3 text-sm text-zinc-500">
+          {stats.ixes.toLocaleString("en-US")} internet exchanges
+        </p>
+      </section>
 
-        <div className="max-w-3xl">
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-            <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40 live-dot" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            </span>
-            <span>Live · {stats.facilitiesTotal.toLocaleString()} facilities indexed</span>
-          </div>
-          <h1 className="mt-4 text-5xl font-semibold leading-[1.05] tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-6xl">
-            An open atlas of <br className="hidden sm:block" />
-            <span className="text-zinc-500">every serious data center</span> on Earth.
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-300">
-            Sourced, deduplicated, and built to be more useful than the directories that came
-            before it. Free to use, free to cite.{" "}
-            <Link
-              href="/methodology"
-              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              Read the methodology
-              <span aria-hidden>→</span>
-            </Link>
-          </p>
-        </div>
-
-        <section className="mt-16">
-          <SectionHeader caption="updated hourly">By the numbers</SectionHeader>
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Stat
-              size="hero"
-              live
-              label="Data centers"
-              value={stats.facilitiesTotal.toLocaleString()}
-            />
-            <Stat size="hero" label="Countries" value={stats.uniqueCountries.toString()} />
-          </div>
-          <div className="mt-3 flex flex-wrap items-baseline gap-x-6 gap-y-2 rounded-2xl border border-zinc-200/70 bg-white/60 px-5 py-3 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-900/30">
-            <InlineTertiary label="cloud regions" value={stats.cloudRegions.toLocaleString()} />
-            <Divider />
-            <InlineTertiary label="networks · ASNs" value={stats.networks.toLocaleString()} />
-            <Divider />
-            <InlineTertiary label="internet exchanges" value={stats.ixes.toLocaleString()} />
-          </div>
-        </section>
-
-        <section className="mt-16 grid grid-cols-1 gap-10 lg:grid-cols-2">
-          <div>
-            <SectionHeader>Top countries</SectionHeader>
-            <ul className="mt-5 divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
-              {stats.topCountries.map(([cc, n], i) => (
-                <RankedRow
-                  key={cc}
-                  rank={i + 1}
-                  label={countryName(cc) ?? cc}
-                  value={n}
-                  count={n}
-                  maxCount={maxCountry}
-                  prefix={<span className="text-base leading-none">{countryFlag(cc)}</span>}
-                />
-              ))}
-            </ul>
-          </div>
-          <div>
-            <SectionHeader>Top US operators</SectionHeader>
-            <ul className="mt-5 divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
-              {stats.topUsOperators.map(([op, n], i) => (
-                <RankedRow
-                  key={op}
-                  rank={i + 1}
-                  label={op}
-                  value={n}
-                  count={n}
-                  maxCount={maxOperator}
-                />
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="mt-16">
-          <SectionHeader>What&rsquo;s not here yet</SectionHeader>
-          <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
-            We track{" "}
-            <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
-              {stats.facilitiesTotal.toLocaleString()}
-            </span>{" "}
-            facilities. Permissive directories list ~4,000 in the US alone. The difference is
-            definition, not sloppiness — see the{" "}
-            <Link
-              href="/methodology"
-              className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              inclusion criteria
-            </Link>
-            . Work in flight:
-          </p>
-          <ul className="mt-5 space-y-5">
-            <Gap title="Hyperscale buildings" impact="+300–500" effort="researching">
-              Microsoft, Google, Meta, AWS, and Apple each operate dozens of buildings. Microsoft
-              and Google publish addresses for ESG reporting — we&rsquo;ll scrape those.
-            </Gap>
-            <Gap title="Operator-page orphans" impact="+200–300" effort="next up">
-              234 operator-page records currently unmatched. Most are real facilities not in
-              PeeringDB. Geocoding closes the gap.
-            </Gap>
-            <Gap title="More operators" impact="+150–250" effort="tractable">
-              Iron Mountain, Aligned, Stack, Compass, T5, Sabey, Switch, Vantage, H5, Element
-              Critical — all publish facility pages. We&rsquo;ve done 7 of the top operators.
-            </Gap>
+      <section className="mt-16 grid grid-cols-1 gap-10 lg:grid-cols-2">
+        <div>
+          <SectionHeader>Top countries</SectionHeader>
+          <ul className="mt-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+            {stats.topCountries.map(([cc, n], i) => (
+              <RankedRow
+                key={cc}
+                rank={i + 1}
+                label={countryName(cc) ?? cc}
+                value={n}
+                count={n}
+                maxCount={maxCountry}
+                prefix={<span className="text-base leading-none">{countryFlag(cc)}</span>}
+              />
+            ))}
           </ul>
-        </section>
+        </div>
+        <div>
+          <SectionHeader>Top US operators</SectionHeader>
+          <ul className="mt-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+            {stats.topUsOperators.map(([op, n], i) => (
+              <RankedRow
+                key={op}
+                rank={i + 1}
+                label={op}
+                value={n}
+                count={n}
+                maxCount={maxOperator}
+              />
+            ))}
+          </ul>
+        </div>
+      </section>
 
-        <section className="mt-16 border-t border-zinc-200/70 pt-6 text-xs text-zinc-500 dark:border-zinc-800/60">
-          <p className="font-mono">
-            Built by Junna Park · Data from PeeringDB (CC-BY-SA), OpenStreetMap (ODbL), and
-            operator-published facility pages · Map tiles by Mapbox
-          </p>
-        </section>
-      </main>
-    </div>
+      <section className="mt-16">
+        <SectionHeader>What&rsquo;s not here yet</SectionHeader>
+        <p className="mt-5 max-w-2xl text-zinc-500">
+          We track{" "}
+          <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-50">{facilities}</span>{" "}
+          facilities. Permissive directories list ~4,000 in the US alone. The difference is
+          definition, not sloppiness — see the{" "}
+          <Link href="/methodology" className={sheetLink}>
+            inclusion criteria
+          </Link>
+          . Work in flight:
+        </p>
+        <ul className="mt-5 space-y-5">
+          <Gap title="Hyperscale buildings" impact="+300–500" effort="researching">
+            Microsoft, Google, Meta, AWS, and Apple each operate dozens of buildings. Microsoft
+            and Google publish addresses for ESG reporting — we&rsquo;ll scrape those.
+          </Gap>
+          <Gap title="More operators" impact="+80–150" effort="in flight">
+            Iron Mountain, H5, Vantage, Aligned/ODATA, NEXTDC, and STACK are in. Next: Compass, T5
+            (location pages currently unpublished), Sabey, Switch, Element Critical.
+          </Gap>
+        </ul>
+      </section>
+
+      <section className="mt-16 border-t border-zinc-200 pt-6 text-sm text-zinc-500 dark:border-zinc-800">
+        <p>
+          <Link href="/privacy" className={sheetLink}>
+            Privacy
+          </Link>
+          {" · "}
+          <a
+            href="mailto:info@datacenters.world"
+            className="font-mono text-teal-800 underline decoration-teal-300/80 underline-offset-2 hover:decoration-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
+          >
+            info@datacenters.world
+          </a>{" "}
+          · Data from PeeringDB (CC-BY-SA), OpenStreetMap (ODbL), and operator-published facility
+          pages · Map tiles by Mapbox
+        </p>
+      </section>
+    </EditorialShell>
   );
 }
 
-function InlineTertiary({ label, value }: { label: string; value: string }) {
+function LegendStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline gap-2">
-      <span className="font-mono text-xl tabular-nums text-zinc-900 dark:text-zinc-100">
-        {value}
-      </span>
-      <span className="text-xs uppercase tracking-wider text-zinc-500">{label}</span>
+    <div>
+      <dt className="text-sm text-zinc-500">{label}</dt>
+      <dd className="mt-1 font-mono text-2xl tabular-nums tracking-tight text-teal-800 dark:text-teal-300">{value}</dd>
     </div>
-  );
-}
-
-function Divider() {
-  return (
-    <span aria-hidden className="h-3 w-px bg-zinc-300/70 dark:bg-zinc-700/70" />
   );
 }

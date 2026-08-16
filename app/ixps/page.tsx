@@ -5,7 +5,7 @@ import { loadIxpSummaries } from "@/lib/ixps-data";
 import { INDEXABLE_CAPS, IXP_MIN_FACILITIES } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 3600;
+export const revalidate = 2_592_000;
 
 export const metadata: Metadata = {
   title: "Internet Exchange Points (IXPs) — All 1,309 Worldwide",
@@ -31,9 +31,9 @@ export default async function IxpsIndex() {
     .filter((i) => i.facility_count >= IXP_MIN_FACILITIES)
     .slice(0, INDEXABLE_CAPS.ixps);
   const totalNets = withMembers.reduce((sum, i) => sum + (i.net_count ?? 0), 0);
-  const summary = `${withMembers.length.toLocaleString()} tracked Internet Exchange Points across ${
+  const summary = `${withMembers.length.toLocaleString("en-US")} tracked Internet Exchange Points across ${
     new Set(withMembers.map((i) => i.country).filter(Boolean)).size
-  } countries, connecting ${totalNets.toLocaleString()} aggregate network memberships.`;
+  } countries, connecting ${totalNets.toLocaleString("en-US")} aggregate network memberships.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -102,7 +102,7 @@ export default async function IxpsIndex() {
               </div>
               <div className="flex shrink-0 items-center gap-4 text-xs tabular-nums text-zinc-500">
                 {i.net_count != null && (
-                  <span>{i.net_count.toLocaleString()} network{i.net_count === 1 ? "" : "s"}</span>
+                  <span>{i.net_count.toLocaleString("en-US")} network{i.net_count === 1 ? "" : "s"}</span>
                 )}
                 {i.facility_count > 0 && (
                   <span>{i.facility_count} facilit{i.facility_count === 1 ? "y" : "ies"}</span>
@@ -113,7 +113,7 @@ export default async function IxpsIndex() {
         </ul>
 
         <p className="mt-6 text-xs text-zinc-500">
-          Showing the top {INDEXABLE_CAPS.ixps} of {withMembers.length.toLocaleString()} tracked
+          Showing the top {INDEXABLE_CAPS.ixps} of {withMembers.length.toLocaleString("en-US")} tracked
           IXPs by facility presence. Every IXP is reachable at{" "}
           <span className="font-mono">/ixps/[slug]</span> directly — the API exposes the full set.
         </p>

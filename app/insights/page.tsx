@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { INSIGHTS } from "@/lib/insights-data";
 
-export const revalidate = 86400;
+export const revalidate = 2_592_000;
 
 export const metadata: Metadata = {
   title: "Insights — long-form data dives",

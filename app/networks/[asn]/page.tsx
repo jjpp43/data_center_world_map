@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { loadNetworkDetail, loadTopNetworks } from "@/lib/networks-data";
-import { isIndexableNetwork, NOINDEX_ROBOTS } from "@/lib/indexable";
+import { INDEXABLE_CAPS, NETWORK_MIN_FACILITIES, isIndexableNetwork, NOINDEX_ROBOTS } from "@/lib/indexable";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
 
@@ -20,8 +20,10 @@ type Props = {
 };
 
 export async function generateStaticParams() {
-  const { top } = await loadTopNetworks(500);
-  return top.filter((n) => n.facility_count >= 2).map((n) => ({ asn: String(n.asn) }));
+  const { top } = await loadTopNetworks(INDEXABLE_CAPS.networks);
+  return top
+    .filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES)
+    .map((n) => ({ asn: String(n.asn) }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -32,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!detail) return { title: "Network not found" };
   const { network, facilities, country_breakdown } = detail;
 
-  const facCount = facilities.length.toLocaleString();
+  const facCount = facilities.length.toLocaleString("en-US");
   const title = `AS${network.asn} ${network.name} — ${facCount} Data Center${
     facilities.length === 1 ? "" : "s"
   }, ${country_breakdown.length} ${country_breakdown.length === 1 ? "Country" : "Countries"}`;
@@ -65,7 +67,7 @@ export default async function NetworkPage({ params }: Props) {
     network.info_type ? ` ${network.info_type.toLowerCase()}` : ""
   } network${
     network.info_scope ? ` with ${network.info_scope.toLowerCase()} scope` : ""
-  }, present in ${facilities.length.toLocaleString()} tracked colocation facilit${
+  }, present in ${facilities.length.toLocaleString("en-US")} tracked colocation facilit${
     facilities.length === 1 ? "y" : "ies"
   } across ${country_breakdown.length} countr${country_breakdown.length === 1 ? "y" : "ies"}.`;
 
@@ -142,9 +144,9 @@ export default async function NetworkPage({ params }: Props) {
         </p>
 
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatBox label="Facilities" value={facilities.length.toLocaleString()} />
-          <StatBox label="Countries" value={country_breakdown.length.toLocaleString()} />
-          <StatBox label="Operators" value={operator_ranking.length.toLocaleString()} />
+          <StatBox label="Facilities" value={facilities.length.toLocaleString("en-US")} />
+          <StatBox label="Countries" value={country_breakdown.length.toLocaleString("en-US")} />
+          <StatBox label="Operators" value={operator_ranking.length.toLocaleString("en-US")} />
           <StatBox label="Traffic band" value={network.info_traffic ?? "—"} />
         </div>
 
@@ -255,7 +257,7 @@ export default async function NetworkPage({ params }: Props) {
                   </div>
                   <div className="flex shrink-0 items-center gap-3 text-xs tabular-nums text-zinc-500">
                     {f.network_count > 0 && (
-                      <span>{f.network_count.toLocaleString()} network{f.network_count === 1 ? "" : "s"}</span>
+                      <span>{f.network_count.toLocaleString("en-US")} network{f.network_count === 1 ? "" : "s"}</span>
                     )}
                     {f.power_mw != null && <span>{f.power_mw} MW</span>}
                   </div>

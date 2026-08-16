@@ -25,11 +25,3 @@ body {
 .dark .dot-grid {
   background-image: radial-gradient(circle at 1px 1px, rgb(63 63 70 / 0.35) 1px, transparent 0);
 }
-
-@keyframes dcw-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.4); }
-}
-.live-dot {
-  animation: dcw-pulse 2.4s ease-in-out infinite;
-}

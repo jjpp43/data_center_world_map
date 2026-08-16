@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const detail = await loadDensityTier(tier as DensityTier);
   if (!detail) return { title: "Tier not found" };
   const { spec, facilities } = detail;
-  const description = `${facilities.length.toLocaleString()} ${spec.label.toLowerCase()} data centers (${spec.short}) ranked by peering-network count. ${spec.blurb}`;
+  const description = `${facilities.length.toLocaleString("en-US")} ${spec.label.toLowerCase()} data centers (${spec.short}) ranked by peering-network count. ${spec.blurb}`;
   const canonical = `/density/${spec.slug}`;
   return {
     title: `${spec.label} data centers (${spec.short})`,
@@ -50,7 +50,7 @@ export default async function TierPage({ params }: Props) {
     .map(([country, count]) => ({ country, count }))
     .sort((a, b) => b.count - a.count);
 
-  const summary = `${facilities.length.toLocaleString()} tracked data centers with ${
+  const summary = `${facilities.length.toLocaleString("en-US")} tracked data centers with ${
     spec.short
   }, ranked by peering-network count. Spans ${countryRanking.length} countr${countryRanking.length === 1 ? "y" : "ies"}.`;
 
@@ -154,7 +154,7 @@ export default async function TierPage({ params }: Props) {
                 </div>
                 <div className="flex shrink-0 items-center gap-3 text-xs tabular-nums text-zinc-500">
                   <span className="text-zinc-900 dark:text-zinc-100">
-                    {f.network_count.toLocaleString()} networks
+                    {f.network_count.toLocaleString("en-US")} networks
                   </span>
                   {f.power_mw != null && <span>{f.power_mw} MW</span>}
                 </div>
@@ -163,7 +163,7 @@ export default async function TierPage({ params }: Props) {
           </ul>
           {facilities.length > 250 && (
             <p className="mt-4 text-xs text-zinc-500">
-              Showing top 250 of {facilities.length.toLocaleString()}. The remaining facilities are
+              Showing top 250 of {facilities.length.toLocaleString("en-US")}. The remaining facilities are
               addressable individually under <span className="font-mono">/facility/[slug]</span>.
             </p>
           )}

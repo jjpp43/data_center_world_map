@@ -4,7 +4,7 @@ import { loadTopNetworks } from "@/lib/networks-data";
 import { INDEXABLE_CAPS, NETWORK_MIN_FACILITIES } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 3600;
+export const revalidate = 2_592_000;
 
 // Match isIndexableNetwork(). Was 500, which fed ~400 noindex ASN pages into
 // crawl discovery — each a full ISR render on first fetch, none able to rank.
@@ -33,7 +33,7 @@ export default async function NetworksIndex() {
   const { total, top: ranked } = await loadTopNetworks(TOP_N);
   const top = ranked.filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES);
 
-  const summary = `${total.toLocaleString()} networks have a tracked presence in at least one data-center facility. The full list is 34,000+ and addressable by ASN — this page shows the top ${TOP_N.toLocaleString()} by data-center footprint.`;
+  const summary = `${total.toLocaleString("en-US")} networks have a tracked presence in at least one data-center facility. The full list is 34,000+ and addressable by ASN — this page shows the top ${TOP_N.toLocaleString("en-US")} by data-center footprint.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -105,14 +105,14 @@ export default async function NetworksIndex() {
               </div>
               <div className="flex shrink-0 items-center gap-4 text-xs tabular-nums text-zinc-500">
                 {n.info_traffic && <span className="hidden sm:inline">{n.info_traffic}</span>}
-                <span>{n.facility_count.toLocaleString()} facilit{n.facility_count === 1 ? "y" : "ies"}</span>
+                <span>{n.facility_count.toLocaleString("en-US")} facilit{n.facility_count === 1 ? "y" : "ies"}</span>
               </div>
             </li>
           ))}
         </ul>
 
         <p className="mt-6 text-xs text-zinc-500">
-          Showing top {TOP_N.toLocaleString()} of {total.toLocaleString()} networks
+          Showing top {TOP_N.toLocaleString("en-US")} of {total.toLocaleString("en-US")} networks
           with facility presence. Every PeeringDB ASN with ≥2 facility presences is reachable at{" "}
           <span className="font-mono">/networks/[asn]</span> directly — the sitemap and API expose
           the full set.

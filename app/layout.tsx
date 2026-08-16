@@ -1,21 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SessionProvider } from "@/components/SessionProvider";
-import { PostHogProvider, PostHogPageView } from "@/components/PostHog";
+import { ThemeSync } from "@/components/ThemeSync";
 import { jsonForHtml } from "@/lib/json-ld";
 import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
-
-// Inline pre-paint script: read the dcw-theme cookie and toggle .dark on
-// <html> before React hydrates. Default is dark (no cookie OR cookie !== light).
-// Kept inline + before <body> so there's no flash of wrong theme. The home
-// page's theme-toggle effect keeps it in sync after hydration.
-const THEME_BOOTSTRAP_SCRIPT = `
-try {
-  var m = document.cookie.match(/(?:^|; )dcw-theme=([^;]+)/);
-  if (!m || m[1] !== 'light') document.documentElement.classList.add('dark');
-} catch (_) { document.documentElement.classList.add('dark'); }
-`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,7 +42,6 @@ export const metadata: Metadata = {
     "interconnect",
   ],
   applicationName: "datacenters.world",
-  authors: [{ name: "Junna Park" }],
   alternates: {
     canonical: "/",
   },
@@ -102,7 +90,6 @@ const SITE_JSON_LD = {
       "@id": `${SITE}/#org`,
       name: "datacenters.world",
       url: SITE,
-      founder: { "@type": "Person", name: "Junna Park" },
     },
     // Dataset schema unlocks Google's Dataset-result card and gives answer
     // engines (ChatGPT, Gemini, Perplexity) a canonical structured payload
@@ -177,21 +164,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
-      </head>
       <body className="h-full font-sans">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonForHtml(SITE_JSON_LD) }}
         />
-        <PostHogProvider>
-          <PostHogPageView />
-          <SessionProvider>{children}</SessionProvider>
-        </PostHogProvider>
+        <ThemeSync />
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );

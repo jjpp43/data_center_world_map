@@ -8,10 +8,10 @@ import { MapToggle } from "@/components/MapToggle";
 import { Legend } from "@/components/Legend";
 import { FacilityPanel } from "@/components/FacilityPanel";
 import { NoTokenBanner } from "@/components/NoTokenBanner";
-import { FirstRunHint } from "@/components/FirstRunHint";
 import { MobileHome } from "@/components/MobileHome";
 import type { Facility, CloudRegion, FacilityStatus, CloudProvider } from "@/lib/types";
 import { DEFAULT_STATE, parseUrl, serializeUrl } from "@/lib/url-state";
+import { facilitiesInRegions } from "@/lib/cloud-region-areas";
 
 export default function HomePage() {
   const [state, setState] = useState(DEFAULT_STATE);
@@ -49,31 +49,59 @@ export default function HomePage() {
   }, []);
 
   const { filters, selectedSlug, theme, projection, cloudRegionsVisible, providerFocus } = state;
-
-  const filteredFacilities = useMemo(() => {
-    if (providerFocus) return [];
-    return facilities.filter((f) => {
-      if (filters.operators.length && !filters.operators.includes(f.operator)) return false;
-      if (filters.countries.length && !filters.countries.includes(f.country)) return false;
-      return true;
-    });
-  }, [facilities, filters, providerFocus]);
+  const [regionFocus, setRegionFocus] = useState<{ provider: CloudProvider; code: string } | null>(
+    null,
+  );
 
   const filteredCloudRegions = useMemo(() => {
     return cloudRegions.filter((r) => {
+      if (regionFocus) return r.provider === regionFocus.provider && r.code === regionFocus.code;
       if (providerFocus && r.provider !== providerFocus) return false;
       if (filters.countries.length && !filters.countries.includes(r.country)) return false;
       return true;
     });
-  }, [cloudRegions, filters.countries, providerFocus]);
+  }, [cloudRegions, filters.countries, providerFocus, regionFocus]);
 
-  const fitTrigger = providerFocus
-    ? `focus:${providerFocus}:${filters.countries.join(",")}`
-    : filters.countries.length
-      ? filters.countries.join(",")
-      : null;
+  const filteredFacilities = useMemo(() => {
+    const base = facilities.filter((f) => {
+      if (filters.operators.length && !filters.operators.includes(f.operator)) return false;
+      if (filters.countries.length && !filters.countries.includes(f.country)) return false;
+      return true;
+    });
+    if (!providerFocus && !regionFocus) return base;
+    return facilitiesInRegions(base, filteredCloudRegions);
+  }, [facilities, filters, providerFocus, regionFocus, filteredCloudRegions]);
 
-  const fitBoundsTarget = providerFocus ? filteredCloudRegions : undefined;
+  const providerFacilityTotal = useMemo(() => {
+    if (!providerFocus) return facilities.length;
+    const regions = cloudRegions.filter((r) => r.provider === providerFocus);
+    const byOperator = filters.operators.length
+      ? facilities.filter((f) => filters.operators.includes(f.operator))
+      : facilities;
+    return facilitiesInRegions(byOperator, regions).length;
+  }, [providerFocus, cloudRegions, facilities, filters.operators]);
+
+  const defaultUSView =
+    !providerFocus &&
+    filters.operators.length === 0 &&
+    filters.countries.length === 1 &&
+    filters.countries[0] === "US";
+
+  const fitTrigger = regionFocus
+    ? `region:${regionFocus.provider}:${regionFocus.code}`
+    : providerFocus
+      ? `focus:${providerFocus}:${filters.countries.join(",")}`
+      : defaultUSView
+        ? null
+        : filters.countries.length
+          ? filters.countries.join(",")
+          : null;
+
+  const fitBoundsTarget = regionFocus
+    ? filteredCloudRegions
+    : providerFocus
+      ? filteredCloudRegions
+      : undefined;
 
   const selectedFacility = useMemo(
     () => (selectedSlug ? facilities.find((f) => f.slug === selectedSlug) ?? null : null),
@@ -101,13 +129,16 @@ export default function HomePage() {
         cloudRegions={filteredCloudRegions}
         projection={projection}
         style={theme}
-        cloudRegionsVisible={providerFocus !== null || cloudRegionsVisible}
+        cloudRegionsVisible={providerFocus !== null || regionFocus !== null || cloudRegionsVisible}
         fitTrigger={fitTrigger}
         fitBoundsTarget={fitBoundsTarget}
         onFacilityClick={(slug) => setState((s) => ({ ...s, selectedSlug: slug }))}
+        onCloudRegionClick={(region) => {
+          setRegionFocus(region);
+          if (region) setState((s) => ({ ...s, providerFocus: region.provider }));
+        }}
       />
       <NoTokenBanner />
-      <FirstRunHint facilityCount={facilities.length} dismissOnSlug={selectedSlug} />
       <TopBar
         facilities={facilities}
         onSelect={(slug) => setState((s) => ({ ...s, selectedSlug: slug }))}
@@ -121,10 +152,13 @@ export default function HomePage() {
         filters={filters}
         onChange={(filters) => setState((s) => ({ ...s, filters }))}
         providerFocus={providerFocus}
-        onProviderFocusChange={(providerFocus) => setState((s) => ({ ...s, providerFocus }))}
-        visibleCount={providerFocus ? filteredCloudRegions.length : filteredFacilities.length}
-        totalCount={providerFocus ? cloudRegions.filter((r) => r.provider === providerFocus).length : facilities.length}
-        countLabel={providerFocus ? `${providerFocus.toUpperCase()} regions` : "facilities"}
+        onProviderFocusChange={(providerFocus) => {
+          setRegionFocus(null);
+          setState((s) => ({ ...s, providerFocus }));
+        }}
+        visibleCount={filteredFacilities.length}
+        totalCount={providerFocus || regionFocus ? providerFacilityTotal : facilities.length}
+        countLabel="facilities"
       />
       <MapToggle
         projection={projection}

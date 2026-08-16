@@ -4,7 +4,7 @@ import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { loadCountrySummaries } from "@/lib/countries-data";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 3600;
+export const revalidate = 2_592_000;
 
 export const metadata: Metadata = {
   title: "Data Centers by Country — All 148 Countries Ranked (Free Map)",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default async function CountriesIndex() {
   const countries = await loadCountrySummaries();
   const totalFacilities = countries.reduce((sum, c) => sum + c.facility_count, 0);
-  const summary = `${totalFacilities.toLocaleString()} tracked data centers across ${countries.length} countries.`;
+  const summary = `${totalFacilities.toLocaleString("en-US")} tracked data centers across ${countries.length} countries.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -78,7 +78,7 @@ export default async function CountriesIndex() {
                 <span>{c.facility_count} facilit{c.facility_count === 1 ? "y" : "ies"}</span>
                 <span>{c.operators} operator{c.operators === 1 ? "" : "s"}</span>
                 {c.total_power_mw && c.total_power_mw > 0 ? (
-                  <span>{Math.round(c.total_power_mw).toLocaleString()} MW</span>
+                  <span>{Math.round(c.total_power_mw).toLocaleString("en-US")} MW</span>
                 ) : null}
               </div>
             </li>

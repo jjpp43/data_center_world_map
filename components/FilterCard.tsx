@@ -44,7 +44,15 @@ export function FilterCard({
   totalCount,
   countLabel,
 }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+
+  const countText = formatCountChip({
+    visibleCount,
+    totalCount,
+    countries: filters.countries,
+    providerFocus,
+    countLabel,
+  });
 
   const operatorOptions = useMemo(() => {
     const counts = new Map<string, number>();
@@ -58,33 +66,45 @@ export function FilterCard({
     return [...counts.entries()].sort((a, b) => b[1] - a[1]);
   }, [facilities]);
 
+  if (collapsed) {
+    return (
+      <div className="pointer-events-auto absolute left-4 top-20 z-20">
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          aria-expanded={false}
+          aria-label={`Filters, ${countText}`}
+          className="flex items-center gap-2.5 rounded-full border border-zinc-300 bg-white/95 px-4 py-2.5 text-sm font-medium text-zinc-900 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:border-zinc-500 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+        >
+          <FilterIcon />
+          <span>Filters</span>
+          <span className="font-mono tabular-nums text-zinc-500 dark:text-zinc-400">{countText}</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="pointer-events-auto absolute left-4 top-20 z-20 w-72 rounded-2xl border border-zinc-300/80 bg-white/95 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/70">
+    <div className="pointer-events-auto absolute left-4 top-20 z-20 w-72 rounded-2xl border border-zinc-300 bg-white/95 shadow-lg backdrop-blur-md dark:border-zinc-500 dark:bg-zinc-900">
       <button
         type="button"
-        onClick={() => setCollapsed(!collapsed)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+        onClick={() => setCollapsed(true)}
+        aria-expanded={true}
+        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm font-medium text-zinc-900 dark:text-zinc-100"
       >
-        <span className="flex items-center gap-2">
-          <FilterIcon /> Filters
+        <span className="flex items-center gap-2.5">
+          <FilterIcon />
+          <span>Filters</span>
         </span>
-        <span className="flex items-center gap-2 text-xs font-normal tabular-nums text-zinc-500 dark:text-zinc-400">
-          <span>
-            <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-              {visibleCount.toLocaleString()}
-            </span>
-            <span className="text-zinc-400 dark:text-zinc-500">
-              {" / "}
-              {totalCount.toLocaleString()}
-            </span>{" "}
-            {countLabel}
+        <span className="flex items-center gap-2 font-normal">
+          <span className="font-mono tabular-nums text-zinc-500 dark:text-zinc-400">
+            {countText}
           </span>
-          <ChevronIcon collapsed={collapsed} />
+          <ChevronIcon collapsed={false} />
         </span>
       </button>
 
-      {!collapsed && (
-        <div className="space-y-4 border-t border-zinc-200/60 px-4 py-3 dark:border-zinc-800/60">
+      <div className="space-y-4 border-t border-zinc-200 px-4 py-3 dark:border-zinc-700">
           <FilterSection label="Quick">
             <div className="flex flex-wrap gap-1">
               {QUICK_OPERATORS.map((op) => {
@@ -130,8 +150,11 @@ export function FilterCard({
                     }`}
                   >
                     <span
-                      className="inline-block h-1.5 w-1.5 rounded-full"
-                      style={{ backgroundColor: cp.color }}
+                      className="inline-block h-1.5 w-2.5 rounded-[1px]"
+                      style={{
+                        backgroundColor: `${cp.color}40`,
+                        boxShadow: `inset 0 0 0 1px ${cp.color}`,
+                      }}
                     />
                     {cp.label}
                   </button>
@@ -176,12 +199,34 @@ export function FilterCard({
               }
             />
           </FilterSection>
-
-
-        </div>
-      )}
+      </div>
     </div>
   );
+}
+
+function formatCountChip({
+  visibleCount,
+  totalCount,
+  countries,
+  providerFocus,
+  countLabel,
+}: {
+  visibleCount: number;
+  totalCount: number;
+  countries: string[];
+  providerFocus: CloudProvider | null;
+  countLabel: string;
+}): string {
+  const vis = visibleCount.toLocaleString("en-US");
+  const tot = totalCount.toLocaleString("en-US");
+  if (providerFocus) {
+    return visibleCount === totalCount ? `${vis} ${countLabel}` : `${vis} / ${tot} ${countLabel}`;
+  }
+  if (countries.length === 1 && visibleCount !== totalCount) {
+    return `${vis} ${countries[0]} / ${tot}`;
+  }
+  if (visibleCount !== totalCount) return `${vis} / ${tot}`;
+  return tot;
 }
 
 function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
@@ -368,7 +413,7 @@ function SmallCloseIcon() {
 
 function FilterIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
     </svg>
   );

@@ -5,7 +5,7 @@ import { METROS, assignMetro } from "@/lib/metros-data";
 import { supabaseServer } from "@/lib/supabase";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 86400;
+export const revalidate = 2_592_000;
 
 const TOP_N = 20;
 
@@ -99,7 +99,7 @@ export default async function PeeringHubMetrosInsight() {
     "@type": "Article",
     headline: "Where the world peers: metros ranked by network density",
     description: "Colocation metros ranked by aggregate peering-network presence.",
-    author: { "@type": "Person", name: "Junna Park" },
+    author: { "@type": "Organization", name: "datacenters.world", url: "https://datacenters.world/" },
     isPartOf: { "@type": "WebSite", name: "datacenters.world", url: "https://datacenters.world/" },
     mainEntity: {
       "@type": "ItemList",
@@ -139,7 +139,7 @@ export default async function PeeringHubMetrosInsight() {
           This one uses aggregate PeeringDB network presence across every tracked facility in the
           metro. The top 20 metros together host{" "}
           <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
-            {totalNetworks.toLocaleString()}
+            {totalNetworks.toLocaleString("en-US")}
           </span>{" "}
           network presences.
         </p>
@@ -151,7 +151,7 @@ export default async function PeeringHubMetrosInsight() {
             </Link>{" "}
             with{" "}
             <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
-              {lead.networks.toLocaleString()}
+              {lead.networks.toLocaleString("en-US")}
             </span>{" "}
             network presences spread across{" "}
             <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
@@ -185,7 +185,7 @@ export default async function PeeringHubMetrosInsight() {
                 </div>
                 <div className="flex shrink-0 items-center gap-3 text-xs tabular-nums">
                   <span className="font-mono text-zinc-900 dark:text-zinc-100">
-                    {m.networks.toLocaleString()} networks
+                    {m.networks.toLocaleString("en-US")} networks
                   </span>
                   <span className="text-zinc-500">{m.facility_count} fac</span>
                   {m.ix_present > 0 && (

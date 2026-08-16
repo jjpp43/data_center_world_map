@@ -4,7 +4,7 @@ import { countryFlag, countryName } from "@/lib/countries";
 import { loadMetroSummaries } from "@/lib/metros-data";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 3600;
+export const revalidate = 2_592_000;
 
 export const metadata: Metadata = {
   title: "Data Center Metros — Top 30 Worldwide Ranked",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default async function MetrosIndex() {
   const metros = await loadMetroSummaries();
   const totalFacilities = metros.reduce((sum, m) => sum + m.facility_count, 0);
-  const summary = `${totalFacilities.toLocaleString()} tracked data centers grouped into ${metros.length} canonical metros — the unit the industry actually uses to measure capacity.`;
+  const summary = `${totalFacilities.toLocaleString("en-US")} tracked data centers grouped into ${metros.length} canonical metros — the unit the industry actually uses to measure capacity.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -96,7 +96,7 @@ export default async function MetrosIndex() {
                 <span>{m.facility_count} facilit{m.facility_count === 1 ? "y" : "ies"}</span>
                 <span>{m.operator_count} operator{m.operator_count === 1 ? "" : "s"}</span>
                 {m.total_power_mw && m.total_power_mw > 0 ? (
-                  <span>{Math.round(m.total_power_mw).toLocaleString()} MW</span>
+                  <span>{Math.round(m.total_power_mw).toLocaleString("en-US")} MW</span>
                 ) : null}
               </div>
             </li>

@@ -1,14 +1,14 @@
 # Data Center World Map — Project Context
 
-Public map of every known data center on Earth — single Mapbox view, 2D ↔ 3D toggle. Solo project by Junna Park. Default view: US, dark, globe. **Canonical host is `www.datacenters.world`** — apex 308s to it (raw curl needs `-L --post308`, or hit `www.` directly).
+Public map of every known data center on Earth — single Mapbox view, 2D ↔ 3D toggle. Default view: US, dark, globe. **Canonical host is `www.datacenters.world`** — apex 308s to it (raw curl needs `-L --post308`, or hit `www.` directly).
 
 ## Current status
 
-Phases 1–14 shipped. Migrations `0001–0018` applied. No user submissions — curated/scraped only. **Pivot in progress** (see `ROADMAP.md`): MCP distribution → narrow tools → B2B licensing. API stays live as upsell, not headline.
+Phases 1–14 shipped. Migrations `0001–0020` applied; `0020` adds source keys for NEXTDC/STACK. No user submissions — curated/scraped only. **Pivot in progress** (see `ROADMAP.md`): MCP distribution → narrow tools → B2B licensing. API stays live as upsell, not headline.
 
-- **5,675** facilities · **34,732** networks · **1,309** IXPs · **176** cloud regions · **57,206** net↔fac · **4,134** ix↔fac
-- Sources: PeeringDB 5,256 · OSM-only 95 · operator pages 230 · Iron Mountain 4+19 · Google 58 · Meta 32. Microsoft deferred (region-grain only).
-- Fill rates: T1 100% · `power_mw` 2.4% · `space_sqft` 9.7% · `year_built` 0.7% · `pue` 1.3%.
+- **5,829** facilities · **34,732** networks · **1,309** IXPs · **176** cloud regions · **57,206** net↔fac · **4,134** ix↔fac
+- Sources: PeeringDB 5,256 · OSM-only 95 · operator pages 230 · Iron Mountain 4+19 · Google 58 · Meta 32 · H5 33 · Vantage 39 · Aligned/ODATA 37 · NEXTDC 28 · STACK 80. Microsoft deferred (region-grain only).
+- Fill rates: T1 100% · `power_mw` 7.7% (446) · `space_sqft` 11.5% (672) · `year_built` 0.7% · `pue` 1.3%.
 
 ## Stack
 
@@ -109,12 +109,12 @@ app/
 ├── api/[transport]/route.ts          MCP server (5 tools)
 ├── api/billing/checkout/route.ts     Polar Checkout
 ├── api/webhooks/polar/route.ts       signature-verified receiver
-├── api/cron/refresh-geojson/...      weekly cron → Deploy Hook (fails closed if CRON_SECRET unset)
+├── api/cron/revalidate/...           ingest-triggered on-demand revalidateTag (SWR, CRON_SECRET)
 ├── login, auth/{callback,signout}/route.ts   GitHub OAuth (callback safeNext()). login + dashboard = noindex,nofollow
 ├── dashboard/...                     keys / plan / billing / usage / MCP snippet
 ├── sitemap.ts                        ~900 URLs (capped per type); long-tail still resolves
 proxy.ts                              Bearer auth on /api/v1/* + /api/mcp (Next 16: middleware → proxy)
-vercel.json                           weekly cron (Sun 03:00 UTC)
+vercel.json                           crons empty — geojson rebake is manual (`--rebuild` or git deploy)
 public/{facilities,cloud-regions}.geojson    baked at build (gitignored)
 
 components/  Map, TopBar, SearchBox, FilterCard, MapToggle, Legend, FacilityPanel,
@@ -124,10 +124,10 @@ lib/  supabase (server/admin/browser), supabase-server (cookie-aware), api-keys 
       polar, api (jsonResponse + internalError + CSV-safe csvResponse), api-data (shared loaders),
       json-ld (jsonForHtml), indexable (sitemap caps + isFacilityIndexable/NOINDEX_ROBOTS),
       types, url-state, countries, operators, *-data, density, insights-data
-scripts/  ingest, ingest-{ironmountain,google,meta}, canonicalize-orphans,
+scripts/  ingest, ingest-{ironmountain,google,meta,operator-buildings}, canonicalize-orphans,
           build-geojson (prebuild), _trigger-rebuild, audit-quality, audit-orphans, check-security.mjs
 .github/workflows/backup.yml          weekly pg_dump → GH artifact (Sun 04:00 UTC)
-supabase/migrations/0001–0018.sql · scrapers/ (Node 22 subproject)
+supabase/migrations/0001–0020.sql · scrapers/ (Node 22 subproject)
 ```
 
 ## Caching / egress
@@ -135,10 +135,10 @@ supabase/migrations/0001–0018.sql · scrapers/ (Node 22 subproject)
 Supabase egress is the dominant cost. Three layers:
 
 1. **Map data → static-baked.** `scripts/build-geojson.ts` (prebuild) writes `public/{facilities,cloud-regions}.geojson` (~1.9 MB + 41 KB); runtime never touches Supabase for map data. Headers `public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800`.
-2. **SSR pages → ISR.** Per-slug (`/facility`, `/operators`, `/countries`, `/metros`, `/ixps`, `/networks`, `/density`) `revalidate = 2_592_000` (30d). Index 3600–86400. Sitemap 86400. **Invariant**: no `getTheme()`/`cookies()` in server pages — silently disables `revalidate`. Also no `new Date()` in rendered output (module-load `YEAR` const only) — non-deterministic bytes force an ISR write every cycle. **Effective revalidate = min(segment `revalidate`, inner `unstable_cache` TTL)** — a 30d page reading a 24h loader regenerates every 24h. Verify with the Revalidate column in `next build` output, not the source constant.
-3. **Data fetches → matviews + `unstable_cache`.** Aggregations read `country_summary`, `operator_summary`, `facility_density` (single-row, not paginated scans). Every loader in `lib/*-data.ts` + `operators.ts` + `density.ts` wrapped `unstable_cache(fn, key, { revalidate: 2_592_000, tags })` (30d — must match the segment `revalidate` above or it clamps it). `lib/api-data.ts` stays at 86400: REST/MCP are the documented 24h-freshness surface and aren't ISR-billed. Tags: `data-centers`, `networks`, `ixes` — declared but **no `revalidateTag()` caller exists**; freshness comes from deploys (weekly cron) + TTL.
+2. **SSR pages → ISR.** Catalog pages (`/facility`, `/operators`, `/countries`, `/metros`, `/ixps`, `/networks`, `/density`, `/insights`, `/about`, indexes) `revalidate = 2_592_000` (30d). Sitemap 86400. **Invariant**: no `getTheme()`/`cookies()` in server pages — silently disables `revalidate`. Also no `new Date()` / unbound `toLocaleString()` in rendered output (module-load `YEAR` const; numbers via `toLocaleString("en-US")`; dates `en-US` + `timeZone: "UTC"`) — non-deterministic bytes force an ISR write every cycle. **Effective revalidate = min(segment `revalidate`, inner `unstable_cache` TTL)** — a 30d page reading a 24h loader regenerates every 24h. Verify with the Revalidate column in `next build` output, not the source constant.
+3. **Data fetches → matviews + `unstable_cache`.** Aggregations read `country_summary`, `operator_summary`, `facility_density` (single-row, not paginated scans). Every loader in `lib/*-data.ts` + `operators.ts` + `density.ts` wrapped `unstable_cache(fn, key, { revalidate: 2_592_000, tags })` (30d — must match the segment `revalidate` above or it clamps it). `lib/api-data.ts` stays at 86400: REST/MCP are the documented 24h-freshness surface and aren't ISR-billed. Tags: `data-centers`, `networks`, `ixes`. Ingest calls `POST /api/cron/revalidate` (`revalidateTag(tag, "max")`, SWR) so HTML refreshes without a new deployment. Identical HTML after regen incurs no ISR write.
 
-Matviews refreshed by `refresh_summary_views()` RPC (concurrent); ingest calls it on `--apply`. **Refresh cadence**: every deploy invalidates `unstable_cache` → fresh ISR write on next hit to every per-slug page (~40k writes/rebuild). So `triggerRebuild()` defaults off, no-ops without `--rebuild` (data lands within 24h via `revalidate`); unset `VERCEL_DEPLOY_HOOK_URL` → no-op regardless. Weekly Vercel cron redeploys to re-bake geojson = steady-state cache-nuke baseline.
+Matviews refreshed by `refresh_summary_views()` RPC (concurrent); ingest calls it on `--apply`. **ISR cache is per-deployment** — a new deploy starts empty and the next crawl of every slug is a write. Geojson rebakes only on a Next.js build: git deploy, or ingest with `--rebuild` (deploy hook). Default ingest path is on-demand revalidate, not a deploy. No scheduled cron. Unset `VERCEL_DEPLOY_HOOK_URL` → `--rebuild` no-op. Unset `CRON_SECRET` → revalidate no-op.
 
 **Indexable head vs long-tail** (`lib/indexable.ts`, single source of truth for caps + min-facility thresholds: facilities 500, operators 200, ixps 100, networks 100; `sitemap.ts` imports these): **Facilities are fully indexable** — every real facility page (coords present, `isFacilityIndexable(lat,lng)`) emits `index:true`; the `facilities:500` cap is a *sitemap crawl-budget hint only*, not an index gate. (Reverses commit f9e3832 which noindex'd ~91% of facilities and tanked GSC impressions; `noindex,follow` never saved ISR writes anyway.) `/operators`, `/ixps`, `/networks` still `noindex` genuinely thin pages outside caps via `isIndexable*()` in `generateMetadata`. Countries + metros uncapped. Dashboard + login `noindex,nofollow` (auth-gated).
 
@@ -148,7 +148,7 @@ Matviews refreshed by `refresh_summary_views()` RPC (concurrent); ingest calls i
 
 ## Migrations
 
-`0001–0006` schema + PostGIS + RLS · `0007` api_keys + anon throttle · `0008` subscriptions · `0009` monthly quotas · `0010` drop anon tier · `0011` `api_key_usage_daily` · `0012` Free 500→1,000 · `0013` canonicalize 8 operator variants · `0014` backfill 34 NULL operators · `0015` anchor quota cycle (signup-anniversary free / billing-period paid) · `0016` matviews + `refresh_summary_views()` · `0017` `#variable_conflict use_column` in `validate_and_charge_api_key` (OUT `key_id` collided with `api_key_usage_daily.key_id` → silent 401 on every API/MCP call until applied) · `0018` `p_charge boolean default true` so `proxy.ts` validates-without-charging MCP protocol overhead (`initialize`/`tools/list`/`notifications/*`) instead of burning quota per handshake.
+`0001–0006` schema + PostGIS + RLS · `0007` api_keys + anon throttle · `0008` subscriptions · `0009` monthly quotas · `0010` drop anon tier · `0011` `api_key_usage_daily` · `0012` Free 500→1,000 · `0013` canonicalize 8 operator variants · `0014` backfill 34 NULL operators · `0015` anchor quota cycle (signup-anniversary free / billing-period paid) · `0016` matviews + `refresh_summary_views()` · `0017` `#variable_conflict use_column` in `validate_and_charge_api_key` (OUT `key_id` collided with `api_key_usage_daily.key_id` → silent 401 on every API/MCP call until applied) · `0018` `p_charge boolean default true` so `proxy.ts` validates-without-charging MCP protocol overhead (`initialize`/`tools/list`/`notifications/*`) instead of burning quota per handshake · `0019` `source_records` keys for `google-com`/`meta-com`/`h5datacenters-com`/`vantage-dc-com`/`aligneddc-com` · `0020` `nextdc-com`/`stackinfra-com`.
 
 ## Build phases (history)
 
@@ -162,10 +162,10 @@ Matviews refreshed by `refresh_summary_views()` RPC (concurrent); ingest calls i
 ```bash
 npm run dev
 npm run build                                   # prebuild: check:security + build-geojson
-npm run ingest                                  # re-ingest scrapers/out/*.jsonl (add -- --rebuild to deploy)
+npm run ingest                                  # re-ingest scrapers/out/*.jsonl (SWR-revalidates catalog; add -- --rebuild to re-bake geojson)
 npm run audit:quality
 npm run canonicalize:orphans -- --apply
-npm run ingest:{ironmountain,google,meta} -- --apply
+npm run ingest:{ironmountain,google,meta,buildings} -- --apply
 ```
 
 `prebuild` uses `tsx --env-file-if-exists=.env.local` (local + Vercel); geojson bake reads public tables only (anon key). **Ingest order**: cloud regions → PeeringDB facilities → OSM → operator pages → networks → IXes → netfac → ixfac. Idempotent on `(slug)`, `(source, source_id)`, `(data_center_id, network_id)`. **Add a source**: JSONL in `scrapers/out/` → migration if needed → extend `scripts/ingest.ts` or new `scripts/ingest-<source>.ts` → update facility page + API docs if user-facing.
@@ -198,8 +198,8 @@ POLAR_ACCESS_TOKEN=polar_oat_... · POLAR_WEBHOOK_SECRET=whsec_...
 POLAR_PRO_PRODUCT_ID=...                # unset → /dashboard "Coming soon"
 POLAR_TEAM_PRODUCT_ID=... · POLAR_API_BASE=https://api.polar.sh   # optional (sandbox)
 # Cache / rebuild
-VERCEL_DEPLOY_HOOK_URL=...              # cron + --rebuild POST here. Unset → no-op.
-CRON_SECRET=...                         # /api/cron/refresh-geojson. Unset → 500 (fails closed).
+VERCEL_DEPLOY_HOOK_URL=...              # ingest --rebuild POST here. Unset → no-op.
+CRON_SECRET=...                         # /api/cron/revalidate. Unset → ingest revalidate no-op; route 500.
 # Analytics (optional)
 NEXT_PUBLIC_POSTHOG_KEY=phc_... · NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 ```
@@ -227,12 +227,12 @@ RLS on every public table (public-read on data; auth-scoped via `auth.uid()` on 
 
 ## First-time deploy
 
-1. Apply migrations `0001–0018`.
+1. Apply migrations `0001–0020`.
 2. Enable GitHub provider in Supabase Auth; register GitHub OAuth app with callback at **Supabase's** `https://<ref>.supabase.co/auth/v1/callback` (not our `/auth/callback`).
 3. Supabase Auth → URL Config: Site URL = prod, allowlist `localhost:3000/**` + `datacenters.world/**`.
 4. Set `NEXT_PUBLIC_SITE_URL` in Vercel; create Pro + Team products in Polar (3-day trial, no card); set Polar env + redeploy.
 5. Register Polar webhook → `/api/webhooks/polar`, format=**Raw**, events `subscription.{created,updated,active,canceled,revoked}`.
-6. Vercel → Git → Deploy Hooks (main) → `VERCEL_DEPLOY_HOOK_URL`. Set `CRON_SECRET` (32 random bytes). Redeploy.
+6. Vercel → Git → Deploy Hooks (main) → `VERCEL_DEPLOY_HOOK_URL` (only needed for `ingest --rebuild`). Set `CRON_SECRET` (32 random bytes) so ingest can SWR-revalidate catalog pages. Redeploy.
 7. GitHub → Secrets → `SUPABASE_DB_URL` (session-pooler) for backup.
 
 ## Out of scope / known limitations
@@ -246,6 +246,6 @@ RLS on every public table (public-read on data; auth-scoped via `auth.uid()` on 
 - **Monetization**: 5a ✅ free API+docs · 5b ✅ GitHub OAuth + Polar · 5c (future) newsletter + paywall `/insights/*` $20–30/mo · 5d (future) sponsored profiles ($50–200/facility/yr, `verified` badge). **Inclusion never paid.** Avoid pay-to-list, hard paywall on public map, aggressive lead-gen.
 - **MCP**: more tools (`find_facilities_near(lat,lng,radius_km)` — PostGIS infra exists, `list_ixps`, `get_network(asn)`); submit to directories (Anthropic catalog, smithery.ai, `modelcontextprotocol/servers`).
 - **Perf/cost**: vector tiles (.mvt) for map data (needs `pg_tileserv` or build-time gen); pre-gen facility OG images (top-500). No default OG image yet.
-- **Data coverage**: more operator scrapers (Aligned, Stack, Compass, T5, Sabey, Switch, Vantage, H5, Element Critical); revisit Azure annually; photos/footprints (Mapillary, StreetView).
+- **Data coverage**: more operator scrapers (Compass, T5, Sabey, Switch, Element Critical); revisit Azure annually; photos/footprints (Mapillary, StreetView). T5's public `/locations/` archive currently has empty grids (CPT unpublished).
 - **Product polish**: account deletion (GDPR); API quota alerts (80/100%) via Resend + cron; key rotation flow; dashboard top-endpoints (needs `endpoint` col on `api_key_usage_daily`).
 - **Ops/DX**: error monitoring (Sentry/PostHog); typed Supabase client (`supabase gen types`); auto-refresh matviews via pg_cron.

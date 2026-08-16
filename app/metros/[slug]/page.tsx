@@ -30,8 +30,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!detail) return { title: "Metro not found" };
   const { metro, facilities, operator_ranking, total_power_mw } = detail;
   const country = countryName(metro.country);
-  const count = facilities.length.toLocaleString();
-  const power = total_power_mw ? Math.round(total_power_mw).toLocaleString() : null;
+  const count = facilities.length.toLocaleString("en-US");
+  const power = total_power_mw ? Math.round(total_power_mw).toLocaleString("en-US") : null;
   const title = `${metro.name} Data Centers — ${count} Facilities, Top Operators`;
   const description = `All ${count} ${metro.name} data centers mapped — ${operator_ranking.length} operator${
     operator_ranking.length === 1 ? "" : "s"
@@ -55,11 +55,11 @@ export default async function MetroPage({ params }: Props) {
   const country = countryName(metro.country);
   const cityCount = new Set(facilities.map((f) => f.city).filter(Boolean)).size;
 
-  const summary = `The ${metro.name} metro hosts ${facilities.length.toLocaleString()} tracked data center${
+  const summary = `The ${metro.name} metro hosts ${facilities.length.toLocaleString("en-US")} tracked data center${
     facilities.length === 1 ? "" : "s"
   } operated by ${operator_ranking.length} distinct operator${
     operator_ranking.length === 1 ? "" : "s"
-  }${total_power_mw ? `, with ${Math.round(total_power_mw).toLocaleString()} MW of published power capacity` : ""}.`;
+  }${total_power_mw ? `, with ${Math.round(total_power_mw).toLocaleString("en-US")} MW of published power capacity` : ""}.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -131,10 +131,10 @@ export default async function MetroPage({ params }: Props) {
         )}
 
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatBox label="Facilities" value={facilities.length.toLocaleString()} />
-          <StatBox label="Operators" value={operator_ranking.length.toLocaleString()} />
-          <StatBox label="Cities" value={cityCount.toLocaleString()} />
-          <StatBox label="Networks present" value={total_networks.toLocaleString()} />
+          <StatBox label="Facilities" value={facilities.length.toLocaleString("en-US")} />
+          <StatBox label="Operators" value={operator_ranking.length.toLocaleString("en-US")} />
+          <StatBox label="Cities" value={cityCount.toLocaleString("en-US")} />
+          <StatBox label="Networks present" value={total_networks.toLocaleString("en-US")} />
         </div>
 
         {operator_ranking.length > 0 && (

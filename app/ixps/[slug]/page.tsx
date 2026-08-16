@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { loadIxpDetail, loadIxpSummaries } from "@/lib/ixps-data";
-import { isIndexableIxp, NOINDEX_ROBOTS } from "@/lib/indexable";
+import { INDEXABLE_CAPS, IXP_MIN_FACILITIES, isIndexableIxp, NOINDEX_ROBOTS } from "@/lib/indexable";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
 
@@ -21,7 +21,10 @@ type Props = {
 
 export async function generateStaticParams() {
   const ixps = await loadIxpSummaries();
-  return ixps.filter((i) => i.facility_count > 0).map((i) => ({ slug: i.slug }));
+  return ixps
+    .filter((i) => i.facility_count >= IXP_MIN_FACILITIES)
+    .slice(0, INDEXABLE_CAPS.ixps)
+    .map((i) => ({ slug: i.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -34,8 +37,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : ixp.country
     ? countryName(ixp.country)
     : "Global";
-  const memberCount = ixp.net_count != null ? ixp.net_count.toLocaleString() : null;
-  const facCount = facilities.length.toLocaleString();
+  const memberCount = ixp.net_count != null ? ixp.net_count.toLocaleString("en-US") : null;
+  const facCount = facilities.length.toLocaleString("en-US");
   const title = memberCount
     ? `${ixp.name} — ${memberCount} Networks, ${facCount} Facilities`
     : `${ixp.name} — Internet Exchange Point in ${where}`;
@@ -72,7 +75,7 @@ export default async function IxpPage({ params }: Props) {
 
   const summary = `${ixp.name} is an Internet Exchange Point${
     ixp.city || ixp.country ? ` serving ${wherePhrase}` : ""
-  }${ixp.net_count ? `, with ${ixp.net_count.toLocaleString()} member network${ixp.net_count === 1 ? "" : "s"}` : ""}${
+  }${ixp.net_count ? `, with ${ixp.net_count.toLocaleString("en-US")} member network${ixp.net_count === 1 ? "" : "s"}` : ""}${
     facilities.length > 0
       ? ` operating across ${facilities.length} colocation facilit${facilities.length === 1 ? "y" : "ies"}`
       : ""
@@ -148,10 +151,10 @@ export default async function IxpPage({ params }: Props) {
         </p>
 
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatBox label="Member networks" value={ixp.net_count != null ? ixp.net_count.toLocaleString() : "—"} />
-          <StatBox label="Facilities" value={facilities.length.toLocaleString()} />
-          <StatBox label="Operators" value={operator_ranking.length.toLocaleString()} />
-          <StatBox label="Countries" value={country_breakdown.length.toLocaleString()} />
+          <StatBox label="Member networks" value={ixp.net_count != null ? ixp.net_count.toLocaleString("en-US") : "—"} />
+          <StatBox label="Facilities" value={facilities.length.toLocaleString("en-US")} />
+          <StatBox label="Operators" value={operator_ranking.length.toLocaleString("en-US")} />
+          <StatBox label="Countries" value={country_breakdown.length.toLocaleString("en-US")} />
         </div>
 
         {ixp.website && (

@@ -5,7 +5,7 @@ import { loadFacilitiesWithCounts } from "@/lib/insights-data";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 86400;
+export const revalidate = 2_592_000;
 
 const TOP_N = 50;
 
@@ -38,7 +38,7 @@ export default async function MostDenseInsight() {
     headline: "The 50 most network-dense data centers on Earth",
     description:
       "Ranked by peering networks present — the real interconnect hubs of the global internet.",
-    author: { "@type": "Person", name: "Junna Park" },
+    author: { "@type": "Organization", name: "datacenters.world", url: "https://datacenters.world/" },
     isPartOf: { "@type": "WebSite", name: "datacenters.world", url: "https://datacenters.world/" },
     mainEntity: {
       "@type": "ItemList",
@@ -77,7 +77,7 @@ export default async function MostDenseInsight() {
           peering — places where ISPs, content providers, and enterprises terminate their fiber and
           exchange traffic directly. Ranked by PeeringDB network count, the top 50 host{" "}
           <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
-            {total.toLocaleString()}
+            {total.toLocaleString("en-US")}
           </span>{" "}
           network presences across{" "}
           <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
@@ -93,7 +93,7 @@ export default async function MostDenseInsight() {
             </Link>{" "}
             with{" "}
             <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
-              {lead.network_count.toLocaleString()}
+              {lead.network_count.toLocaleString("en-US")}
             </span>{" "}
             networks present — a single building reached by more peering networks than most
             countries.
@@ -145,7 +145,7 @@ export default async function MostDenseInsight() {
                 </div>
                 <div className="flex shrink-0 items-center gap-3 text-xs tabular-nums">
                   <span className="font-mono text-zinc-900 dark:text-zinc-100">
-                    {f.network_count.toLocaleString()} networks
+                    {f.network_count.toLocaleString("en-US")} networks
                   </span>
                   {f.ix_count > 0 && (
                     <span className="text-zinc-500">{f.ix_count} IXP{f.ix_count === 1 ? "" : "s"}</span>

@@ -7,8 +7,8 @@
  *
  * The Vercel CDN serves these static files directly — the runtime function
  * never touches Supabase for map data, which is by far the largest single
- * contributor to Supabase egress. Refresh is triggered by the daily Vercel
- * cron (app/api/cron/refresh-geojson) and by ingest scripts after --apply.
+ * contributor to Supabase egress. Bakes on `next build` (every git deploy)
+ * and when ingest is run with `--rebuild` (deploy hook). No scheduled cron.
  */
 
 import { createClient } from "@supabase/supabase-js";

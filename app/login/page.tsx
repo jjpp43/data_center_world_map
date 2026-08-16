@@ -59,7 +59,10 @@ export default async function LoginPage() {
         </form>
 
         <p className="mt-6 text-xs text-zinc-500">
-          We only use your GitHub login for authentication. No repo access requested.
+          We only use your GitHub login for authentication. No repo access requested.{" "}
+          <Link href="/privacy" className="underline decoration-zinc-300 underline-offset-2 hover:text-zinc-800 dark:decoration-zinc-700 dark:hover:text-zinc-200">
+            Privacy
+          </Link>
         </p>
       </main>
     </div>

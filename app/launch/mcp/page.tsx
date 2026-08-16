@@ -5,7 +5,7 @@ import { AccountPill } from "@/components/AccountPill";
 import { ArrowLeftIcon } from "@/components/editorial";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 86400;
+export const revalidate = 2_592_000;
 
 const SITE = "https://datacenters.world";
 const URL = `${SITE}/launch/mcp`;

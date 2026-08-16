@@ -64,8 +64,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!resolved) return { title: "Country not found" };
   const { country: c, canonicalSlug } = resolved;
   const name = countryName(c.code);
-  const count = c.facility_count.toLocaleString();
-  const power = c.total_power_mw ? Math.round(c.total_power_mw).toLocaleString() : null;
+  const count = c.facility_count.toLocaleString("en-US");
+  const power = c.total_power_mw ? Math.round(c.total_power_mw).toLocaleString("en-US") : null;
   const title = `${name} Data Centers — All ${count} Facilities (Free Map)`;
   const description = `All ${count} ${name} data centers mapped — ${c.operators} operator${
     c.operators === 1 ? "" : "s"
@@ -135,11 +135,11 @@ export default async function CountryPage({ params }: Props) {
   const totalMw = facilities.reduce((sum, f) => sum + (f.power_mw ?? 0), 0);
   const operatorSet = new Set(facilities.map((f) => f.operator).filter((o): o is string => !!o));
 
-  const summary = `${name} hosts ${facilities.length.toLocaleString()} data center${
+  const summary = `${name} hosts ${facilities.length.toLocaleString("en-US")} data center${
     facilities.length === 1 ? "" : "s"
   } across ${cities.length} cit${cities.length === 1 ? "y" : "ies"}, operated by ${operatorSet.size} distinct operator${
     operatorSet.size === 1 ? "" : "s"
-  }${totalMw > 0 ? `, with ${Math.round(totalMw).toLocaleString()} MW of published power capacity` : ""}.`;
+  }${totalMw > 0 ? `, with ${Math.round(totalMw).toLocaleString("en-US")} MW of published power capacity` : ""}.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -185,10 +185,10 @@ export default async function CountryPage({ params }: Props) {
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-700 dark:text-zinc-300">{summary}</p>
 
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatBox label="Facilities" value={facilities.length.toLocaleString()} />
-          <StatBox label="Cities" value={cities.length.toLocaleString()} />
-          <StatBox label="Operators" value={operatorSet.size.toLocaleString()} />
-          <StatBox label="Total power" value={totalMw > 0 ? `${Math.round(totalMw).toLocaleString()} MW` : "—"} />
+          <StatBox label="Facilities" value={facilities.length.toLocaleString("en-US")} />
+          <StatBox label="Cities" value={cities.length.toLocaleString("en-US")} />
+          <StatBox label="Operators" value={operatorSet.size.toLocaleString("en-US")} />
+          <StatBox label="Total power" value={totalMw > 0 ? `${Math.round(totalMw).toLocaleString("en-US")} MW` : "—"} />
         </div>
 
         {cities.map(([city, list]) => (
@@ -220,7 +220,7 @@ export default async function CountryPage({ params }: Props) {
                   </div>
                   <div className="flex shrink-0 items-center gap-3 text-xs tabular-nums text-zinc-500">
                     {f.power_mw != null && <span>{f.power_mw} MW</span>}
-                    {f.space_sqft != null && <span>{f.space_sqft.toLocaleString()} sqft</span>}
+                    {f.space_sqft != null && <span>{f.space_sqft.toLocaleString("en-US")} sqft</span>}
                     {f.status !== "operational" && <span>{f.status}</span>}
                   </div>
                 </li>

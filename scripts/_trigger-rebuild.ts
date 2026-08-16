@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 /**
  * Refresh the materialized summary views (country_summary, operator_summary,
  * facility_density). Called from ingest scripts after --apply so the next
- * build sees pre-aggregated rows instead of stale counts.
+ * render sees pre-aggregated rows instead of stale counts.
  */
 export async function refreshSummaryViews(): Promise<void> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,20 +21,51 @@ export async function refreshSummaryViews(): Promise<void> {
   console.log(`  Summary views refreshed`);
 }
 
+function productionOrigin(): string {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.datacenters.world";
+  const u = new URL(raw);
+  if (u.hostname === "datacenters.world") u.hostname = "www.datacenters.world";
+  return u.origin;
+}
+
 /**
- * Fire the Vercel Deploy Hook so a new build picks up the data we just wrote.
+ * Mark catalog ISR entries stale via `/api/cron/revalidate` (SWR). The next
+ * hit regenerates in the background; identical HTML incurs no ISR write.
+ * Does not start a new deployment, so the existing ISR cache stays intact.
+ */
+export async function triggerRevalidate(reason: string): Promise<void> {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) {
+    console.log(`  (skipping on-demand revalidate — CRON_SECRET not set)`);
+    return;
+  }
+  const url = `${productionOrigin()}/api/cron/revalidate`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secret}` },
+    redirect: "follow",
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.warn(`  on-demand revalidate returned ${res.status}: ${body.slice(0, 200)}`);
+    return;
+  }
+  console.log(`  on-demand revalidate triggered (${reason})`);
+}
+
+/**
+ * Fire the Vercel Deploy Hook so a new build re-bakes geojson.
  *
- * Opt-in via `--rebuild`. Every deploy nukes `unstable_cache`, which forces a
- * fresh ISR write on the next hit to every per-slug page — ~40k catalog-wide
- * writes per rebuild. Default to off; ingested data still appears within 24h
- * via `revalidate: 86_400` on every loader. Use `--rebuild` only when you
- * actually need the data live now (demo, urgent fix).
+ * Opt-in via `--rebuild`. Each new deployment gets an empty ISR cache, so the
+ * next crawl of every per-slug page is a write. Use only when the baked
+ * geojson (or the build itself) must change; catalog HTML freshness is
+ * `triggerRevalidate()`, not a deploy.
  *
- * No-op if VERCEL_DEPLOY_HOOK_URL isn't set — keeps local dev free of friction.
+ * No-op if VERCEL_DEPLOY_HOOK_URL isn't set.
  */
 export async function triggerRebuild(reason: string): Promise<void> {
   if (!process.argv.includes("--rebuild")) {
-    console.log(`  (skipping Vercel rebuild — pass --rebuild to force one. Data will land within 24h via ISR revalidate.)`);
+    console.log(`  (skipping Vercel rebuild — pass --rebuild to re-bake geojson)`);
     return;
   }
   const url = process.env.VERCEL_DEPLOY_HOOK_URL;
@@ -49,4 +80,16 @@ export async function triggerRebuild(reason: string): Promise<void> {
     return;
   }
   console.log(`  Vercel rebuild triggered (${reason})`);
+}
+
+/**
+ * After a successful ingest: always SWR-revalidate catalog tags. A full
+ * deploy is `--rebuild` only (geojson / build artifacts).
+ */
+export async function triggerCatalogFreshness(reason: string): Promise<void> {
+  if (process.argv.includes("--rebuild")) {
+    await triggerRebuild(reason);
+    return;
+  }
+  await triggerRevalidate(reason);
 }

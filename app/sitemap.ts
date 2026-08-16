@@ -83,6 +83,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${SITE}/`, changeFrequency: "daily", priority: 1 },
     { url: `${SITE}/about`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE}/privacy`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE}/methodology`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE}/api`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE}/launch/mcp`, changeFrequency: "monthly", priority: 0.6 },
@@ -108,7 +109,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const facilityEntries: MetadataRoute.Sitemap = facilities.map((r) => ({
     url: `${SITE}/facility/${r.slug}`,
     ...(r.updated_at ? { lastModified: new Date(r.updated_at) } : {}),
-    changeFrequency: "weekly",
+    changeFrequency: "monthly",
     priority: 0.6,
   }));
 
@@ -120,19 +121,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .slice(0, INDEXABLE_CAPS.operators)
     .map((o) => ({
       url: `${SITE}/operators/${o.slug}`,
-      changeFrequency: "weekly",
+      changeFrequency: "monthly",
       priority: 0.7,
     }));
 
   const countryEntries: MetadataRoute.Sitemap = countries.map((c) => ({
     url: `${SITE}/countries/${countrySlug(c.code)}`,
-    changeFrequency: "weekly",
+    changeFrequency: "monthly",
     priority: 0.7,
   }));
 
   const metroEntries: MetadataRoute.Sitemap = metros.map((m) => ({
     url: `${SITE}/metros/${m.slug}`,
-    changeFrequency: "weekly",
+    changeFrequency: "monthly",
     priority: 0.75,
   }));
 
@@ -141,7 +142,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .slice(0, INDEXABLE_CAPS.ixps)
     .map((i) => ({
       url: `${SITE}/ixps/${i.slug}`,
-      changeFrequency: "weekly",
+      changeFrequency: "monthly",
       priority: 0.65,
     }));
 
@@ -149,7 +150,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES)
     .map((n) => ({
       url: `${SITE}/networks/${n.asn}`,
-      changeFrequency: "weekly",
+      changeFrequency: "monthly",
       priority: 0.6,
     }));
 

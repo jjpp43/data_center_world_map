@@ -4,7 +4,7 @@ import { loadOperatorSummaries } from "@/lib/operators";
 import { INDEXABLE_CAPS, OPERATOR_MIN_FACILITIES } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
-export const revalidate = 3600;
+export const revalidate = 2_592_000;
 
 export const metadata: Metadata = {
   title: "Data Center Operators Worldwide — Ranked by Facility Count",
@@ -30,8 +30,8 @@ export default async function OperatorsIndex() {
     .slice(0, INDEXABLE_CAPS.operators);
   const totalFacilities = ops.reduce((sum, o) => sum + o.facility_count, 0);
   const totalMw = ops.reduce((sum, o) => sum + (o.total_power_mw ?? 0), 0);
-  const summary = `${ops.length.toLocaleString()} data center operators run ${totalFacilities.toLocaleString()} facilities tracked on datacenters.world${
-    totalMw > 0 ? `, with ${Math.round(totalMw).toLocaleString()} MW of published power capacity across the named operators` : ""
+  const summary = `${ops.length.toLocaleString("en-US")} data center operators run ${totalFacilities.toLocaleString("en-US")} facilities tracked on datacenters.world${
+    totalMw > 0 ? `, with ${Math.round(totalMw).toLocaleString("en-US")} MW of published power capacity across the named operators` : ""
   }.`;
 
   const jsonLd = {
@@ -94,7 +94,7 @@ export default async function OperatorsIndex() {
                 </span>
                 <span>{o.countries} countr{o.countries === 1 ? "y" : "ies"}</span>
                 {o.total_power_mw && o.total_power_mw > 0 ? (
-                  <span>{Math.round(o.total_power_mw).toLocaleString()} MW</span>
+                  <span>{Math.round(o.total_power_mw).toLocaleString("en-US")} MW</span>
                 ) : null}
               </div>
             </li>
@@ -102,7 +102,7 @@ export default async function OperatorsIndex() {
         </ul>
 
         <p className="mt-6 text-xs text-zinc-500">
-          Showing the top {INDEXABLE_CAPS.operators} of {ops.length.toLocaleString()} tracked
+          Showing the top {INDEXABLE_CAPS.operators} of {ops.length.toLocaleString("en-US")} tracked
           operators by facility count. Every operator is reachable at{" "}
           <span className="font-mono">/operators/[slug]</span> directly — the API exposes the full
           set.

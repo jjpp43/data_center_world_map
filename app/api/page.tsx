@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EditorialHeader } from "@/components/editorial";
+import { EditorialShell, sheetLink } from "@/components/editorial";
 import { ApiNav } from "./ApiNav";
 import { CodeTabs, ResponseBlock, Snippet } from "./CodeTabs";
 
-export const revalidate = 86400;
+export const revalidate = 2_592_000;
 
 export const metadata: Metadata = {
   title: "API",
@@ -25,45 +25,27 @@ const BASE = "https://datacenters.world/api/v1";
 export default async function ApiDocsPage() {
 
   return (
-    <div
-      className={`min-h-full bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
-    >
-      <EditorialHeader active="api" />
-
-      <main className="relative mx-auto max-w-6xl px-6 py-12">
-        <div
-          aria-hidden
-          className="dot-grid pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px]"
-        />
-
-        {/* Hero */}
-        <div className="max-w-3xl">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-            v1 · free tier available · bearer-token auth required
-          </div>
-          <h1 className="mt-4 text-5xl font-semibold leading-[1.05] tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-6xl">
-            API.
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-300">
+    <EditorialShell active="api" wide>
+        <h1 className="text-3xl font-semibold tracking-tight">API Reference</h1>
+        <p className="mt-3 max-w-2xl text-[15px] leading-7 text-zinc-600 dark:text-zinc-400">
             Read access to every data center, operator, country, and cloud region in the atlas.
             JSON or CSV, open CORS, edge-cached. Every request needs an API key —{" "}
-            <Link href="/dashboard" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+            <Link href="/dashboard" className={sheetLink}>
               create a free one
             </Link>{" "}
             (no card) and you&rsquo;re in.
           </p>
 
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
             <Pill label="Base URL" value="/api/v1" />
             <Pill label="Auth" value="bearer (required)" />
             <Pill label="Formats" value="json · csv" />
             <Pill label="CORS" value="open" />
           </div>
-        </div>
 
         {/* Mobile TOC */}
-        <details className="mt-10 rounded-2xl border border-zinc-300 bg-white px-4 py-3 shadow-sm lg:hidden dark:border-zinc-700 dark:bg-zinc-900/70">
-          <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-700 dark:text-zinc-300">
+        <details className="mt-10 rounded-lg border border-zinc-200 px-4 py-3 lg:hidden dark:border-zinc-800">
+          <summary className="cursor-pointer text-sm text-zinc-700 dark:text-zinc-300">
             On this page
           </summary>
           <div className="mt-3">
@@ -72,9 +54,9 @@ export default async function ApiDocsPage() {
         </details>
 
         {/* Grid: left sidebar + content */}
-        <div className="mt-10 grid gap-x-12 gap-y-16 lg:grid-cols-[240px_1fr]">
+        <div className="mt-10 grid gap-x-12 gap-y-16 lg:grid-cols-[220px_1fr]">
           <aside className="hidden lg:block">
-            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-8">
+            <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pb-8">
               <ApiNav />
             </div>
           </aside>
@@ -82,13 +64,13 @@ export default async function ApiDocsPage() {
           <article className="min-w-0 space-y-16">
             {/* ─────────── Overview ─────────── */}
             <Section id="overview" number={1} title="Overview">
-              <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
+              <p className="mt-5 max-w-2xl text-zinc-500">
                 The datacenters.world API is a read-only REST interface over the same dataset that
                 powers the public map and editorial pages.
               </p>
-              <ul className="mt-4 max-w-2xl space-y-2 text-base text-zinc-600 dark:text-zinc-300">
+              <ul className="mt-4 max-w-2xl space-y-2 text-base text-zinc-500">
                 <li>
-                  <strong className="font-mono text-zinc-900 dark:text-zinc-100">5,675</strong>{" "}
+                  <strong className="font-mono text-zinc-900 dark:text-zinc-50">5,675</strong>{" "}
                   data center facilities across <strong className="font-mono">148</strong>{" "}
                   countries
                 </li>
@@ -113,18 +95,18 @@ export default async function ApiDocsPage() {
 
             {/* ─────────── Quick start ─────────── */}
             <Section id="quick-start" number={2} title="Quick start">
-              <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
+              <p className="mt-5 max-w-2xl text-zinc-500">
                 Sixty seconds end to end:{" "}
                 <Link
                   href="/login"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
+              className={sheetLink}
                 >
                   sign in with GitHub
                 </Link>
                 , generate a key on the{" "}
                 <Link
                   href="/dashboard"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
+              className={sheetLink}
                 >
                   dashboard
                 </Link>
@@ -162,7 +144,7 @@ data, meta = body['data'], body['meta']`,
 
             {/* ─────────── Authentication ─────────── */}
             <Section id="authentication" number={3} title="Authentication">
-              <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
+              <p className="mt-5 max-w-2xl text-zinc-500">
                 Every request needs a key passed as <Inline>Authorization: Bearer dcw_…</Inline>.
                 Unauthenticated calls return <Inline>401 Unauthorized</Inline>.
               </p>
@@ -195,13 +177,13 @@ res = requests.get(
               <p className="mt-3 max-w-2xl text-base text-zinc-500">
                 Every successful response sets <Inline>X-RateLimit-Tier</Inline>,{" "}
                 <Inline>X-RateLimit-Limit</Inline>, and <Inline>X-RateLimit-Remaining</Inline>.
-                See <a href="#errors" className="text-blue-600 hover:underline dark:text-blue-400">Errors &amp; rate limits</a> for the over-quota behavior.
+                See <a href="#errors" className={sheetLink}>Errors &amp; rate limits</a> for the over-quota behavior.
               </p>
             </Section>
 
             {/* ─────────── Endpoints ─────────── */}
             <Section id="endpoints" number={4} title="Endpoints">
-              <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
+              <p className="mt-5 max-w-2xl text-zinc-500">
                 Five endpoints, all <Inline>GET</Inline>. Each one accepts <Inline>?format=csv</Inline>{" "}
                 in addition to JSON.
               </p>
@@ -438,10 +420,10 @@ data = res.json()['data']`,
 
             {/* ─────────── MCP ─────────── */}
             <Section id="mcp" number={5} title="MCP (AI tool access)">
-              <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
+              <p className="mt-5 max-w-2xl text-zinc-500">
                 The same atlas, exposed as <a
                   href="https://modelcontextprotocol.io"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
+              className={sheetLink}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -452,14 +434,14 @@ data = res.json()['data']`,
                 networks, IXPs, and cloud regions — citations included.
               </p>
 
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-4 border-y border-zinc-200 dark:border-zinc-800 py-5 sm:grid-cols-4">
                 <Pill label="Endpoint" value="/api/mcp" />
                 <Pill label="Transport" value="streamable http" />
                 <Pill label="Auth" value="bearer (required)" />
                 <Pill label="Quota" value="shared with REST" />
               </div>
 
-              <h3 className="mt-10 font-mono text-[11px] uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">
+              <h3 className="mt-10 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
                 Client config
               </h3>
 
@@ -512,7 +494,7 @@ data = res.json()['data']`,
                 </div>
               </div>
 
-              <h3 className="mt-10 font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">
+              <h3 className="mt-10 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
                 Tools
               </h3>
               <p className="mt-2 max-w-2xl text-base text-zinc-500">
@@ -520,16 +502,16 @@ data = res.json()['data']`,
                 facility / operator / IXP page so your AI can cite back to the dataset.
               </p>
 
-              <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70">
+              <div className="mt-4 overflow-x-auto border border-zinc-200 dark:border-zinc-800">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-zinc-200 bg-zinc-100/80 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300">
+                  <thead className="border-b border-zinc-200 text-left text-sm text-zinc-500 dark:border-zinc-800">
                     <tr>
                       <th className="px-4 py-2.5 text-left font-medium">Tool</th>
                       <th className="px-4 py-2.5 text-left font-medium">Inputs</th>
                       <th className="px-4 py-2.5 text-left font-medium">Returns</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                     <ToolRow
                       name="search_facilities"
                       inputs="country[], operator (prefix), min_power_mw, limit"
@@ -602,7 +584,7 @@ data = res.json()['data']`,
 
             {/* ─────────── Errors & rate limits ─────────── */}
             <Section id="errors" number={7} title="Errors & rate limits">
-              <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
+              <p className="mt-5 max-w-2xl text-zinc-500">
                 Non-2xx responses use a uniform error envelope:
               </p>
               <div className="mt-4">
@@ -636,16 +618,16 @@ if not res.ok:
                 />
               </div>
 
-              <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70">
+              <div className="mt-6 overflow-x-auto border border-zinc-200 dark:border-zinc-800">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-zinc-200 bg-zinc-100/80 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300">
+                  <thead className="border-b border-zinc-200 text-left text-sm text-zinc-500 dark:border-zinc-800">
                     <tr>
                       <th className="px-4 py-2.5 text-left font-medium">Status</th>
                       <th className="px-4 py-2.5 text-left font-medium">When</th>
                       <th className="px-4 py-2.5 text-left font-medium">What to do</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                     <ErrorRow status="400" when="Malformed query params (e.g. bad enum value)." action="Fix the request; check the param table for the endpoint." />
                     <ErrorRow status="401" when="Missing or invalid Authorization header." action="Sign in, create a key, re-send." />
                     <ErrorRow status="404" when="Slug not found on a detail endpoint." action="List first, then look up by exact slug." />
@@ -666,9 +648,9 @@ if not res.ok:
 
             {/* ─────────── Pricing ─────────── */}
             <Section id="pricing" number={8} title="Pricing">
-              <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70">
+              <div className="mt-5 overflow-x-auto border border-zinc-200 dark:border-zinc-800">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-zinc-200 bg-zinc-100/80 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300">
+                  <thead className="border-b border-zinc-200 text-left text-sm text-zinc-500 dark:border-zinc-800">
                     <tr>
                       <th className="px-4 py-2.5 text-left font-medium">Tier</th>
                       <th className="px-4 py-2.5 text-left font-medium">Quota</th>
@@ -676,7 +658,7 @@ if not res.ok:
                       <th className="px-4 py-2.5 text-left font-medium">For</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                     <PricingRow tier="Free" quota="1,000 / month" price="$0" forWho="Hobbyists, evaluation, indie tools." />
                     <PricingRow tier="Pro" quota="10,000 / month" price="$9.99 / mo" forWho="Production services, dashboards, internal tools." />
                     <PricingRow tier="Team" quota="50,000 / month" price="$39.99 / mo" forWho="Bulk analytics, market research, embedded data." />
@@ -688,7 +670,7 @@ if not res.ok:
                 Pro and Team ship with a 3-day free trial via Polar.sh — no charge until day 4,
                 cancel anytime. Upgrades take effect immediately and every active key on your
                 account inherits the new tier. Manage from the{" "}
-                <Link href="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
+                <Link href="/dashboard" className={sheetLink}>
                   dashboard
                 </Link>
                 .
@@ -697,7 +679,7 @@ if not res.ok:
 
             {/* ─────────── Versioning ─────────── */}
             <Section id="versioning" number={9} title="Versioning">
-              <p className="mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300">
+              <p className="mt-5 max-w-2xl text-zinc-500">
                 All endpoints live under <Inline>/api/v1/</Inline>. Breaking changes ship under a
                 new major (<Inline>/api/v2/</Inline>) — never inside <Inline>v1</Inline>. Additive
                 changes (new optional query params, new response fields) ship without version
@@ -710,17 +692,19 @@ if not res.ok:
               </p>
             </Section>
 
-            <div className="mt-12 border-t border-zinc-200/70 pt-6 text-xs text-zinc-500 dark:border-zinc-800/60">
-              <p className="font-mono">
+            <div className="mt-12 border-t border-zinc-200 pt-6 text-sm text-zinc-500 dark:border-zinc-800">
+              <p>
                 Data from PeeringDB (CC-BY-SA), OpenStreetMap (ODbL), operator-published facility
                 pages, datacenters.google, and datacenters.atmeta.com · Citing the API is
-                appreciated · No usage analytics
+                appreciated · No usage analytics ·{" "}
+                <Link href="/privacy" className={sheetLink}>
+                  Privacy
+                </Link>
               </p>
             </div>
           </article>
         </div>
-      </main>
-    </div>
+    </EditorialShell>
   );
 }
 
@@ -785,34 +769,18 @@ const CLOUD_REGION_FIELDS: ReadonlyArray<FieldRow> = [
 
 function Section({
   id,
-  number,
   title,
   children,
 }: {
   id: string;
-  number: number;
+  number?: number;
   title: string;
   children: React.ReactNode;
 }) {
   return (
     <section id={id} className="scroll-mt-24">
-      <div className="flex items-baseline justify-between gap-4 border-t border-zinc-200/70 pt-6 dark:border-zinc-800/60">
-        <div className="flex items-baseline gap-5">
-          <span className="font-mono text-5xl font-light leading-none tabular-nums text-indigo-500 dark:text-indigo-400">
-            {String(number).padStart(2, "0")}
-          </span>
-          <h2 className="font-mono text-xl font-semibold uppercase tracking-[0.12em] text-zinc-900 dark:text-zinc-50">
-            {title}
-          </h2>
-        </div>
-        <a
-          href={`#${id}`}
-          aria-label={`Link to ${title}`}
-          className="font-mono text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-        >
-          #
-        </a>
-      </div>
+      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+      <div className="mt-2 h-0.5 w-7 rounded-full bg-teal-500" />
       {children}
     </section>
   );
@@ -820,13 +788,9 @@ function Section({
 
 function Pill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-zinc-300 bg-white px-3 py-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70">
-      <div className="text-[11px] font-medium uppercase tracking-[0.15em] text-indigo-600 dark:text-indigo-400">
-        {label}
-      </div>
-      <div className="mt-0.5 font-mono text-sm tabular-nums text-zinc-900 dark:text-zinc-100">
-        {value}
-      </div>
+    <div>
+      <div className="text-xs text-zinc-500">{label}</div>
+      <div className="mt-0.5 font-mono text-sm tabular-nums text-teal-800 dark:text-teal-300">{value}</div>
     </div>
   );
 }
@@ -851,34 +815,31 @@ function Endpoint({
   response: string;
 }) {
   return (
-    <article
-      id={id}
-      className="mt-8 scroll-mt-24 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/70"
-    >
-      <header className="flex flex-wrap items-baseline gap-3 border-b border-zinc-200 bg-gradient-to-r from-indigo-50/60 to-transparent px-5 py-4 dark:border-zinc-800 dark:from-indigo-950/30">
-        <span className="rounded-md bg-emerald-500 px-2 py-0.5 font-mono text-xs font-semibold tracking-wider text-white shadow-sm">
+    <article id={id} className="mt-8 scroll-mt-24 rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <header className="flex flex-wrap items-baseline gap-3 border-b border-zinc-200 dark:border-zinc-800 px-5 py-4">
+        <span className="font-mono text-xs font-semibold tracking-wider text-teal-700 dark:text-teal-400">
           {method}
         </span>
-        <code className="font-mono text-base font-medium text-zinc-900 dark:text-zinc-100">{path}</code>
-        <span className="text-base text-zinc-600 dark:text-zinc-400">— {description}</span>
+        <code className="font-mono text-base font-medium text-zinc-900 dark:text-zinc-50">{path}</code>
+        <span className="text-base text-zinc-500">— {description}</span>
       </header>
 
       {params && params.length > 0 && (
-        <div className="border-t border-zinc-200 bg-indigo-50/20 px-5 py-4 dark:border-zinc-800 dark:bg-indigo-950/10">
-          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">
+        <div className="border-t border-zinc-200 dark:border-zinc-800 px-5 py-4">
+          <div className="mb-2 text-xs font-medium text-zinc-500">
             Query parameters
           </div>
           <table className="w-full text-sm">
-            <tbody className="divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
+            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {params.map(([name, type, desc, ex]) => (
-                <tr key={name} className="even:bg-zinc-50/40 dark:even:bg-zinc-900/20">
-                  <td className="py-2 pl-1 pr-3 align-top font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                <tr key={name}>
+                  <td className="py-2 pl-1 pr-3 align-top font-mono text-sm text-zinc-900 dark:text-zinc-50">
                     {name}
                   </td>
-                  <td className="py-2 pr-3 align-top font-mono text-xs text-indigo-600 dark:text-indigo-400">
+                  <td className="py-2 pr-3 align-top font-mono text-xs text-zinc-500">
                     {type}
                   </td>
-                  <td className="py-2 pr-3 align-top text-zinc-700 dark:text-zinc-300">{desc}</td>
+                  <td className="py-2 pr-3 align-top text-zinc-500">{desc}</td>
                   <td className="py-2 pr-1 align-top font-mono text-xs text-zinc-500">{ex}</td>
                 </tr>
               ))}
@@ -887,30 +848,30 @@ function Endpoint({
         </div>
       )}
 
-      <div className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
+      <div className="border-t border-zinc-200 dark:border-zinc-800 px-5 py-4">
         <CodeTabs label="Request" sample={sample} />
       </div>
 
-      <div className="border-t border-zinc-200 bg-emerald-50/30 px-5 py-4 dark:border-zinc-800 dark:bg-emerald-950/10">
+      <div className="border-t border-zinc-200 dark:border-zinc-800 px-5 py-4">
         <ResponseBlock label="Response (truncated)">{response}</ResponseBlock>
       </div>
 
       {fields && fields.length > 0 && (
-        <div className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
-          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">
+        <div className="border-t border-zinc-200 dark:border-zinc-800 px-5 py-4">
+          <div className="mb-2 text-xs font-medium text-zinc-500">
             Response fields
           </div>
           <table className="w-full text-sm">
-            <tbody className="divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
+            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {fields.map(([name, type, desc]) => (
-                <tr key={name} className="even:bg-zinc-50/40 dark:even:bg-zinc-900/20">
-                  <td className="py-2 pl-1 pr-3 align-top font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                <tr key={name}>
+                  <td className="py-2 pl-1 pr-3 align-top font-mono text-sm text-zinc-900 dark:text-zinc-50">
                     {name}
                   </td>
-                  <td className="py-2 pr-3 align-top font-mono text-xs text-indigo-600 dark:text-indigo-400">
+                  <td className="py-2 pr-3 align-top font-mono text-xs text-zinc-500">
                     {type}
                   </td>
-                  <td className="py-2 pr-1 align-top text-zinc-700 dark:text-zinc-300">{desc}</td>
+                  <td className="py-2 pr-1 align-top text-zinc-500">{desc}</td>
                 </tr>
               ))}
             </tbody>
@@ -924,15 +885,15 @@ function Endpoint({
 function Convention({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
-      <p className="mt-1 text-base leading-relaxed text-zinc-600 dark:text-zinc-400">{children}</p>
+      <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{title}</h3>
+      <p className="mt-1 text-base leading-relaxed text-zinc-500">{children}</p>
     </div>
   );
 }
 
 function Inline({ children }: { children: React.ReactNode }) {
   return (
-    <code className="rounded bg-zinc-100 px-1 py-0.5 font-mono text-[11px] text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+    <code className="bg-teal-50 px-1 py-0.5 font-mono text-[11px] text-teal-900 dark:bg-teal-950/60 dark:text-teal-200">
       {children}
     </code>
   );
@@ -950,41 +911,41 @@ function PricingRow({
   forWho: string;
 }) {
   return (
-    <tr className="transition-colors even:bg-zinc-50/60 hover:bg-indigo-50/40 dark:even:bg-zinc-900/30 dark:hover:bg-indigo-950/20">
-      <td className="px-4 py-3 align-top font-medium text-zinc-900 dark:text-zinc-100">{tier}</td>
-      <td className="px-4 py-3 align-top font-mono text-sm tabular-nums text-zinc-700 dark:text-zinc-300">
+    <tr>
+      <td className="px-4 py-3 align-top font-medium text-zinc-900 dark:text-zinc-50">{tier}</td>
+      <td className="px-4 py-3 align-top font-mono text-sm tabular-nums text-zinc-900 dark:text-zinc-50">
         {quota}
       </td>
-      <td className="px-4 py-3 align-top font-mono text-sm tabular-nums text-zinc-700 dark:text-zinc-300">
+      <td className="px-4 py-3 align-top font-mono text-sm tabular-nums text-zinc-900 dark:text-zinc-50">
         {price}
       </td>
-      <td className="px-4 py-3 align-top text-base text-zinc-600 dark:text-zinc-400">{forWho}</td>
+      <td className="px-4 py-3 align-top text-base text-zinc-500">{forWho}</td>
     </tr>
   );
 }
 
 function ToolRow({ name, inputs, returns }: { name: string; inputs: string; returns: string }) {
   return (
-    <tr className="transition-colors even:bg-zinc-50/60 hover:bg-indigo-50/40 dark:even:bg-zinc-900/30 dark:hover:bg-indigo-950/20">
-      <td className="px-4 py-3 align-top font-mono text-sm text-zinc-900 dark:text-zinc-100">
+    <tr>
+      <td className="px-4 py-3 align-top font-mono text-sm text-zinc-900 dark:text-zinc-50">
         {name}
       </td>
-      <td className="px-4 py-3 align-top font-mono text-xs text-indigo-600 dark:text-indigo-400">
+      <td className="px-4 py-3 align-top font-mono text-xs text-zinc-500">
         {inputs}
       </td>
-      <td className="px-4 py-3 align-top text-base text-zinc-600 dark:text-zinc-400">{returns}</td>
+      <td className="px-4 py-3 align-top text-base text-zinc-500">{returns}</td>
     </tr>
   );
 }
 
 function ErrorRow({ status, when, action }: { status: string; when: string; action: string }) {
   return (
-    <tr className="transition-colors even:bg-zinc-50/60 hover:bg-indigo-50/40 dark:even:bg-zinc-900/30 dark:hover:bg-indigo-950/20">
-      <td className="px-4 py-3 align-top font-mono text-base font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+    <tr>
+      <td className="px-4 py-3 align-top font-mono text-base font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
         {status}
       </td>
-      <td className="px-4 py-3 align-top text-base text-zinc-700 dark:text-zinc-300">{when}</td>
-      <td className="px-4 py-3 align-top text-base text-zinc-600 dark:text-zinc-400">{action}</td>
+      <td className="px-4 py-3 align-top text-base text-zinc-900 dark:text-zinc-50">{when}</td>
+      <td className="px-4 py-3 align-top text-base text-zinc-500">{action}</td>
     </tr>
   );
 }

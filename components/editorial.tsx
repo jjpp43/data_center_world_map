@@ -2,65 +2,55 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { AccountPill } from "./AccountPill";
 
+export const sheetLink =
+  "text-teal-800 underline underline-offset-4 decoration-teal-300/80 hover:decoration-teal-700 dark:text-teal-400 dark:decoration-teal-700 dark:hover:decoration-teal-300";
+
+export function EditorialShell({
+  active,
+  wide = false,
+  children,
+}: {
+  active?: "about" | "methodology" | "api";
+  series?: string;
+  plate?: string;
+  wide?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="min-h-full bg-white text-zinc-900 dark:bg-black dark:text-zinc-100">
+      <EditorialHeader active={active} wide={wide} />
+      <main className={`mx-auto px-6 py-12 ${wide ? "max-w-6xl" : "max-w-3xl"}`}>
+        {children}
+      </main>
+    </div>
+  );
+}
+
 export function Stat({
   label,
   value,
   size = "md",
-  live = false,
 }: {
   label: string;
   value: string;
   size?: "hero" | "md" | "sm";
   live?: boolean;
 }) {
-  if (size === "hero") {
-    return (
-      <div className="group relative overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/70 p-6 shadow-sm backdrop-blur-md transition-colors dark:border-zinc-800/70 dark:bg-zinc-950/40">
-        <div
-          aria-hidden
-          className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-indigo-500/[0.08] blur-2xl transition-opacity group-hover:bg-indigo-500/[0.14]"
-        />
-        <div className="relative">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
-            {live && (
-              <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40 live-dot" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              </span>
-            )}
-            <span>{label}</span>
-          </div>
-          <div className="mt-3 font-mono text-[3.25rem] font-light leading-none tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50">
-            {value}
-          </div>
-        </div>
-      </div>
-    );
-  }
-  if (size === "sm") {
-    return (
-      <div className="rounded-lg border border-zinc-200/70 bg-white/60 px-3 py-2 dark:border-zinc-800/70 dark:bg-zinc-900/30">
-        <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">
-          {label}
-        </div>
-        <div className="mt-0.5 font-mono text-lg tabular-nums text-zinc-800 dark:text-zinc-200">
-          {value}
-        </div>
-      </div>
-    );
-  }
+  const valueClass =
+    size === "hero"
+      ? "mt-1 font-mono text-4xl tabular-nums tracking-tight"
+      : size === "sm"
+        ? "mt-0.5 font-mono text-lg tabular-nums"
+        : "mt-1 font-mono text-2xl tabular-nums";
   return (
-    <div className="rounded-2xl border border-zinc-200/70 bg-white/60 p-4 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-900/30">
-      <div className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">{label}</div>
-      <div className="mt-1 font-mono text-2xl tabular-nums text-zinc-900 dark:text-zinc-100">
-        {value}
-      </div>
+    <div>
+      <div className="text-sm text-zinc-500">{label}</div>
+      <div className={`${valueClass} text-teal-800 dark:text-teal-300`}>{value}</div>
     </div>
   );
 }
 
 export function SectionHeader({
-  number,
   children,
   caption,
 }: {
@@ -69,24 +59,14 @@ export function SectionHeader({
   caption?: ReactNode;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-t border-zinc-200/70 pt-5 dark:border-zinc-800/60">
-      <h2 className="flex items-center gap-3 font-mono text-sm font-semibold uppercase tracking-[0.16em] text-zinc-900 dark:text-zinc-50">
-        <span
-          aria-hidden
-          className="inline-block h-4 w-[3px] rounded-sm bg-indigo-500/90 dark:bg-indigo-400/90"
-        />
-        {number != null && (
-          <span className="font-mono text-xs tabular-nums text-indigo-600 dark:text-indigo-400">
-            §{number}
-          </span>
-        )}
-        <span>{children}</span>
-      </h2>
-      {caption && (
-        <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-400">
-          {caption}
-        </span>
-      )}
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          {children}
+        </h2>
+        {caption && <span className="shrink-0 text-sm text-zinc-500">{caption}</span>}
+      </div>
+      <div className="mt-2 h-0.5 w-7 rounded-full bg-teal-500" />
     </div>
   );
 }
@@ -94,25 +74,20 @@ export function SectionHeader({
 export function InlineStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline gap-2">
-      <span className="font-mono text-base tabular-nums text-zinc-900 dark:text-zinc-100">
-        {value}
-      </span>
-      <span className="text-xs text-zinc-500">{label}</span>
+      <span className="font-mono text-base tabular-nums text-teal-800 dark:text-teal-300">{value}</span>
+      <span className="text-sm text-zinc-500">{label}</span>
     </div>
   );
 }
 
 export function Test({ n, title, tag }: { n: string; title: string; tag: string }) {
   return (
-    <div className="group relative border-l border-zinc-200 pl-4 transition-colors hover:border-indigo-500 dark:border-zinc-800 dark:hover:border-indigo-400">
-      <div className="absolute -left-px top-0 h-6 w-px bg-indigo-500/0 transition-colors group-hover:bg-indigo-500 dark:group-hover:bg-indigo-400" />
-      <div className="font-mono text-[10px] tracking-[0.25em] text-indigo-600/80 dark:text-indigo-400/70">
-        {n}
+    <div className="flex gap-3">
+      <span className="w-4 shrink-0 font-mono text-sm text-teal-700 dark:text-teal-400">{n}</span>
+      <div>
+        <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{title}</div>
+        <div className="mt-1 text-sm leading-relaxed text-zinc-500">{tag}</div>
       </div>
-      <div className="mt-1.5 text-sm font-semibold leading-tight text-zinc-900 dark:text-zinc-100">
-        {title}
-      </div>
-      <div className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">{tag}</div>
     </div>
   );
 }
@@ -128,27 +103,18 @@ export function MatrixRow({
   notes: string;
 }) {
   return (
-    <tr className="transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
-      <td className="px-4 py-3 align-top">
-        <div className="flex items-center gap-2">
-          {ok ? (
-            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          ) : (
-            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
-          )}
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">{category}</span>
-        </div>
+    <tr>
+      <td className="px-4 py-2.5 align-top font-medium text-zinc-900 dark:text-zinc-100">
+        {category}
       </td>
-      <td className="px-4 py-3 align-top">
-        <span
-          className={`font-mono text-[10px] uppercase tracking-[0.15em] ${
-            ok ? "text-emerald-700 dark:text-emerald-400" : "text-zinc-500"
-          }`}
-        >
-          {ok ? "Include" : "Exclude"}
-        </span>
+      <td className="px-4 py-2.5 align-top whitespace-nowrap text-sm">
+        {ok ? (
+          <span className="text-teal-800 dark:text-teal-400">Include</span>
+        ) : (
+          <span className="text-rose-700 dark:text-rose-400">Exclude</span>
+        )}
       </td>
-      <td className="px-4 py-3 align-top text-sm text-zinc-600 dark:text-zinc-400">{notes}</td>
+      <td className="px-4 py-2.5 align-top text-sm leading-relaxed text-zinc-500">{notes}</td>
     </tr>
   );
 }
@@ -176,13 +142,13 @@ export function Source({
   return (
     <div className="grid grid-cols-[1fr_auto] gap-6 py-5">
       <div className="min-w-0">
-        <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+        <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100">
           {url ? (
             <a
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-zinc-900 hover:text-blue-600 dark:text-zinc-100 dark:hover:text-blue-300"
+              className="inline-flex items-center gap-1.5 text-teal-800 hover:underline dark:text-teal-400"
             >
               <span>{name}</span>
               <ExternalArrow />
@@ -191,20 +157,12 @@ export function Source({
             name
           )}
         </h3>
-        {host && (
-          <div className="mt-0.5 font-mono text-[10px] tracking-wide text-zinc-500">{host}</div>
-        )}
-        <p className="mt-2 max-w-prose text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-          {what}
-        </p>
+        {host && <div className="mt-0.5 font-mono text-xs text-zinc-500">{host}</div>}
+        <p className="mt-2 max-w-prose text-sm leading-relaxed text-zinc-500">{what}</p>
       </div>
       <div className="shrink-0 text-right">
-        <div className="font-mono text-2xl font-light tabular-nums text-zinc-900 dark:text-zinc-100">
-          {count}
-        </div>
-        <div className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500">
-          {unit}
-        </div>
+        <div className="font-mono text-xl tabular-nums text-teal-800 dark:text-teal-300">{count}</div>
+        <div className="mt-0.5 text-xs text-zinc-500">{unit}</div>
       </div>
     </div>
   );
@@ -222,23 +180,13 @@ export function Gap({
   children: ReactNode;
 }) {
   return (
-    <li className="relative pl-6">
-      <span
-        aria-hidden
-        className="absolute left-0 top-2 h-1.5 w-1.5 rounded-full bg-amber-500/70 ring-4 ring-amber-500/10 dark:bg-amber-400/70 dark:ring-amber-400/10"
-      />
+    <li>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
-        <span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-300">
-          {impact}
-        </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500">
-          {effort}
-        </span>
+        <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{title}</h3>
+        <span className="font-mono text-xs tabular-nums text-zinc-500">{impact}</span>
+        <span className="font-mono text-xs tabular-nums text-amber-700 dark:text-amber-400">{effort}</span>
       </div>
-      <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-        {children}
-      </p>
+      <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-500">{children}</p>
     </li>
   );
 }
@@ -247,8 +195,6 @@ export function RankedRow({
   rank,
   label,
   value,
-  count,
-  maxCount,
   prefix,
 }: {
   rank: number;
@@ -258,22 +204,13 @@ export function RankedRow({
   maxCount: number;
   prefix?: ReactNode;
 }) {
-  const pct = maxCount > 0 ? Math.max(2, (count / maxCount) * 100) : 0;
   return (
-    <li className="group flex items-center gap-3 py-1.5 text-sm">
-      <span className="w-5 font-mono text-[10px] tabular-nums text-zinc-400">
-        {String(rank).padStart(2, "0")}
-      </span>
+    <li className="flex items-center gap-3 py-2 text-sm">
+      <span className="w-4 font-mono text-xs tabular-nums text-teal-700 dark:text-teal-400">{rank}</span>
       {prefix}
-      <span className="min-w-0 flex-1 truncate text-zinc-800 dark:text-zinc-200">{label}</span>
-      <div className="hidden h-1 w-20 overflow-hidden rounded-full bg-zinc-200/70 dark:bg-zinc-800/70 sm:block">
-        <div
-          className="h-full bg-indigo-500/60 transition-colors group-hover:bg-indigo-500"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="w-12 text-right font-mono text-xs tabular-nums text-zinc-500">
-        {value.toLocaleString()}
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      <span className="font-mono text-xs tabular-nums text-zinc-500">
+        {value.toLocaleString("en-US")}
       </span>
     </li>
   );
@@ -290,7 +227,7 @@ export function ExternalArrow() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="inline text-zinc-500"
+      className="inline text-teal-600 dark:text-teal-500"
     >
       <path d="M7 17 17 7M9 7h8v8" />
     </svg>
@@ -316,21 +253,18 @@ export function ArrowLeftIcon() {
 
 export function EditorialHeader({
   active,
+  wide = false,
 }: {
-  active: "about" | "methodology" | "api";
+  active?: "about" | "methodology" | "api";
+  wide?: boolean;
 }) {
-  // Client-side Link nav (not <a href>) so the layout persists across
-  // about/methodology/api hops. Raw <a> would full-reload each click,
-  // which re-runs the inline theme bootstrap and races React hydration
-  // — the visible symptom was a light-mode flash after a couple of nav
-  // clicks.
   const link = (href: string, label: string, current: boolean) => (
     <Link
       href={href}
-      className={`text-sm font-medium transition-colors ${
+      className={`text-sm ${
         current
-          ? "text-zinc-900 dark:text-zinc-100"
-          : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+          ? "font-medium text-teal-800 dark:text-teal-400"
+          : "text-zinc-500 hover:text-teal-800 dark:hover:text-teal-300"
       }`}
     >
       {label}
@@ -338,24 +272,26 @@ export function EditorialHeader({
   );
 
   return (
-    <header className="sticky top-0 z-10 border-b border-zinc-200/60 bg-white/75 backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-950/75">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-6 px-6 py-3.5">
-        <div className="flex items-center gap-5">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 rounded-full border border-zinc-200/60 bg-white/80 px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-950/70 dark:text-zinc-300 dark:hover:bg-zinc-900"
-          >
-            <ArrowLeftIcon /> Map
+    <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black">
+      <div
+        className={`mx-auto flex items-center justify-between gap-6 px-6 py-3 ${wide ? "max-w-6xl" : "max-w-3xl"}`}
+      >
+        <div className="flex items-center gap-6">
+          <Link href="/" className="text-sm font-semibold tracking-tight">
+            datacenters.world
           </Link>
-          <nav className="flex items-center gap-5">
+          <nav className="flex items-center gap-4">
             {link("/about", "About", active === "about")}
             {link("/methodology", "Methodology", active === "methodology")}
             {link("/api", "API", active === "api")}
           </nav>
         </div>
-        <div className="flex items-center gap-5">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
-            datacenters<span className="text-blue-500 dark:text-blue-400">.world</span>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/"
+            className="text-sm text-zinc-500 hover:text-teal-800 dark:hover:text-teal-300"
+          >
+            Map
           </Link>
           <AccountPill />
         </div>
