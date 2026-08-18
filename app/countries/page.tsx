@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
-import { loadCountrySummaries } from "@/lib/countries-data";
+import { loadCountryIndex } from "@/lib/countries-data";
 import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 2_592_000;
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CountriesIndex() {
-  const countries = await loadCountrySummaries();
+  const countries = await loadCountryIndex();
   const totalFacilities = countries.reduce((sum, c) => sum + c.facility_count, 0);
   const summary = `${totalFacilities.toLocaleString("en-US")} tracked data centers across ${countries.length} countries.`;
 

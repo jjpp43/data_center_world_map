@@ -1,12 +1,13 @@
 import type { MetadataRoute } from "next";
 import { unstable_cache } from "next/cache";
 import { supabaseServer } from "@/lib/supabase";
-import { loadOperatorSummaries } from "@/lib/operators";
-import { loadCountrySummaries } from "@/lib/countries-data";
+import { catalogIndexCache } from "@/lib/cache-tags";
+import { loadOperatorIndex } from "@/lib/operators";
+import { loadCountryIndex } from "@/lib/countries-data";
 import { countrySlug } from "@/lib/countries";
 import { loadMetroSummaries } from "@/lib/metros-data";
-import { loadIxpSummaries } from "@/lib/ixps-data";
-import { loadTopNetworks } from "@/lib/networks-data";
+import { loadIxpIndex } from "@/lib/ixps-data";
+import { loadTopNetworksIndex } from "@/lib/networks-data";
 import { TIERS } from "@/lib/density";
 import { INSIGHTS } from "@/lib/insights-data";
 import {
@@ -63,17 +64,17 @@ const loadIndexableFacilitiesWithStamps = unstable_cache(
       .map((r) => ({ slug: r.slug, updated_at: r.updated_at }));
   },
   ["sitemap-indexable-facility-slugs-v1"],
-  { revalidate: 86_400, tags: ["data-centers"] },
+  { ...catalogIndexCache, revalidate: 86_400 },
 );
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [facilities, operators, countries, metros, ixps, networks] = await Promise.all([
     loadIndexableFacilitiesWithStamps(),
-    loadOperatorSummaries(),
-    loadCountrySummaries(),
+    loadOperatorIndex(),
+    loadCountryIndex(),
     loadMetroSummaries(),
-    loadIxpSummaries(),
-    loadTopNetworks(INDEXABLE_CAPS.networks),
+    loadIxpIndex(),
+    loadTopNetworksIndex(INDEXABLE_CAPS.networks),
   ]);
 
   // lastModified only set on entries with a real data-driven timestamp

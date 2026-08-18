@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { catalogIndexCache } from "./cache-tags";
 import { supabaseServer } from "./supabase";
 
 const DIRECTORY = new Set(["peeringdb", "osm"]);
@@ -68,5 +69,5 @@ async function fetchMethodologyStats(): Promise<MethodologyStats> {
 export const loadMethodologyStats = unstable_cache(
   fetchMethodologyStats,
   ["methodology-stats-v1"],
-  { revalidate: 2_592_000, tags: ["data-centers"] },
+  catalogIndexCache,
 );

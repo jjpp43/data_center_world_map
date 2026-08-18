@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { loadOperatorSummaries } from "@/lib/operators";
+import { loadOperatorIndex } from "@/lib/operators";
 import { INDEXABLE_CAPS, OPERATOR_MIN_FACILITIES } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function OperatorsIndex() {
-  const ops = await loadOperatorSummaries();
+  const ops = await loadOperatorIndex();
   // Only link the set that can actually be indexed. Linking the full 1,000+
   // put ~800 noindex pages into crawl discovery, each costing an ISR write on
   // first fetch and unable to rank. Long-tail slugs still resolve directly.

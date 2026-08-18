@@ -185,7 +185,7 @@ const loadFacilityMeta = unstable_cache(
     return data;
   },
   ["facility-meta-v3"],
-  { revalidate: 2_592_000, tags: ["data-centers"] },
+  { revalidate: 2_592_000 },
 );
 
 const loadFacilityDetail = unstable_cache(
@@ -225,7 +225,7 @@ const loadFacilityDetail = unstable_cache(
     return { dc, sources: sources ?? [], nafRows: nafRows ?? [], iafRows: iafRows ?? [] };
   },
   ["facility-detail-v1"],
-  { revalidate: 2_592_000, tags: ["data-centers"] },
+  { revalidate: 2_592_000 },
 );
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

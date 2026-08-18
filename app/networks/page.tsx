@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { loadTopNetworks } from "@/lib/networks-data";
+import { loadTopNetworksIndex } from "@/lib/networks-data";
 import { INDEXABLE_CAPS, NETWORK_MIN_FACILITIES } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
@@ -30,7 +30,7 @@ function infoTypeBadge(type: string | null): string {
 }
 
 export default async function NetworksIndex() {
-  const { total, top: ranked } = await loadTopNetworks(TOP_N);
+  const { total, top: ranked } = await loadTopNetworksIndex(TOP_N);
   const top = ranked.filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES);
 
   const summary = `${total.toLocaleString("en-US")} networks have a tracked presence in at least one data-center facility. The full list is 34,000+ and addressable by ASN — this page shows the top ${TOP_N.toLocaleString("en-US")} by data-center footprint.`;

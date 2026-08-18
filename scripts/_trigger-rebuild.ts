@@ -29,8 +29,8 @@ function productionOrigin(): string {
 }
 
 /**
- * Mark catalog ISR entries stale via `/api/cron/revalidate` (SWR). The next
- * hit regenerates in the background; identical HTML incurs no ISR write.
+ * Mark index/aggregate ISR entries stale via `/api/cron/revalidate` (SWR).
+ * Per-slug pages are not in the blast — they refresh on their 30d TTL.
  * Does not start a new deployment, so the existing ISR cache stays intact.
  */
 export async function triggerRevalidate(reason: string): Promise<void> {
@@ -83,8 +83,8 @@ export async function triggerRebuild(reason: string): Promise<void> {
 }
 
 /**
- * After a successful ingest: always SWR-revalidate catalog tags. A full
- * deploy is `--rebuild` only (geojson / build artifacts).
+ * After a successful ingest: SWR-revalidate index/aggregate pages + API
+ * data cache. A full deploy is `--rebuild` only (geojson / build artifacts).
  */
 export async function triggerCatalogFreshness(reason: string): Promise<void> {
   if (process.argv.includes("--rebuild")) {

@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { catalogIndexCache, pageCache } from "./cache-tags";
 import { supabaseServer } from "./supabase";
 
 function rawSlug(name: string): string {
@@ -92,7 +93,14 @@ async function fetchIxpSummaries(): Promise<IxpSummary[]> {
 export const loadIxpSummaries = unstable_cache(
   fetchIxpSummaries,
   ["ixp-summaries-v1"],
-  { revalidate: 2_592_000, tags: ["ixes"] },
+  pageCache,
+);
+
+/** Index/sitemap/insights only. Must not be called from per-slug IXP pages. */
+export const loadIxpIndex = unstable_cache(
+  fetchIxpSummaries,
+  ["ixp-summaries-index-v1"],
+  catalogIndexCache,
 );
 
 export interface IxpDetail {

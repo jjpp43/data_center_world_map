@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { catalogIndexCache, pageCache } from "./cache-tags";
 import { supabaseServer } from "./supabase";
 
 export interface NetworkSummary {
@@ -97,7 +98,16 @@ export function loadTopNetworks(limit: number) {
   return unstable_cache(
     () => fetchTopNetworks(limit),
     ["top-networks-v1", String(limit)],
-    { revalidate: 2_592_000, tags: ["networks"] },
+    pageCache,
+  )();
+}
+
+/** Index/sitemap only. Must not be called from per-slug network pages. */
+export function loadTopNetworksIndex(limit: number) {
+  return unstable_cache(
+    () => fetchTopNetworks(limit),
+    ["top-networks-index-v1", String(limit)],
+    catalogIndexCache,
   )();
 }
 

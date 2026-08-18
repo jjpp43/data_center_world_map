@@ -9,7 +9,7 @@ Phases 1–14 of the original build plan shipped. Public API + Polar monetizatio
 
 This roadmap is the pivot: stop selling the API as the product, start using it as the *upsell* under finished answers and B2B distribution. Original Phase 12 MCP work is the unfair advantage — the directory ecosystem is thin and actively hunting for legitimate servers.
 
-See CLAUDE.md for codebase + technical state. This file is strategy/sequencing only.
+See `.cursor/rules/project.mdc` for codebase + technical state. This file is strategy/sequencing only.
 
 ---
 
@@ -21,7 +21,7 @@ See CLAUDE.md for codebase + technical state. This file is strategy/sequencing o
 
 1. **Fix protocol-overhead quota bug** (prerequisite — agentic clients burn 1k free-tier quota in one session today)
    - `proxy.ts`: inspect JSON-RPC body before charging; skip `initialize`, `tools/list`, `notifications/*`
-   - Listed in CLAUDE.md "Open improvements"
+   - Listed in `.cursor/rules/project.mdc` "Open improvements"
 2. **Lightweight launch page** at `/launch/mcp`
    - One permanent on-site URL: pitch + install snippet + tool list + link to `/api`
    - Cross-postable from HN/X without sending traffic to someone else's platform
@@ -74,7 +74,7 @@ Decision deferred until Phase 1 ships and we have signal on which audience showe
 
 **Trigger:** Wait until site has consistent traffic (define: 10k uniques/month). Premature without it.
 
-Then: "verified operator" badges on facility pages, colo/CDN/monitoring sponsor slots. Inclusion stays unpaid (CLAUDE.md monetization invariant).
+Then: "verified operator" badges on facility pages, colo/CDN/monitoring sponsor slots. Inclusion stays unpaid (project monetization invariant).
 
 ---
 
@@ -87,4 +87,4 @@ Then: "verified operator" badges on facility pages, colo/CDN/monitoring sponsor 
 
 ## Open improvements (still relevant, separate from pivot)
 
-The "Open improvements" section in CLAUDE.md (more MCP tools, vector tiles, `noindex` long-tail, account deletion, etc.) is still the punch list for product polish. The pivot phases run alongside it, not instead of it.
+The "Open improvements" section in `.cursor/rules/project.mdc` (more MCP tools, vector tiles, `noindex` long-tail, account deletion, etc.) is still the punch list for product polish. The pivot phases run alongside it, not instead of it.

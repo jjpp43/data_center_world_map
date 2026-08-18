@@ -103,7 +103,7 @@ const loadFacilitiesForCountry = unstable_cache(
     return facilities;
   },
   ["country-facilities-v1"],
-  { revalidate: 2_592_000, tags: ["data-centers"] },
+  { revalidate: 2_592_000 },
 );
 
 export default async function CountryPage({ params }: Props) {

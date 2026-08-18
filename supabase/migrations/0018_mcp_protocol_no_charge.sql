@@ -5,8 +5,8 @@
 -- `tools/list`, then the actual `tools/call`. Today every one of these
 -- HTTP POSTs goes through validate_and_charge_api_key and decrements the
 -- monthly quota, so a single agent's first connect burns 3+ Free-tier
--- credits before doing any useful work. CLAUDE.md "Open improvements"
--- has flagged this since Phase 12.
+-- credits before doing any useful work. Project notes ("Open improvements")
+-- have flagged this since Phase 12.
 --
 -- Fix: add an optional p_charge boolean. When false, the function still
 -- validates the key + reports tier/remaining (so proxy.ts can serve

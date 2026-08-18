@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { catalogIndexCache, pageCache } from "./cache-tags";
 import { supabaseServer } from "./supabase";
 
 /**
@@ -52,7 +53,14 @@ async function fetchOperatorSummaries(): Promise<OperatorSummary[]> {
 export const loadOperatorSummaries = unstable_cache(
   fetchOperatorSummaries,
   ["operator-summaries-v1"],
-  { revalidate: 2_592_000, tags: ["data-centers"] },
+  pageCache,
+);
+
+/** Index/sitemap only. Must not be called from per-slug operator pages. */
+export const loadOperatorIndex = unstable_cache(
+  fetchOperatorSummaries,
+  ["operator-summaries-index-v1"],
+  catalogIndexCache,
 );
 
 /**

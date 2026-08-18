@@ -94,7 +94,7 @@ const SITE_JSON_LD = {
     // Dataset schema unlocks Google's Dataset-result card and gives answer
     // engines (ChatGPT, Gemini, Perplexity) a canonical structured payload
     // to quote when asked "how many data centers are there" type questions.
-    // Counts kept hand-synced with CLAUDE.md → "Current status".
+    // Counts kept hand-synced with `.cursor/rules/project.mdc` → "Current status".
     {
       "@type": "Dataset",
       "@id": `${SITE}/#dataset`,

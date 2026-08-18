@@ -2,7 +2,7 @@
 --
 -- Each pair below is the same legal entity written two ways. Canonical form
 -- is the one matching the existing dataset convention (legal-suffix style,
--- the same convention CLAUDE.md documents and that OPERATOR_ALIASES in
+-- the same convention the project context documents and that OPERATOR_ALIASES in
 -- next.config.ts assumes).
 --
 -- SupraNet AG vs SupraNet Communications, Inc. are NOT merged — they are

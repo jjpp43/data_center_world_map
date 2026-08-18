@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
-import { loadIxpSummaries } from "@/lib/ixps-data";
+import { loadIxpIndex } from "@/lib/ixps-data";
 import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 2_592_000;
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LargestIxpsInsight() {
-  const all = await loadIxpSummaries();
+  const all = await loadIxpIndex();
   const top = all
     .filter((i) => i.net_count != null && i.net_count > 0)
     .sort((a, b) => (b.net_count ?? 0) - (a.net_count ?? 0))

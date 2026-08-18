@@ -1,3 +1,8 @@
+---
+description: datacenters.world project context — stack, caching/ISR budget, conventions, security
+alwaysApply: true
+---
+
 # Data Center World Map — Project Context
 
 Public map of every known data center on Earth — single Mapbox view, 2D ↔ 3D toggle. Default view: US, dark, globe. **Canonical host is `www.datacenters.world`** — apex 308s to it (raw curl needs `-L --post308`, or hit `www.` directly).
@@ -87,7 +92,7 @@ Read-only, two surfaces, **same Bearer auth + per-key monthly quota across both*
 | `/api/v1/cloud-regions` | Filterable by provider + country |
 | `/api/mcp` | Streamable HTTP MCP — 5 tools (search_facilities, get_facility, list_operators, list_countries, list_cloud_regions) |
 
-- **Shared data layer** (`lib/api-data.ts`): `unstable_cache` loaders imported by both REST handlers AND MCP tools. Keys versioned `api-v1-<endpoint>-v1` — bump on response-shape change. `data-centers` tag invalidation. One global Supabase pass per (loader, args) per 24h across REST + MCP + page renders.
+- **Shared data layer** (`lib/api-data.ts`): `unstable_cache` loaders imported by both REST handlers AND MCP tools. Keys versioned `api-v1-<endpoint>-v1` — bump on response-shape change. `api-data` tag invalidation (runtime cache only, not HTML ISR). One global Supabase pass per (loader, args) per 24h across REST + MCP + page renders.
 - **Cache-Control on `/api/v1/*` is `private, max-age=<N>, must-revalidate`** — `public` let the CDN cache per-user `X-RateLimit-*` headers and leak across keys.
 - Helpers in `lib/api.ts`: `jsonResponse`, `csvResponse`, `errorResponse`, `internalError`, `preflight`.
 - **Auth gate** (`proxy.ts`, matches `/api/v1/:path*` + `/api/mcp`): no Bearer → 401. Valid → `validate_and_charge_api_key` RPC, sets `X-RateLimit-{Tier,Limit,Remaining}`. Over quota → 429. **Per-instance negative-token cache (60s TTL, 1024 cap)** short-circuits known-invalid hashes so token-spray doesn't amplify Supabase egress. Web Crypto SHA-256 (Edge or Node).
@@ -109,7 +114,7 @@ app/
 ├── api/[transport]/route.ts          MCP server (5 tools)
 ├── api/billing/checkout/route.ts     Polar Checkout
 ├── api/webhooks/polar/route.ts       signature-verified receiver
-├── api/cron/revalidate/...           ingest-triggered on-demand revalidateTag (SWR, CRON_SECRET)
+├── api/cron/revalidate/...           ingest-triggered SWR of index pages + api-data (CRON_SECRET)
 ├── login, auth/{callback,signout}/route.ts   GitHub OAuth (callback safeNext()). login + dashboard = noindex,nofollow
 ├── dashboard/...                     keys / plan / billing / usage / MCP snippet
 ├── sitemap.ts                        ~900 URLs (capped per type); long-tail still resolves
@@ -122,7 +127,8 @@ components/  Map, TopBar, SearchBox, FilterCard, MapToggle, Legend, FacilityPane
              SessionProvider, PostHog, editorial
 lib/  supabase (server/admin/browser), supabase-server (cookie-aware), api-keys (TIER_LIMITS),
       polar, api (jsonResponse + internalError + CSV-safe csvResponse), api-data (shared loaders),
-      json-ld (jsonForHtml), indexable (sitemap caps + isFacilityIndexable/NOINDEX_ROBOTS),
+      cache-tags (catalog-indexes vs api-data vs untagged per-slug), json-ld (jsonForHtml),
+      indexable (sitemap caps + isFacilityIndexable/NOINDEX_ROBOTS),
       types, url-state, countries, operators, *-data, density, insights-data
 scripts/  ingest, ingest-{ironmountain,google,meta,operator-buildings}, canonicalize-orphans,
           build-geojson (prebuild), _trigger-rebuild, audit-quality, audit-orphans, check-security.mjs
@@ -136,9 +142,22 @@ Supabase egress is the dominant cost. Three layers:
 
 1. **Map data → static-baked.** `scripts/build-geojson.ts` (prebuild) writes `public/{facilities,cloud-regions}.geojson` (~1.9 MB + 41 KB); runtime never touches Supabase for map data. Headers `public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800`.
 2. **SSR pages → ISR.** Catalog pages (`/facility`, `/operators`, `/countries`, `/metros`, `/ixps`, `/networks`, `/density`, `/insights`, `/about`, indexes) `revalidate = 2_592_000` (30d). Sitemap 86400. **Invariant**: no `getTheme()`/`cookies()` in server pages — silently disables `revalidate`. Also no `new Date()` / unbound `toLocaleString()` in rendered output (module-load `YEAR` const; numbers via `toLocaleString("en-US")`; dates `en-US` + `timeZone: "UTC"`) — non-deterministic bytes force an ISR write every cycle. **Effective revalidate = min(segment `revalidate`, inner `unstable_cache` TTL)** — a 30d page reading a 24h loader regenerates every 24h. Verify with the Revalidate column in `next build` output, not the source constant.
-3. **Data fetches → matviews + `unstable_cache`.** Aggregations read `country_summary`, `operator_summary`, `facility_density` (single-row, not paginated scans). Every loader in `lib/*-data.ts` + `operators.ts` + `density.ts` wrapped `unstable_cache(fn, key, { revalidate: 2_592_000, tags })` (30d — must match the segment `revalidate` above or it clamps it). `lib/api-data.ts` stays at 86400: REST/MCP are the documented 24h-freshness surface and aren't ISR-billed. Tags: `data-centers`, `networks`, `ixes`. Ingest calls `POST /api/cron/revalidate` (`revalidateTag(tag, "max")`, SWR) so HTML refreshes without a new deployment. Identical HTML after regen incurs no ISR write.
+3. **Data fetches → matviews + `unstable_cache`.** Aggregations read `country_summary`, `operator_summary`, `facility_density` (single-row, not paginated scans). Every loader in `lib/*-data.ts` + `operators.ts` + `density.ts` wrapped `unstable_cache(fn, key, { revalidate: 2_592_000 })` (30d — must match the segment `revalidate` above or it clamps it). **Per-slug pages are untagged** (30d time-based only). Index/aggregate loaders use tag `catalog-indexes` via a **separate cache key** (`loadXIndex` / `loadMetroSummaries`) — never the same `unstable_cache` entry a detail page calls during render (including `generateMetadata` / `isIndexable*`). `lib/api-data.ts` stays at 86400 with tag `api-data`: REST/MCP aren't ISR-billed. Ingest calls `POST /api/cron/revalidate` (`revalidateTag("catalog-indexes"|"api-data", "max")` plus `revalidatePath` for uncached `/about` and `/insights/peering-hub-metros`).
 
 Matviews refreshed by `refresh_summary_views()` RPC (concurrent); ingest calls it on `--apply`. **ISR cache is per-deployment** — a new deploy starts empty and the next crawl of every slug is a write. Geojson rebakes only on a Next.js build: git deploy, or ingest with `--rebuild` (deploy hook). Default ingest path is on-demand revalidate, not a deploy. No scheduled cron. Unset `VERCEL_DEPLOY_HOOK_URL` → `--rebuild` no-op. Unset `CRON_SECRET` → revalidate no-op.
+
+**ISR write budget — do not regress.** Vercel bills ISR in 8 KB units (HTML + RSC + layout). One full-catalog recrawl is ~10–15k units. Ingest blast radius is **~20 index/aggregate pages**, not the ~5,800 facility slugs. Spec staleness on a per-slug page for up to 30d after ingest is the accepted tradeoff.
+
+Breaking any of these increases writes:
+
+- **No shared tag on per-slug loaders.** `catalog-indexes` / `api-data` / any new tag must not be on a cache entry that `/facility/[slug]`, `/operators/[slug]`, `/countries/[code]`, `/metros/[slug]`, `/ixps/[slug]`, or `/networks/[asn]` read during render. If an index and a detail page need the same query, split keys (`loadOperatorIndex` vs `loadOperatorSummaries`). Tags live in `lib/cache-tags.ts`; cron tags are only those two.
+- **Do not shorten catalog `revalidate`.** Pages stay `2_592_000` (30d); sitemap `86400`; `api-data` `86400`. Inner `unstable_cache` TTL must be ≥ the segment or it clamps the page (a 30d page + 24h loader = 24h regen). Confirm in the `next build` Revalidate column, not the source constant.
+- **Ingest ≠ deploy, ingest ≠ catalog purge.** Cron may only `revalidateTag` `catalog-indexes` + `api-data` and `revalidatePath` the listed uncached index URLs. Never `revalidateTag` a tag per-slug pages carry; never `revalidatePath("/facility/[slug]")` (or any other dynamic `[slug]` pattern); never `revalidatePath("/", "layout")`. `--rebuild` / the deploy hook stays opt-in (geojson only).
+- **Do not prerender the full catalog** to "save" writes — that only moves them to deploy time. `generateStaticParams` stays a head slice (`PRERENDER_TOP_N = 500` facilities; operator/ixp/network caps in `lib/indexable.ts`).
+- **Deterministic HTML** on ISR pages: no `cookies()` / `getTheme()` / `new Date()` / unbound `toLocaleString()`. Byte-identical regen is what lets Vercel skip a write.
+- **New pages:** untagged 30d, or `catalog-indexes` if they should refresh on ingest. Uncached Supabase on an index page → add that path to `UNCACHE_PATHS` in `app/api/cron/revalidate/route.ts`. Do not "fix" freshness by tagging a loader detail pages share.
+- **Do not `noindex` facilities** to cut ISR (that tanked GSC). Operator/ixp/network **index-link + sitemap caps** stay — they limit crawl discovery of thin pages without deindexing facilities. Don't add uncapped sitemap dumps of 1k+ thin URLs.
+- Before merging changes to `revalidate`, cache tags, `revalidateTag`/`revalidatePath`, `generateStaticParams`, sitemap URL volume, or ingest `--rebuild`: ingest blast stays index-only, and `next build` still shows 30d (1d sitemap), not 1h/24h from a nested loader.
 
 **Indexable head vs long-tail** (`lib/indexable.ts`, single source of truth for caps + min-facility thresholds: facilities 500, operators 200, ixps 100, networks 100; `sitemap.ts` imports these): **Facilities are fully indexable** — every real facility page (coords present, `isFacilityIndexable(lat,lng)`) emits `index:true`; the `facilities:500` cap is a *sitemap crawl-budget hint only*, not an index gate. (Reverses commit f9e3832 which noindex'd ~91% of facilities and tanked GSC impressions; `noindex,follow` never saved ISR writes anyway.) `/operators`, `/ixps`, `/networks` still `noindex` genuinely thin pages outside caps via `isIndexable*()` in `generateMetadata`. Countries + metros uncapped. Dashboard + login `noindex,nofollow` (auth-gated).
 
@@ -162,7 +181,7 @@ Matviews refreshed by `refresh_summary_views()` RPC (concurrent); ingest calls i
 ```bash
 npm run dev
 npm run build                                   # prebuild: check:security + build-geojson
-npm run ingest                                  # re-ingest scrapers/out/*.jsonl (SWR-revalidates catalog; add -- --rebuild to re-bake geojson)
+npm run ingest                                  # re-ingest scrapers/out/*.jsonl (SWR-revalidates indexes only; add -- --rebuild to re-bake geojson)
 npm run audit:quality
 npm run canonicalize:orphans -- --apply
 npm run ingest:{ironmountain,google,meta,buildings} -- --apply
@@ -174,6 +193,7 @@ npm run ingest:{ironmountain,google,meta,buildings} -- --apply
 
 - No comments unless WHY is non-obvious. No backwards-compat shims (pre-production). No try/catch around code that can't fail — validate at boundaries only.
 - Server Components by default; `'use client'` only when needed. No event handlers in Server Component props (Next 16 enforces) — extract a Client Component.
+- **ISR write budget** (see Caching): never tag per-slug caches, never shorten catalog `revalidate` below 30d, never `revalidatePath` a dynamic `[slug]` pattern, never default ingest to `--rebuild`. Prefer stale per-slug HTML over a catalog recrawl.
 - No co-author lines in commits. No emojis in code unless asked.
 
 ## Mapbox (v3.8+)
@@ -232,7 +252,7 @@ RLS on every public table (public-read on data; auth-scoped via `auth.uid()` on 
 3. Supabase Auth → URL Config: Site URL = prod, allowlist `localhost:3000/**` + `datacenters.world/**`.
 4. Set `NEXT_PUBLIC_SITE_URL` in Vercel; create Pro + Team products in Polar (3-day trial, no card); set Polar env + redeploy.
 5. Register Polar webhook → `/api/webhooks/polar`, format=**Raw**, events `subscription.{created,updated,active,canceled,revoked}`.
-6. Vercel → Git → Deploy Hooks (main) → `VERCEL_DEPLOY_HOOK_URL` (only needed for `ingest --rebuild`). Set `CRON_SECRET` (32 random bytes) so ingest can SWR-revalidate catalog pages. Redeploy.
+6. Vercel → Git → Deploy Hooks (main) → `VERCEL_DEPLOY_HOOK_URL` (only needed for `ingest --rebuild`). Set `CRON_SECRET` (32 random bytes) so ingest can SWR-revalidate **index** pages (not the per-slug catalog). Redeploy.
 7. GitHub → Secrets → `SUPABASE_DB_URL` (session-pooler) for backup.
 
 ## Out of scope / known limitations

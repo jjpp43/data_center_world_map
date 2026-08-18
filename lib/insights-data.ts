@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { catalogIndexCache } from "./cache-tags";
 import { supabaseServer } from "./supabase";
 
 export interface DenseFacility {
@@ -33,7 +34,7 @@ async function fetchFacilitiesWithCounts(): Promise<DenseFacility[]> {
 export const loadFacilitiesWithCounts = unstable_cache(
   fetchFacilitiesWithCounts,
   ["facilities-with-counts-v2"],
-  { revalidate: 2_592_000, tags: ["data-centers"] },
+  catalogIndexCache,
 );
 
 export interface InsightCard {

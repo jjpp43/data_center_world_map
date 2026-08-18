@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { pageCache } from "./cache-tags";
 import { supabaseServer } from "./supabase";
 
 export const loadTopFacilitySlugs = unstable_cache(
@@ -14,5 +15,5 @@ export const loadTopFacilitySlugs = unstable_cache(
     return (data ?? []).map((r) => r.slug);
   },
   ["top-facility-slugs-v1"],
-  { revalidate: 2_592_000, tags: ["data-centers"] },
+  pageCache,
 );

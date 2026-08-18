@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { catalogIndexCache, pageCache } from "./cache-tags";
 import { supabaseServer } from "./supabase";
 
 export interface Metro {
@@ -150,32 +151,33 @@ export function assignMetro(lat: number, lng: number, country?: string): Metro |
   return best?.metro ?? null;
 }
 
+async function fetchAllFacilities(): Promise<FacilityWithNetCount[]> {
+  const sb = supabaseServer();
+  const rows: FacilityWithNetCount[] = [];
+  for (let from = 0; from < 100_000; from += 1000) {
+    const { data, error } = await sb
+      .from("facility_density")
+      .select("slug, name, operator, country, city, lat, lng, power_mw, network_count")
+      .not("lat", "is", null)
+      .not("lng", "is", null)
+      .order("slug")
+      .range(from, from + 999)
+      .returns<FacilityWithNetCount[]>();
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    rows.push(...data);
+    if (data.length < 1000) break;
+  }
+  return rows;
+}
+
 const loadAllFacilities = unstable_cache(
-  async (): Promise<FacilityWithNetCount[]> => {
-    const sb = supabaseServer();
-    const rows: FacilityWithNetCount[] = [];
-    for (let from = 0; from < 100_000; from += 1000) {
-      const { data, error } = await sb
-        .from("facility_density")
-        .select("slug, name, operator, country, city, lat, lng, power_mw, network_count")
-        .not("lat", "is", null)
-        .not("lng", "is", null)
-        .order("slug")
-        .range(from, from + 999)
-        .returns<FacilityWithNetCount[]>();
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-      rows.push(...data);
-      if (data.length < 1000) break;
-    }
-    return rows;
-  },
+  fetchAllFacilities,
   ["metro-facilities-v2"],
-  { revalidate: 2_592_000, tags: ["data-centers"] },
+  pageCache,
 );
 
-export async function loadMetroSummaries(): Promise<MetroSummary[]> {
-  const facilities = await loadAllFacilities();
+function summariesFrom(facilities: FacilityWithNetCount[]): MetroSummary[] {
   const agg = new Map<string, { count: number; operators: Set<string>; mw: number | null }>();
   for (const f of facilities) {
     const metro = assignMetro(f.lat, f.lng, f.country);
@@ -199,6 +201,13 @@ export async function loadMetroSummaries(): Promise<MetroSummary[]> {
     .filter((m) => m.facility_count > 0)
     .sort((a, b) => b.facility_count - a.facility_count);
 }
+
+/** Index/sitemap only. Fetches independently so ingest cannot stale metro detail pages. */
+export const loadMetroSummaries = unstable_cache(
+  async () => summariesFrom(await fetchAllFacilities()),
+  ["metro-summaries-v1"],
+  catalogIndexCache,
+);
 
 export interface MetroDetail {
   metro: Metro;

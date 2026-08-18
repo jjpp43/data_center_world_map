@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { API_DATA_TAG } from "@/lib/cache-tags";
 import { supabaseServer } from "@/lib/supabase";
 import { countryName } from "@/lib/countries";
 
@@ -7,8 +8,8 @@ import { countryName } from "@/lib/countries";
 // either surface fills one shared cache entry.
 //
 // Cache keys are versioned per loader. Bump the trailing -v<n> on a
-// response-shape change to force eviction; tags ("data-centers") are
-// kept stable so the existing rebuild path still invalidates them.
+// response-shape change to force eviction. Tag is `api-data` (REST/MCP
+// runtime cache only — never attach it to HTML ISR pages).
 
 // ─────────────────────────────────────────────────────────────────────
 // Facilities — paginated list
@@ -124,7 +125,7 @@ export const getFacilitiesPage = unstable_cache(
     return { rows, total: count ?? 0 };
   },
   ["api-v1-facilities-v1"],
-  { revalidate: 86400, tags: ["data-centers"] },
+  { revalidate: 86400, tags: [API_DATA_TAG] },
 );
 
 // ─────────────────────────────────────────────────────────────────────
@@ -245,7 +246,7 @@ export const getFacilityDetail = unstable_cache(
     };
   },
   ["api-v1-facility-detail-v1"],
-  { revalidate: 86400, tags: ["data-centers"] },
+  { revalidate: 86400, tags: [API_DATA_TAG] },
 );
 
 // ─────────────────────────────────────────────────────────────────────
@@ -299,7 +300,7 @@ export const getOperatorAggregates = unstable_cache(
       .sort((a, b) => b.facility_count - a.facility_count);
   },
   ["api-v1-operators-v1"],
-  { revalidate: 86400, tags: ["data-centers"] },
+  { revalidate: 86400, tags: [API_DATA_TAG] },
 );
 
 // ─────────────────────────────────────────────────────────────────────
@@ -343,7 +344,7 @@ export const getCountryAggregates = unstable_cache(
       .sort((a, b) => b.facility_count - a.facility_count);
   },
   ["api-v1-countries-v1"],
-  { revalidate: 86400, tags: ["data-centers"] },
+  { revalidate: 86400, tags: [API_DATA_TAG] },
 );
 
 // ─────────────────────────────────────────────────────────────────────
@@ -382,5 +383,5 @@ export const getCloudRegions = unstable_cache(
     return data ?? [];
   },
   ["api-v1-cloud-regions-v1"],
-  { revalidate: 86400, tags: ["data-centers"] },
+  { revalidate: 86400, tags: [API_DATA_TAG] },
 );

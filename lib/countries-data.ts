@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { catalogIndexCache, pageCache } from "./cache-tags";
 import { supabaseServer } from "./supabase";
 import { countrySlug } from "./countries";
 
@@ -36,7 +37,14 @@ async function fetchCountrySummaries(): Promise<CountrySummary[]> {
 export const loadCountrySummaries = unstable_cache(
   fetchCountrySummaries,
   ["country-summaries-v1"],
-  { revalidate: 2_592_000, tags: ["data-centers"] },
+  pageCache,
+);
+
+/** Index/sitemap only. Must not be called from per-slug country pages. */
+export const loadCountryIndex = unstable_cache(
+  fetchCountrySummaries,
+  ["country-summaries-index-v1"],
+  catalogIndexCache,
 );
 
 export async function findCountryByCode(code: string): Promise<CountrySummary | null> {

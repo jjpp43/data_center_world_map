@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { countryFlag, countryName } from "@/lib/countries";
-import { loadIxpSummaries } from "@/lib/ixps-data";
+import { loadIxpIndex } from "@/lib/ixps-data";
 import { INDEXABLE_CAPS, IXP_MIN_FACILITIES } from "@/lib/indexable";
 import { jsonForHtml } from "@/lib/json-ld";
 
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export default async function IxpsIndex() {
-  const ixps = await loadIxpSummaries();
+  const ixps = await loadIxpIndex();
   const withMembers = ixps.filter((i) => i.facility_count > 0 || (i.net_count ?? 0) > 0);
   // Match isIndexableIxp(). Linking all 1,237 fed ~1,136 noindex pages into
   // crawl discovery — each one a full ISR render on first fetch, none able to
