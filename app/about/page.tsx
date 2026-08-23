@@ -15,7 +15,7 @@ export const revalidate = 2_592_000;
 export const metadata: Metadata = {
   title: "About",
   description:
-    "datacenters.world is an open, sourced map of every serious data center on Earth — 5,300+ facilities across 148 countries with verified specs, operators, networks, and IXPs.",
+    "datacenters.world is an open, sourced map of every serious data center on Earth — 5,800+ facilities across 148 countries with verified specs, operators, networks, and IXPs.",
   alternates: { canonical: "/about" },
   openGraph: {
     title: "About datacenters.world",
@@ -167,9 +167,10 @@ export default async function AboutPage() {
           . Work in flight:
         </p>
         <ul className="mt-5 space-y-5">
-          <Gap title="Hyperscale buildings" impact="+300–500" effort="researching">
-            Microsoft, Google, Meta, AWS, and Apple each operate dozens of buildings. Microsoft
-            and Google publish addresses for ESG reporting — we&rsquo;ll scrape those.
+          <Gap title="Remaining hyperscale buildings" impact="+200–400" effort="researching">
+            Google and Meta campus buildings are on the map. Microsoft, AWS, and Apple still
+            are not — those clouds show up only as the region layer. Microsoft publishes
+            addresses in ESG filings; we&rsquo;ll scrape those next.
           </Gap>
           <Gap title="More operators" impact="+80–150" effort="in flight">
             Iron Mountain, H5, Vantage, Aligned/ODATA, NEXTDC, and STACK are in. Next: Compass, T5

@@ -779,8 +779,9 @@ function Section({
 }) {
   return (
     <section id={id} className="scroll-mt-24">
-      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-      <div className="mt-2 h-0.5 w-7 rounded-full bg-teal-500" />
+      <h2 className="border-b border-zinc-200 pb-2 text-xl font-semibold tracking-tight dark:border-zinc-800">
+        {title}
+      </h2>
       {children}
     </section>
   );

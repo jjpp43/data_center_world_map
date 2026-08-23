@@ -59,14 +59,11 @@ export function SectionHeader({
   caption?: ReactNode;
 }) {
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          {children}
-        </h2>
-        {caption && <span className="shrink-0 text-sm text-zinc-500">{caption}</span>}
-      </div>
-      <div className="mt-2 h-0.5 w-7 rounded-full bg-teal-500" />
+    <div className="flex items-baseline justify-between gap-3 border-b border-zinc-200 pb-2 dark:border-zinc-800">
+      <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        {children}
+      </h2>
+      {caption && <span className="shrink-0 text-sm text-zinc-500">{caption}</span>}
     </div>
   );
 }
