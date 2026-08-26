@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase";
+import { CENSUS_FMT } from "@/lib/census";
 import { countryFlag, countryName } from "@/lib/countries";
 import {
   EditorialShell,
@@ -15,7 +16,7 @@ export const revalidate = 2_592_000;
 export const metadata: Metadata = {
   title: "About",
   description:
-    "datacenters.world is an open, sourced map of every serious data center on Earth — 5,800+ facilities across 148 countries with verified specs, operators, networks, and IXPs.",
+    `datacenters.world is an open, sourced map of every serious data center on Earth — ${CENSUS_FMT.facilities} facilities across ${CENSUS_FMT.countries} countries with verified specs, operators, networks, and IXPs.`,
   alternates: { canonical: "/about" },
   openGraph: {
     title: "About datacenters.world",

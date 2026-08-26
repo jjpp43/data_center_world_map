@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EditorialShell, sheetLink } from "@/components/editorial";
+import { CENSUS_FMT, SITE_ORIGIN } from "@/lib/census";
 import { ApiNav } from "./ApiNav";
 import { CodeTabs, ResponseBlock, Snippet } from "./CodeTabs";
 
@@ -9,18 +10,18 @@ export const revalidate = 2_592_000;
 export const metadata: Metadata = {
   title: "API",
   description:
-    "REST + MCP access to the datacenters.world atlas — 5,675 facilities, 34,732 networks, 1,309 IXPs, 176 cloud regions. JSON or CSV, open CORS, edge-cached. Plug into Claude Desktop, Cursor, or Claude Code via MCP, or call /api/v1 from anywhere. Free tier 1,000 req/month.",
+    `REST + MCP access to the datacenters.world atlas — ${CENSUS_FMT.facilities} facilities, ${CENSUS_FMT.networks} networks, ${CENSUS_FMT.ixps} IXPs, ${CENSUS_FMT.cloudRegions} cloud regions. JSON or CSV, open CORS, edge-cached. Plug into Claude Desktop, Cursor, or Claude Code via MCP, or call /api/v1 from anywhere. Free tier 1,000 req/month.`,
   alternates: { canonical: "/api" },
   openGraph: {
     title: "datacenters.world API",
     description:
-      "REST + MCP access to the datacenters.world atlas — 5,675 facilities, 34,732 networks, 1,309 IXPs, 176 cloud regions.",
+      `REST + MCP access to the datacenters.world atlas — ${CENSUS_FMT.facilities} facilities, ${CENSUS_FMT.networks} networks, ${CENSUS_FMT.ixps} IXPs, ${CENSUS_FMT.cloudRegions} cloud regions.`,
     type: "article",
     url: "/api",
   },
 };
 
-const BASE = "https://datacenters.world/api/v1";
+const BASE = `${SITE_ORIGIN}/api/v1`;
 
 export default async function ApiDocsPage() {
 
@@ -70,16 +71,16 @@ export default async function ApiDocsPage() {
               </p>
               <ul className="mt-4 max-w-2xl space-y-2 text-base text-zinc-500">
                 <li>
-                  <strong className="font-mono text-zinc-900 dark:text-zinc-50">5,675</strong>{" "}
-                  data center facilities across <strong className="font-mono">148</strong>{" "}
+                  <strong className="font-mono text-zinc-900 dark:text-zinc-50">{CENSUS_FMT.facilities}</strong>{" "}
+                  data center facilities across <strong className="font-mono">{CENSUS_FMT.countries}</strong>{" "}
                   countries
                 </li>
                 <li>
-                  <strong className="font-mono">34,732</strong> networks (ASNs) +{" "}
-                  <strong className="font-mono">1,309</strong> internet exchanges
+                  <strong className="font-mono">{CENSUS_FMT.networks}</strong> networks (ASNs) +{" "}
+                  <strong className="font-mono">{CENSUS_FMT.ixps}</strong> internet exchanges
                 </li>
                 <li>
-                  <strong className="font-mono">176</strong> public cloud regions across AWS, Google,
+                  <strong className="font-mono">{CENSUS_FMT.cloudRegions}</strong> public cloud regions across AWS, Google,
                   Azure, Oracle
                 </li>
               </ul>
@@ -88,8 +89,8 @@ export default async function ApiDocsPage() {
                 <Inline>?format=csv</Inline>. All responses are edge-cached with{" "}
                 <Inline>stale-while-revalidate</Inline> and any-origin CORS. Sources include
                 PeeringDB, OpenStreetMap, operator-published facility pages (Equinix, Digital
-                Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS, Iron Mountain),
-                datacenters.google, and datacenters.atmeta.com.
+                Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS, Iron Mountain, H5, Vantage,
+                Aligned/ODATA, NEXTDC, STACK), datacenters.google, and datacenters.atmeta.com.
               </p>
             </Section>
 
@@ -453,7 +454,7 @@ data = res.json()['data']`,
                   <Snippet>{`{
   "mcpServers": {
     "datacenters-world": {
-      "url": "https://datacenters.world/api/mcp",
+      "url": "https://www.datacenters.world/api/mcp",
       "headers": {
         "Authorization": "Bearer dcw_…"
       }
@@ -469,7 +470,7 @@ data = res.json()['data']`,
                   <Snippet>{`claude mcp add datacenters-world \\
   --transport http \\
   --header "Authorization: Bearer dcw_…" \\
-  https://datacenters.world/api/mcp`}</Snippet>
+  https://www.datacenters.world/api/mcp`}</Snippet>
                 </div>
 
                 <div>
@@ -484,7 +485,7 @@ data = res.json()['data']`,
       "args": [
         "-y",
         "mcp-remote",
-        "https://datacenters.world/api/mcp",
+        "https://www.datacenters.world/api/mcp",
         "--header",
         "Authorization: Bearer dcw_…"
       ]

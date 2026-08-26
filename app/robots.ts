@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
+import { canonicalOrigin } from "@/lib/census";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
+const SITE = canonicalOrigin();
 
 // Public dataset endpoints — we *want* these surfaced to crawlers (esp.
 // answer engines) so they can quote live numbers. Other /api/ routes stay
 // off-limits to avoid accidental indexing of internal handlers.
-const PUBLIC_API = ["/api/v1/", "/api/facilities.geojson", "/api/cloud-regions.geojson"];
+const PUBLIC_API = ["/api/v1/", "/facilities.geojson", "/cloud-regions.geojson"];
 
 export default function robots(): MetadataRoute.Robots {
   const baseRule = {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SessionProvider } from "@/components/SessionProvider";
 import { ThemeSync } from "@/components/ThemeSync";
+import { CENSUS_FMT, canonicalOrigin } from "@/lib/census";
 import { jsonForHtml } from "@/lib/json-ld";
 import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
+const SITE = canonicalOrigin();
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s · datacenters.world",
   },
   description:
-    "An open, sourced map of every data center (data centre) on Earth — 5,300+ facilities across 148 countries with verified specs, operators, networks, and IXPs.",
+    `An open, sourced map of every data center (data centre) on Earth — ${CENSUS_FMT.facilities} facilities across ${CENSUS_FMT.countries} countries with verified specs, operators, networks, and IXPs.`,
   keywords: [
     "data center map",
     "data centre map",
@@ -51,14 +52,14 @@ export const metadata: Metadata = {
     siteName: "datacenters.world",
     title: "datacenters.world — every data center on the map",
     description:
-      "An open, sourced map of every serious data center on Earth — 5,300+ facilities across 148 countries.",
+      `An open, sourced map of every serious data center on Earth — ${CENSUS_FMT.facilities} facilities across ${CENSUS_FMT.countries} countries.`,
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: "datacenters.world — every data center on the map",
     description:
-      "An open, sourced map of every serious data center on Earth — 5,300+ facilities across 148 countries.",
+      `An open, sourced map of every serious data center on Earth — ${CENSUS_FMT.facilities} facilities across ${CENSUS_FMT.countries} countries.`,
   },
   robots: {
     index: true,
@@ -94,13 +95,13 @@ const SITE_JSON_LD = {
     // Dataset schema unlocks Google's Dataset-result card and gives answer
     // engines (ChatGPT, Gemini, Perplexity) a canonical structured payload
     // to quote when asked "how many data centers are there" type questions.
-    // Counts kept hand-synced with `.cursor/rules/project.mdc` → "Current status".
+    // Counts from `lib/census.ts` — keep in sync with project.mdc Current status.
     {
       "@type": "Dataset",
       "@id": `${SITE}/#dataset`,
       name: "datacenters.world atlas",
       description:
-        "An open, curated atlas of every known data center (data centre) on Earth — 5,675 verified facilities across 148 countries, with operators, power capacity, space, tier, PUE, the 34,732 networks (ASNs) and 1,309 Internet exchanges present at each site, and 176 hyperscale cloud regions (AWS, Google, Azure, Oracle). Sources cited per row.",
+        `An open, curated atlas of every known data center (data centre) on Earth — ${CENSUS_FMT.facilities} verified facilities across ${CENSUS_FMT.countries} countries, with operators, power capacity, space, tier, PUE, the ${CENSUS_FMT.networks} networks (ASNs) and ${CENSUS_FMT.ixps} Internet exchanges present at each site, and ${CENSUS_FMT.cloudRegions} hyperscale cloud regions (AWS, Google, Azure, Oracle). Sources cited per row.`,
       url: SITE,
       creator: { "@id": `${SITE}/#org` },
       publisher: { "@id": `${SITE}/#org` },

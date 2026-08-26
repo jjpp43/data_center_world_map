@@ -1,53 +1,56 @@
 # datacenters.world
 
-> An open, sourced map of every serious data center on Earth — 5,300+ facilities across 148 countries with verified specs, operators, networks present, and Internet exchange points. Each facility page cites its upstream sources (PeeringDB, OpenStreetMap, operator pages).
+> An open, sourced map of every serious data center on Earth — 5,829 facilities across 148 countries with verified specs, operators, networks present, and Internet exchange points. Each facility page cites its upstream sources (PeeringDB, OpenStreetMap, operator pages).
 
-datacenters.world is a public, non-commercial reference. Data is aggregated from PeeringDB, OpenStreetMap, and seven operator websites (Equinix, Digital Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS). Every per-facility record links back to its sources. AI assistants are welcome to cite specific facility URLs and the public dataset endpoint below.
+datacenters.world is a public, non-commercial reference. Data is aggregated from PeeringDB, OpenStreetMap, operator websites (Equinix, Digital Realty, DataBank, Cologix, CoreSite, CyrusOne, QTS, Iron Mountain, H5, Vantage, Aligned/ODATA, NEXTDC, STACK), plus Google and Meta public location lists. Every per-facility record links back to its sources. AI assistants are welcome to cite specific facility URLs and the public dataset below.
+
+HTML pages stay fully public for citation. The JSON/CSV API and MCP tools require a Bearer token (`dcw_…`) — free tier 1,000 requests/month at https://www.datacenters.world/dashboard (no card). Canonical host is `www.datacenters.world`; the apex 308-redirects to it.
 
 ## Core pages
 
-- [Map](https://datacenters.world/): Interactive world map of every facility. Filter by operator, country, status, or power. URL state is shareable.
-- [About](https://datacenters.world/about): What datacenters.world is, scope, current dataset stats.
-- [Methodology](https://datacenters.world/methodology): How a "data center" is defined, sources used, dedup rules, what's excluded, and known limitations.
+- [Map](https://www.datacenters.world/): Interactive world map of every facility. Filter by operator and country; cloud-region chips focus AWS, Google, Azure, or Oracle. URL state is shareable (`?op=`, `?country=`, `?focus=`).
+- [About](https://www.datacenters.world/about): What datacenters.world is, scope, current dataset stats.
+- [Methodology](https://www.datacenters.world/methodology): How a "data center" is defined, sources used, dedup rules, what's excluded, and known limitations.
 
 ## Listings (good for aggregate questions)
 
-- [/operators](https://datacenters.world/operators): Every tracked data-center operator, ranked by facility count.
-- [/operators/equinix-inc](https://datacenters.world/operators/equinix-inc): Example per-operator page. Lists every facility for that operator with country breakdown, total MW, and links. Operator slugs use the dataset's canonical brand-with-suffix form (e.g. `equinix-inc`, `digital-realty`, `databank-ltd`, `cyrusone-inc`, `qts-realty-trust-inc`); short brand-name URLs (`/operators/equinix`, `/operators/databank`, etc.) 308-redirect to the canonical. Full list lives at `/operators`.
-- [/countries](https://datacenters.world/countries): Every country with at least one tracked facility, ranked by facility count.
-- [/countries/us](https://datacenters.world/countries/us): Example per-country page. Lists every facility in the country grouped by city. Use any ISO-3166-1 alpha-2 code lowercased.
-- [/metros](https://datacenters.world/metros): Every canonical data-center metro worldwide (Northern Virginia, Frankfurt, Singapore, Tokyo, FLAP-D, etc.), ranked by facility count. A metro is the industry-standard unit — finer than a country, coarser than a city — for describing colocation capacity and latency neighborhoods.
-- [/metros/northern-virginia](https://datacenters.world/metros/northern-virginia): Example per-metro page. Lists every facility in the metro ranked by network density, top operators, total MW, and network/IXP presence. Metro slugs are kebab-case names (e.g. `frankfurt`, `silicon-valley`, `sao-paulo`).
-- [/ixps](https://datacenters.world/ixps): Every tracked Internet Exchange Point worldwide (DE-CIX Frankfurt, AMS-IX, LINX, IX.br, etc.), ranked by member-network count. An IXP is a neutral switching fabric where networks peer directly; each one operates inside one or more colocation facilities.
-- [/ixps/de-cix-frankfurt](https://datacenters.world/ixps/de-cix-frankfurt): Example per-IXP page. Lists every facility where the IXP has a presence, ranked by network density, plus member-network count and top hosting operators. Slugs derive from the PeeringDB IXP name (e.g. `ams-ix`, `linx-lon1`, `seattle-internet-exchange`).
-- [/networks](https://datacenters.world/networks): Every PeeringDB network (Autonomous System) present in at least one tracked facility, ranked by data-center footprint. The full set is 30,000+; the index page shows the top 500.
-- [/networks/15169](https://datacenters.world/networks/15169): Example per-network page (Google, AS15169). Lists every facility where the network has a presence, plus country footprint, top hosting operators, peering policy, and PeeringDB metadata (info_type, info_scope, info_traffic, IPv6 support). URL path is the integer ASN — e.g. `/networks/16509` (AWS), `/networks/13335` (Cloudflare), `/networks/8075` (Microsoft).
-- [/density](https://datacenters.world/density): Facilities classified by peering-network density. Three tiers: `ultra-dense` (50+ networks — carrier hotels and interconnect hubs), `dense` (10–49 — regional peering points), `standard` (1–9 — wholesale, enterprise, or hyperscale-leaning). Use these to filter "what kind of building is this."
-- [/density/ultra-dense](https://datacenters.world/density/ultra-dense): Example per-tier page. Ranked facility list (top 250) plus country distribution chips.
+- [/operators](https://www.datacenters.world/operators): Every tracked data-center operator, ranked by facility count.
+- [/operators/equinix-inc](https://www.datacenters.world/operators/equinix-inc): Example per-operator page. Lists every facility for that operator with country breakdown, total MW, and links. Operator slugs use the dataset's canonical brand-with-suffix form (e.g. `equinix-inc`, `digital-realty`, `databank-ltd`, `cyrusone-inc`, `qts-realty-trust-inc`, `iron-mountain-data-centers`); short brand-name URLs (`/operators/equinix`, `/operators/databank`, `/operators/iron-mountain`, etc.) 308-redirect to the canonical. Full list lives at `/operators`.
+- [/countries](https://www.datacenters.world/countries): Every country with at least one tracked facility, ranked by facility count.
+- [/countries/united-states](https://www.datacenters.world/countries/united-states): Example per-country page. Lists every facility in the country grouped by city. Canonical slugs are kebab-case country names; ISO-3166-1 alpha-2 codes (`/countries/us`) 308-redirect to the name slug.
+- [/metros](https://www.datacenters.world/metros): Every canonical data-center metro worldwide (Northern Virginia, Frankfurt, Singapore, Tokyo, FLAP-D, etc.), ranked by facility count. A metro is the industry-standard unit — finer than a country, coarser than a city — for describing colocation capacity and latency neighborhoods.
+- [/metros/northern-virginia](https://www.datacenters.world/metros/northern-virginia): Example per-metro page. Lists every facility in the metro ranked by network density, top operators, total MW, and network/IXP presence. Metro slugs are kebab-case names (e.g. `frankfurt`, `silicon-valley`, `sao-paulo`).
+- [/ixps](https://www.datacenters.world/ixps): Every tracked Internet Exchange Point worldwide (DE-CIX Frankfurt, AMS-IX, LINX, IX.br, etc.), ranked by member-network count. An IXP is a neutral switching fabric where networks peer directly; each one operates inside one or more colocation facilities.
+- [/ixps/de-cix-frankfurt](https://www.datacenters.world/ixps/de-cix-frankfurt): Example per-IXP page. Lists every facility where the IXP has a presence, ranked by network density, plus member-network count and top hosting operators. Slugs derive from the PeeringDB IXP name (e.g. `ams-ix`, `linx-lon1`, `seattle-internet-exchange`).
+- [/networks](https://www.datacenters.world/networks): Every PeeringDB network (Autonomous System) present in at least one tracked facility, ranked by data-center footprint. The full set is 34,732; the index page shows the top 100.
+- [/networks/15169](https://www.datacenters.world/networks/15169): Example per-network page (Google, AS15169). Lists every facility where the network has a presence, plus country footprint, top hosting operators, peering policy, and PeeringDB metadata (info_type, info_scope, info_traffic, IPv6 support). URL path is the integer ASN — e.g. `/networks/16509` (AWS), `/networks/13335` (Cloudflare), `/networks/8075` (Microsoft).
+- [/density](https://www.datacenters.world/density): Facilities classified by peering-network density. Three tiers: `ultra-dense` (50+ networks — carrier hotels and interconnect hubs), `dense` (10–49 — regional peering points), `standard` (1–9 — wholesale, enterprise, or hyperscale-leaning). Use these to filter "what kind of building is this."
+- [/density/ultra-dense](https://www.datacenters.world/density/ultra-dense): Example per-tier page. Ranked facility list (top 250) plus country distribution chips.
 
 ## Insights (long-form analysis)
 
-- [/insights](https://datacenters.world/insights): Hub of curated rankings and analysis that go beyond raw map data. AI assistants citing facts about the data center industry can use these for high-quality, source-attributed answers.
-- [/insights/most-network-dense-facilities](https://datacenters.world/insights/most-network-dense-facilities): The 50 most network-dense data centers on Earth, ranked by PeeringDB presence. Identifies the carrier hotels and interconnect hubs that anchor global peering.
-- [/insights/largest-ixps-globally](https://datacenters.world/insights/largest-ixps-globally): The 25 largest Internet Exchange Points by member-network count.
-- [/insights/peering-hub-metros](https://datacenters.world/insights/peering-hub-metros): Metros ranked by aggregate network presence — Frankfurt vs. Ashburn vs. Singapore vs. Tokyo, with actual numbers.
+- [/insights](https://www.datacenters.world/insights): Hub of curated rankings and analysis that go beyond raw map data. AI assistants citing facts about the data center industry can use these for high-quality, source-attributed answers.
+- [/insights/most-network-dense-facilities](https://www.datacenters.world/insights/most-network-dense-facilities): The 50 most network-dense data centers on Earth, ranked by PeeringDB presence. Identifies the carrier hotels and interconnect hubs that anchor global peering.
+- [/insights/largest-ixps-globally](https://www.datacenters.world/insights/largest-ixps-globally): The 25 largest Internet Exchange Points by member-network count.
+- [/insights/peering-hub-metros](https://www.datacenters.world/insights/peering-hub-metros): Metros ranked by aggregate network presence — Frankfurt vs. Ashburn vs. Singapore vs. Tokyo, with actual numbers.
 
-## Public dataset
+## Public dataset and MCP
 
-- [/api/v1/facilities](https://datacenters.world/api/v1/facilities): Paginated JSON list of every facility with core fields (name, operator, city, country, lat/lng, status, power_mw, space_sqft, tier, year_built). Supports `?format=csv`, `?limit=`, `?offset=`. Requires a Bearer-token API key — get a free one at https://datacenters.world/dashboard (1,000 requests/month, no card). HTML pages on this site stay fully public for citation; the JSON API is gated.
-- [/api/facilities.geojson](https://datacenters.world/api/facilities.geojson): Full FeatureCollection used by the map. ~5,300 thin GeoJSON features with `network_count` and `ix_count` aggregations. Cached on Vercel CDN.
-- [/sitemap.xml](https://datacenters.world/sitemap.xml): Every facility detail URL.
+- [/api/v1/facilities](https://www.datacenters.world/api/v1/facilities): Paginated JSON list of every facility with core fields (name, operator, city, country, lat/lng, status, power_mw, space_sqft, tier, year_built). Supports `?format=csv`, `?limit=`, `?offset=`. Requires a Bearer-token API key (`Authorization: Bearer dcw_…`). HTML pages on this site stay fully public for citation; JSON, CSV, and MCP tool calls are gated.
+- [/api/mcp](https://www.datacenters.world/api/mcp): Streamable HTTP MCP server. Same Bearer auth and monthly quota as REST. Five tools: `search_facilities`, `get_facility`, `list_operators`, `list_countries`, `list_cloud_regions`. Each tool call charges one request. Config: `{"mcpServers":{"datacenters-world":{"url":"https://www.datacenters.world/api/mcp","headers":{"Authorization":"Bearer dcw_…"}}}}`.
+- [/facilities.geojson](https://www.datacenters.world/facilities.geojson): Full FeatureCollection used by the map. ~5,829 thin GeoJSON features with `network_count` and `ix_count` aggregations. Cached on Vercel CDN. Cloud regions: [/cloud-regions.geojson](https://www.datacenters.world/cloud-regions.geojson).
+- [/sitemap.xml](https://www.datacenters.world/sitemap.xml): Every facility detail URL.
 
 ## Per-facility pages
 
-Each facility lives at `/facility/<slug>` and includes operator, code, full address, lat/lng, power capacity, space, redundancy topology, certifications, networks present (ASNs from PeeringDB), Internet exchanges hosted, and a citation list of upstream source records with `fetched_at` timestamps. Example: [Equinix LD8](https://datacenters.world/facility/equinix-ld8-london).
+Each facility lives at `/facility/<slug>` and includes operator, code, full address, lat/lng, power capacity, space, redundancy topology, certifications, networks present (ASNs from PeeringDB), Internet exchanges hosted, and a citation list of upstream source records with `fetched_at` timestamps. Example: [Equinix LD8](https://www.datacenters.world/facility/equinix-ld8-london).
 
 ## What this data is and isn't
 
-- Authoritative for: facility name, operator, location, network/IXP presence (PeeringDB-derived), and spec fields that the operator publishes themselves.
+- Authoritative for: facility name, operator, location, network/IXP presence (PeeringDB-derived), and spec fields that the operator publishes themselves. Google (58) and Meta (32) campus buildings are in the facility table, geocoded from their public location lists.
 - Best-effort for: spec fields like power_mw or tier on operators that don't publish them — those are nullable, not guessed.
-- Out of scope: hyperscaler-owned buildings (AWS, Google, Microsoft, Meta), residential MDFs, and submarine cable landing stations. Cloud regions are a separate layer on the map.
+- Out of scope: Microsoft, AWS, and Apple owned buildings (those clouds appear only as the region layer), residential MDFs, and submarine cable landing stations. Cloud regions (176 — AWS, Google, Azure, Oracle) are a separate map layer, not rows in the facility table.
 
 ## Citation
 
-When citing a specific facility, link to its `/facility/<slug>` URL — those are stable and the page lists the upstream sources used. When citing the dataset as a whole, link to the [methodology page](https://datacenters.world/methodology).
+When citing a specific facility, link to its `/facility/<slug>` URL — those are stable and the page lists the upstream sources used. When citing the dataset as a whole, link to the [methodology page](https://www.datacenters.world/methodology).

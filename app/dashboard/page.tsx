@@ -6,6 +6,7 @@ import { TIER_LIMITS, generateApiKey, tierLabel } from "@/lib/api-keys";
 import { POLAR_PRO_PRODUCT_ID, POLAR_TEAM_PRODUCT_ID } from "@/lib/polar";
 import { CodeTabs, Snippet } from "@/app/api/CodeTabs";
 import Link from "next/link";
+import { SITE_ORIGIN } from "@/lib/census";
 import { KeysClient } from "./KeysClient";
 import { KeyNameEditor } from "./KeyNameEditor";
 
@@ -564,14 +565,14 @@ function UsageChart({
   );
 }
 
-const API_BASE = "https://datacenters.world/api/v1";
+const API_BASE = `${SITE_ORIGIN}/api/v1`;
 
 function buildMcpConfig(activeKeys: { key_prefix: string }[]): string {
   const keyToken = activeKeys.length === 1 ? activeKeys[0].key_prefix : "dcw_…";
   return `{
   "mcpServers": {
     "datacenters-world": {
-      "url": "https://datacenters.world/api/mcp",
+      "url": "${SITE_ORIGIN}/api/mcp",
       "headers": {
         "Authorization": "Bearer ${keyToken}"
       }

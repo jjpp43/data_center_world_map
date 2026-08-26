@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { CENSUS_FMT } from "@/lib/census";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import { loadCountryIndex } from "@/lib/countries-data";
 import { jsonForHtml } from "@/lib/json-ld";
@@ -7,14 +8,14 @@ import { jsonForHtml } from "@/lib/json-ld";
 export const revalidate = 2_592_000;
 
 export const metadata: Metadata = {
-  title: "Data Centers by Country — All 148 Countries Ranked (Free Map)",
+  title: `Data Centers by Country — All ${CENSUS_FMT.countries} Countries Ranked (Free Map)`,
   description:
-    "Data center (data centre) counts and capacity for every country with a tracked facility — 148 countries, 5,675 facilities. Browse the map ranked by count.",
+    `Data center (data centre) counts and capacity for every country with a tracked facility — ${CENSUS_FMT.countries} countries, ${CENSUS_FMT.facilities} facilities. Browse the map ranked by count.`,
   alternates: { canonical: "/countries" },
   openGraph: {
-    title: "Data Centers by Country — All 148 Countries Ranked",
+    title: `Data Centers by Country — All ${CENSUS_FMT.countries} Countries Ranked`,
     description:
-      "Data center counts and capacity for every country — 148 countries, 5,675 facilities.",
+      `Data center counts and capacity for every country — ${CENSUS_FMT.countries} countries, ${CENSUS_FMT.facilities} facilities.`,
     type: "website",
     url: "/countries",
   },

@@ -32,7 +32,7 @@ Phases 1–14 shipped. Migrations `0001–0020` applied; `0020` adds source keys
 ## Data model
 
 ```
-data_centers (5,675)          ← canonical
+data_centers (5,829)          ← canonical
   ├→ source_records           ← N:1, raw payload kept
   ├→ networks_at_facility →   networks (34,732 ASNs)
   └→ ixes_at_facility    →    ixes (1,309 IXPs)

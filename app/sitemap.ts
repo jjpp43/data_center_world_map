@@ -17,8 +17,9 @@ import {
   OPERATOR_MIN_FACILITIES,
   isFacilityIndexable,
 } from "@/lib/indexable";
+import { canonicalOrigin } from "@/lib/census";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
+const SITE = canonicalOrigin();
 
 export const revalidate = 86400;
 

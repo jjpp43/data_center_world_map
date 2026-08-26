@@ -11,6 +11,7 @@ import { NoTokenBanner } from "@/components/NoTokenBanner";
 import { MobileHome } from "@/components/MobileHome";
 import type { Facility, CloudRegion, FacilityStatus, CloudProvider } from "@/lib/types";
 import { DEFAULT_STATE, parseUrl, serializeUrl } from "@/lib/url-state";
+import { CENSUS_FMT } from "@/lib/census";
 import { facilitiesInRegions } from "@/lib/cloud-region-areas";
 
 export default function HomePage() {
@@ -114,9 +115,10 @@ export default function HomePage() {
     >
       <h1 className="sr-only">Data Centers Map — Every Data Centre in the World</h1>
       <p className="sr-only">
-        An open, sourced map of 5,675 data centers (also spelled data centres) across 148
-        countries. Search every facility by operator, country, metro, network, or Internet
-        exchange. Verified specs sourced from PeeringDB, operator pages, OpenStreetMap, and
+        An open, sourced map of {CENSUS_FMT.facilities} data centers (also spelled data
+        centres) across {CENSUS_FMT.countries} countries. Search every facility by operator,
+        country, metro, network, or Internet exchange. Verified specs sourced from PeeringDB,
+        operator pages, OpenStreetMap, and
         public filings — including Equinix, Digital Realty, Keppel Data Centres, Iron Mountain,
         Google, Meta, and 1,000+ other operators worldwide.
       </p>

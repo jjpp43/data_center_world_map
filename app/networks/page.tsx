@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { loadTopNetworksIndex } from "@/lib/networks-data";
 import { INDEXABLE_CAPS, NETWORK_MIN_FACILITIES } from "@/lib/indexable";
+import { CENSUS_FMT } from "@/lib/census";
 import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 2_592_000;
@@ -11,14 +12,14 @@ export const revalidate = 2_592_000;
 const TOP_N = INDEXABLE_CAPS.networks;
 
 export const metadata: Metadata = {
-  title: "Networks (ASNs) — 34,732 in Tracked Data Centers",
+  title: `Networks (ASNs) — ${CENSUS_FMT.networks} in Tracked Data Centers`,
   description:
-    "Every PeeringDB-registered network present in a tracked data center — Google AS15169, AWS AS16509, Cloudflare AS13335, Microsoft AS8075, and 30,000+ more. Ranked by data center footprint.",
+    `Every PeeringDB-registered network present in a tracked data center — Google AS15169, AWS AS16509, Cloudflare AS13335, Microsoft AS8075, and ${CENSUS_FMT.networks} total. Ranked by data center footprint; the index lists the top ${INDEXABLE_CAPS.networks}.`,
   alternates: { canonical: "/networks" },
   openGraph: {
-    title: "Networks (ASNs) — 34,732 in Tracked Data Centers",
+    title: `Networks (ASNs) — ${CENSUS_FMT.networks} in Tracked Data Centers`,
     description:
-      "Every PeeringDB-registered network — Google, AWS, Cloudflare, Microsoft, and 30,000+ more — ranked by data center footprint.",
+      `Every PeeringDB-registered network — Google, AWS, Cloudflare, Microsoft — ${CENSUS_FMT.networks} ranked by data center footprint.`,
     type: "website",
     url: "/networks",
   },

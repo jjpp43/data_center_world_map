@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { CENSUS_FMT } from "@/lib/census";
 
 // Static build-time OG image, inherited by every route that doesn't define its
 // own. `twitter.card` was already `summary_large_image` with no image to show,
@@ -48,15 +49,15 @@ export default function OpengraphImage() {
         </div>
         <div style={{ display: "flex", gap: 56, fontSize: 30 }}>
           <div style={{ display: "flex", gap: 12 }}>
-            <span style={{ color: "#818cf8" }}>5,675</span>
+            <span style={{ color: "#818cf8" }}>{CENSUS_FMT.facilities}</span>
             <span style={{ color: "#a1a1aa" }}>facilities</span>
           </div>
           <div style={{ display: "flex", gap: 12 }}>
-            <span style={{ color: "#818cf8" }}>148</span>
+            <span style={{ color: "#818cf8" }}>{CENSUS_FMT.countries}</span>
             <span style={{ color: "#a1a1aa" }}>countries</span>
           </div>
           <div style={{ display: "flex", gap: 12 }}>
-            <span style={{ color: "#818cf8" }}>1,309</span>
+            <span style={{ color: "#818cf8" }}>{CENSUS_FMT.ixps}</span>
             <span style={{ color: "#a1a1aa" }}>IXPs</span>
           </div>
         </div>

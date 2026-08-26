@@ -3,16 +3,17 @@ import Link from "next/link";
 import { Snippet } from "@/app/api/CodeTabs";
 import { AccountPill } from "@/components/AccountPill";
 import { ArrowLeftIcon } from "@/components/editorial";
+import { CENSUS_FMT, SITE_ORIGIN } from "@/lib/census";
 import { jsonForHtml } from "@/lib/json-ld";
 
 export const revalidate = 2_592_000;
 
-const SITE = "https://datacenters.world";
+const SITE = SITE_ORIGIN;
 const URL = `${SITE}/launch/mcp`;
 
 const TITLE = "MCP server — every known data center, available to your AI";
 const DESCRIPTION =
-  "5,675 facilities, 34,732 networks, 1,309 IXPs, 176 cloud regions — exposed as Model Context Protocol tools. One config snippet and Claude Desktop, Cursor, or Claude Code can answer infrastructure questions with citations. Free tier 1,000 calls/month.";
+  `${CENSUS_FMT.facilities} facilities, ${CENSUS_FMT.networks} networks, ${CENSUS_FMT.ixps} IXPs, ${CENSUS_FMT.cloudRegions} cloud regions — exposed as Model Context Protocol tools. One config snippet and Claude Desktop, Cursor, or Claude Code can answer infrastructure questions with citations. Free tier 1,000 calls/month.`;
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -86,9 +87,9 @@ export default function McpLaunchPage() {
             server over the largest open atlas of data center facilities on the
             internet. Add one config snippet and Claude Desktop, Cursor, or
             Claude Code can answer infrastructure questions about{" "}
-            <strong className="font-mono">5,675</strong> facilities,{" "}
-            <strong className="font-mono">34,732</strong> networks, and{" "}
-            <strong className="font-mono">1,309</strong> Internet exchanges —
+            <strong className="font-mono">{CENSUS_FMT.facilities}</strong> facilities,{" "}
+            <strong className="font-mono">{CENSUS_FMT.networks}</strong> networks, and{" "}
+            <strong className="font-mono">{CENSUS_FMT.ixps}</strong> Internet exchanges —
             with a citation URL on every result.
           </p>
 
@@ -189,7 +190,7 @@ export default function McpLaunchPage() {
               <Snippet>{`{
   "mcpServers": {
     "datacenters-world": {
-      "url": "https://datacenters.world/api/mcp",
+      "url": "https://www.datacenters.world/api/mcp",
       "headers": {
         "Authorization": "Bearer dcw_…"
       }
@@ -205,7 +206,7 @@ export default function McpLaunchPage() {
               <Snippet>{`claude mcp add datacenters-world \\
   --transport http \\
   --header "Authorization: Bearer dcw_…" \\
-  https://datacenters.world/api/mcp`}</Snippet>
+  https://www.datacenters.world/api/mcp`}</Snippet>
             </div>
 
             <div>
@@ -220,7 +221,7 @@ export default function McpLaunchPage() {
       "args": [
         "-y",
         "mcp-remote",
-        "https://datacenters.world/api/mcp",
+        "https://www.datacenters.world/api/mcp",
         "--header",
         "Authorization: Bearer dcw_…"
       ]
