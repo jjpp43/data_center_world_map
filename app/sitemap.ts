@@ -23,6 +23,21 @@ const SITE = canonicalOrigin();
 
 export const revalidate = 86400;
 
+/**
+ * Floor for sitemap lastmod. Live catalog `updated_at` is still 4 Jun 2026,
+ * which is *before* f9e3832 noindexed ~91% of facility URLs (25 Jun) and
+ * 16c7101 restored indexability (30 Jun). Google already fetched the sitemap
+ * with those June-4 stamps, so it has no lastmod reason to recrawl. A module
+ * constant (not `new Date()`) keeps sitemap bytes identical across daily
+ * regenerations. Bump this when we need another catalog recrawl.
+ */
+const LASTMOD_FLOOR = new Date("2026-06-30T00:00:00.000Z");
+
+function sitemapLastmod(updatedAt?: string | null): Date {
+  const ts = updatedAt ? new Date(updatedAt).getTime() : 0;
+  return new Date(Math.max(ts, LASTMOD_FLOOR.getTime()));
+}
+
 type FacSlugRow = {
   slug: string;
   updated_at: string | null;
@@ -78,31 +93,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     loadTopNetworksIndex(INDEXABLE_CAPS.networks),
   ]);
 
-  // lastModified only set on entries with a real data-driven timestamp
-  // (facility `updated_at`). Stamping `new Date()` everywhere flips the
-  // sitemap bytes on every revalidation and burns an ISR write per cycle
-  // without giving Google any real freshness signal.
+  // lastModified uses LASTMOD_FLOOR, never `new Date()`. Stamping request
+  // time flipped sitemap bytes every daily revalidation and burned an ISR
+  // write per cycle. The floor is the noindex-restore day so Google sees a
+  // one-time lastmod bump vs the live 2026-06-04 stamps.
   const staticEntries: MetadataRoute.Sitemap = [
-    { url: `${SITE}/`, changeFrequency: "daily", priority: 1 },
-    { url: `${SITE}/about`, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE}/privacy`, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${SITE}/methodology`, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE}/api`, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE}/launch/mcp`, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE}/operators`, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/countries`, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/metros`, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/ixps`, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/networks`, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/density`, changeFrequency: "weekly", priority: 0.75 },
-    { url: `${SITE}/insights`, changeFrequency: "weekly", priority: 0.75 },
+    { url: `${SITE}/`, lastModified: LASTMOD_FLOOR, changeFrequency: "daily", priority: 1 },
+    { url: `${SITE}/about`, lastModified: LASTMOD_FLOOR, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE}/privacy`, lastModified: LASTMOD_FLOOR, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE}/methodology`, lastModified: LASTMOD_FLOOR, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE}/api`, lastModified: LASTMOD_FLOOR, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE}/launch/mcp`, lastModified: LASTMOD_FLOOR, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE}/operators`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/countries`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/metros`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/ixps`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/networks`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE}/density`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.75 },
+    { url: `${SITE}/insights`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.75 },
     ...TIERS.map((t) => ({
       url: `${SITE}/density/${t.slug}`,
+      lastModified: LASTMOD_FLOOR,
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),
     ...INSIGHTS.map((i) => ({
       url: `${SITE}/insights/${i.slug}`,
+      lastModified: LASTMOD_FLOOR,
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
@@ -110,7 +127,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const facilityEntries: MetadataRoute.Sitemap = facilities.map((r) => ({
     url: `${SITE}/facility/${r.slug}`,
-    ...(r.updated_at ? { lastModified: new Date(r.updated_at) } : {}),
+    lastModified: sitemapLastmod(r.updated_at),
     changeFrequency: "monthly",
     priority: 0.6,
   }));
@@ -123,18 +140,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .slice(0, INDEXABLE_CAPS.operators)
     .map((o) => ({
       url: `${SITE}/operators/${o.slug}`,
+      lastModified: LASTMOD_FLOOR,
       changeFrequency: "monthly",
       priority: 0.7,
     }));
 
   const countryEntries: MetadataRoute.Sitemap = countries.map((c) => ({
     url: `${SITE}/countries/${countrySlug(c.code)}`,
+    lastModified: LASTMOD_FLOOR,
     changeFrequency: "monthly",
     priority: 0.7,
   }));
 
   const metroEntries: MetadataRoute.Sitemap = metros.map((m) => ({
     url: `${SITE}/metros/${m.slug}`,
+    lastModified: LASTMOD_FLOOR,
     changeFrequency: "monthly",
     priority: 0.75,
   }));
@@ -144,6 +164,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .slice(0, INDEXABLE_CAPS.ixps)
     .map((i) => ({
       url: `${SITE}/ixps/${i.slug}`,
+      lastModified: LASTMOD_FLOOR,
       changeFrequency: "monthly",
       priority: 0.65,
     }));
@@ -152,6 +173,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES)
     .map((n) => ({
       url: `${SITE}/networks/${n.asn}`,
+      lastModified: LASTMOD_FLOOR,
       changeFrequency: "monthly",
       priority: 0.6,
     }));
