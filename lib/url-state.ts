@@ -1,4 +1,5 @@
 import type { CloudProvider, Filters } from "./types";
+import { isUsOnly, normalizeUsState } from "./us-states";
 
 export type AppState = {
   filters: Filters;
@@ -15,6 +16,7 @@ export const DEFAULT_STATE: AppState = {
   filters: {
     operators: [],
     countries: ["US"],
+    states: [],
   },
   selectedSlug: null,
   theme: "dark",
@@ -28,10 +30,14 @@ export function parseUrl(sp: URLSearchParams): AppState {
   // so a fresh visit lands on the US view instead of an empty-filter globe.
   // Once any param is set, respect exactly what's there.
   if ([...sp.keys()].length === 0) return DEFAULT_STATE;
+  const countries = csv(sp.get("country")).map((c) => c.toUpperCase());
+  const states = parseStates(sp.get("state"));
+  const resolvedCountries = states.length && countries.length === 0 ? ["US"] : countries;
   const next: AppState = {
     filters: {
       operators: csv(sp.get("op")),
-      countries: csv(sp.get("country")).map((c) => c.toUpperCase()),
+      countries: resolvedCountries,
+      states: isUsOnly(resolvedCountries) ? states : [],
     },
     selectedSlug: sp.get("q") || null,
     theme: sp.get("theme") === "light" ? "light" : "dark",
@@ -52,6 +58,7 @@ export function serializeUrl(state: AppState): string {
 
   if (f.operators.length) sp.set("op", f.operators.join(","));
   if (f.countries.length) sp.set("country", f.countries.join(","));
+  if (f.states.length && isUsOnly(f.countries)) sp.set("state", f.states.join(","));
 
   if (state.selectedSlug) sp.set("q", state.selectedSlug);
   if (state.theme === "light") sp.set("theme", "light");
@@ -64,5 +71,17 @@ export function serializeUrl(state: AppState): string {
 
 function csv(s: string | null): string[] {
   return s ? s.split(",").filter(Boolean) : [];
+}
+
+function parseStates(raw: string | null): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const token of csv(raw)) {
+    const code = normalizeUsState(token);
+    if (!code || seen.has(code)) continue;
+    seen.add(code);
+    out.push(code);
+  }
+  return out;
 }
 

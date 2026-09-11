@@ -14,6 +14,7 @@
 import { createClient } from "@supabase/supabase-js";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { normalizeUsState } from "../lib/us-states";
 
 const PAGE = 1000;
 
@@ -24,6 +25,7 @@ type FacilityRow = {
   code: string | null;
   city: string | null;
   country: string;
+  region: string | null;
   lat: number;
   lng: number;
   status: string;
@@ -68,7 +70,7 @@ async function buildFacilities() {
     const { data, error } = await sb
       .from("data_centers")
       .select(
-        "slug, name, operator, code, city, country, lat, lng, status, power_mw, space_sqft, min_cabinet_density_kw, max_cabinet_density_kw, tier, ups_redundancy, uptime_sla, pue, year_built, networks_at_facility(count), ixes_at_facility(count)",
+        "slug, name, operator, code, city, country, region, lat, lng, status, power_mw, space_sqft, min_cabinet_density_kw, max_cabinet_density_kw, tier, ups_redundancy, uptime_sla, pue, year_built, networks_at_facility(count), ixes_at_facility(count)",
       )
       .neq("status", "decommissioned")
       .order("slug")
@@ -90,6 +92,10 @@ async function buildFacilities() {
     };
     if (d.code) props.code = d.code;
     if (d.city) props.city = d.city;
+    if (d.country === "US") {
+      const state = normalizeUsState(d.region);
+      if (state) props.state = state;
+    }
     if (d.power_mw != null) props.power_mw = d.power_mw;
     if (d.space_sqft != null) props.space_sqft = d.space_sqft;
     if (d.min_cabinet_density_kw != null) props.min_cabinet_density_kw = d.min_cabinet_density_kw;

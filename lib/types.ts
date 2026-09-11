@@ -7,6 +7,7 @@ export type Facility = {
   code: string | null;
   city: string;
   country: string;
+  state: string | null;
   lat: number;
   lng: number;
   status: FacilityStatus;
@@ -26,6 +27,7 @@ export type Facility = {
 export type Filters = {
   operators: string[];
   countries: string[];
+  states: string[];
 };
 
 export type CloudProvider = "aws" | "gcp" | "azure" | "oracle";

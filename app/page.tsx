@@ -67,6 +67,7 @@ export default function HomePage() {
     const base = facilities.filter((f) => {
       if (filters.operators.length && !filters.operators.includes(f.operator)) return false;
       if (filters.countries.length && !filters.countries.includes(f.country)) return false;
+      if (filters.states.length && (!f.state || !filters.states.includes(f.state))) return false;
       return true;
     });
     if (!providerFocus && !regionFocus) return base;
@@ -85,6 +86,7 @@ export default function HomePage() {
   const defaultUSView =
     !providerFocus &&
     filters.operators.length === 0 &&
+    filters.states.length === 0 &&
     filters.countries.length === 1 &&
     filters.countries[0] === "US";
 
@@ -94,9 +96,11 @@ export default function HomePage() {
       ? `focus:${providerFocus}:${filters.countries.join(",")}`
       : defaultUSView
         ? null
-        : filters.countries.length
-          ? filters.countries.join(",")
-          : null;
+        : filters.states.length
+          ? `state:${filters.states.join(",")}`
+          : filters.countries.length
+            ? filters.countries.join(",")
+            : null;
 
   const fitBoundsTarget = regionFocus
     ? filteredCloudRegions
@@ -193,6 +197,7 @@ function featureToFacility(f: GeoJSON.Feature): Facility {
     // `.toLowerCase()` don't throw and crash the client page.
     city: p.city ?? "",
     country: p.country,
+    state: p.state ?? null,
     lat,
     lng,
     status: p.status as FacilityStatus,

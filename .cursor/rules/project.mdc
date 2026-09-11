@@ -63,7 +63,7 @@ Full-bleed map (desktop). Below `md`: `<MobileHome>` search-first list (no inter
 
 **Chrome**:
 - **TopBar**: brand · [About · Methodology · API] · search · theme · AccountPill. AccountPill = solid-white "Sign in →" out, glass "Account ▾" dropdown in. `SessionProvider` seeds from Supabase auth cookie client-side (lazy `useState`) to avoid flash. Also rendered by `EditorialHeader`.
-- **FilterCard** (top-left): operator + country multi-selects, cloud focus chips. Power/status filters removed (status 100% op, power 2.4%).
+- **FilterCard** (top-left): operator + country multi-selects, cloud focus chips. When country is US-only: state chips (top 8 by count) + searchable MultiSelect (`?state=VA,TX`). Power/status filters removed (status 100% op, power 2.4%).
 - **MapToggle** (top-right) · **Legend** (bottom-left) · **FirstRunHint** (one-shot via localStorage).
 - Marker click → 400px right-slide `FacilityPanel` → `/facility/[slug]`. Cloud region click → Mapbox popup.
 
@@ -77,7 +77,7 @@ Full-bleed map (desktop). Below `md`: `<MobileHome>` search-first list (no inter
 
 ## URL state
 
-`lib/url-state.ts`: `?op=Equinix&country=US,GB&q=<slug>&theme=light&map=2d&clouds=0&focus=aws`. Default `country=US`, dark, globe, clouds on. **Do not** add per-pan bbox queries.
+`lib/url-state.ts`: `?op=Equinix&country=US,GB&state=VA,TX&q=<slug>&theme=light&map=2d&clouds=0&focus=aws`. Default `country=US`, dark, globe, clouds on. State param only applies when country is US-only (`?state=VA` implies US). **Do not** add per-pan bbox queries.
 
 ## Public API (REST v1 + MCP)
 
@@ -129,7 +129,7 @@ lib/  supabase (server/admin/browser), supabase-server (cookie-aware), api-keys 
       polar, api (jsonResponse + internalError + CSV-safe csvResponse), api-data (shared loaders),
       cache-tags (catalog-indexes vs api-data vs untagged per-slug), json-ld (jsonForHtml),
       indexable (sitemap caps + isFacilityIndexable/NOINDEX_ROBOTS),
-      types, url-state, countries, operators, *-data, density, insights-data
+      types, url-state, countries, us-states, operators, *-data, density, insights-data
 scripts/  ingest, ingest-{ironmountain,google,meta,operator-buildings}, canonicalize-orphans,
           build-geojson (prebuild), _trigger-rebuild, audit-quality, audit-orphans, check-security.mjs
 .github/workflows/backup.yml          weekly pg_dump → GH artifact (Sun 04:00 UTC)

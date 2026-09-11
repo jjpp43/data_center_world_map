@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { CloudProvider, Facility, Filters } from "@/lib/types";
 import { countryFlag, countryName } from "@/lib/countries";
+import { isUsOnly, usStateName } from "@/lib/us-states";
 
 const QUICK_OPERATORS: Array<{ label: string; value: string }> = [
   { label: "Equinix", value: "Equinix, Inc." },
@@ -50,6 +51,7 @@ export function FilterCard({
     visibleCount,
     totalCount,
     countries: filters.countries,
+    states: filters.states,
     providerFocus,
     countLabel,
   });
@@ -65,6 +67,19 @@ export function FilterCard({
     for (const f of facilities) counts.set(f.country, (counts.get(f.country) ?? 0) + 1);
     return [...counts.entries()].sort((a, b) => b[1] - a[1]);
   }, [facilities]);
+
+  const usOnly = isUsOnly(filters.countries);
+
+  const stateOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const f of facilities) {
+      if (f.country !== "US" || !f.state) continue;
+      counts.set(f.state, (counts.get(f.state) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  }, [facilities]);
+
+  const quickStates = stateOptions.slice(0, 8);
 
   if (collapsed) {
     return (
@@ -177,7 +192,13 @@ export function FilterCard({
             <MultiSelect
               options={countryOptions}
               selected={filters.countries}
-              onChange={(countries) => onChange({ ...filters, countries })}
+              onChange={(countries) =>
+                onChange({
+                  ...filters,
+                  countries,
+                  states: isUsOnly(countries) ? filters.states : [],
+                })
+              }
               placeholder="Any country"
               searchPlaceholder="Search countries…"
               searchText={(code) => `${code} ${countryName(code) ?? code}`}
@@ -199,6 +220,53 @@ export function FilterCard({
               }
             />
           </FilterSection>
+
+          {usOnly && (
+            <FilterSection label="State">
+              <div className="mb-2 flex flex-wrap gap-1">
+                {quickStates.map(([code]) => {
+                  const active = filters.states.includes(code);
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => {
+                        const next = active
+                          ? filters.states.filter((v) => v !== code)
+                          : [...filters.states, code];
+                        onChange({ ...filters, states: next });
+                      }}
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                        active
+                          ? "bg-cyan-500/20 text-cyan-700 dark:text-cyan-300"
+                          : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                      }`}
+                    >
+                      {code}
+                    </button>
+                  );
+                })}
+              </div>
+              <MultiSelect
+                options={stateOptions}
+                selected={filters.states}
+                onChange={(states) => onChange({ ...filters, states })}
+                placeholder="Any state"
+                searchPlaceholder="Search states…"
+                dropUp
+                searchText={(code) => `${code} ${usStateName(code)}`}
+                renderOption={(code) => (
+                  <span className="truncate">
+                    {usStateName(code)}
+                    <span className="ml-1.5 text-zinc-400">{code}</span>
+                  </span>
+                )}
+                selectedSummary={(codes) =>
+                  codes.length === 1 ? usStateName(codes[0]) : `${codes.length} states`
+                }
+              />
+            </FilterSection>
+          )}
       </div>
     </div>
   );
@@ -208,12 +276,14 @@ function formatCountChip({
   visibleCount,
   totalCount,
   countries,
+  states,
   providerFocus,
   countLabel,
 }: {
   visibleCount: number;
   totalCount: number;
   countries: string[];
+  states: string[];
   providerFocus: CloudProvider | null;
   countLabel: string;
 }): string {
@@ -221,6 +291,12 @@ function formatCountChip({
   const tot = totalCount.toLocaleString("en-US");
   if (providerFocus) {
     return visibleCount === totalCount ? `${vis} ${countLabel}` : `${vis} / ${tot} ${countLabel}`;
+  }
+  if (states.length === 1 && visibleCount !== totalCount) {
+    return `${vis} ${states[0]} / ${tot}`;
+  }
+  if (states.length > 1 && visibleCount !== totalCount) {
+    return `${vis} ${states.length} states / ${tot}`;
   }
   if (countries.length === 1 && visibleCount !== totalCount) {
     return `${vis} ${countries[0]} / ${tot}`;
@@ -249,6 +325,7 @@ function MultiSelect({
   searchText,
   renderOption,
   selectedSummary,
+  dropUp,
 }: {
   options: [string, number][];
   selected: string[];
@@ -258,6 +335,7 @@ function MultiSelect({
   searchText?: (value: string) => string;
   renderOption?: (value: string) => ReactNode;
   selectedSummary?: (selected: string[]) => ReactNode;
+  dropUp?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -315,7 +393,11 @@ function MultiSelect({
         <ChevronIcon collapsed={!open} />
       </button>
       {open && (
-        <div className="absolute inset-x-0 top-full z-10 mt-1 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+        <div
+          className={`absolute inset-x-0 z-10 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950 ${
+            dropUp ? "bottom-full mb-1" : "top-full mt-1"
+          }`}
+        >
           <div className="flex items-center gap-2 border-b border-zinc-200/70 px-2.5 py-1.5 dark:border-zinc-800/70">
             <SearchIcon />
             <input
