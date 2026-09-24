@@ -39,6 +39,7 @@ export function MobileHome({ facilities }: Props) {
   );
   const showing = sorted.slice(0, page * PAGE_SIZE);
   const hasMore = sorted.length > showing.length;
+  const ready = facilities.length > 0;
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
@@ -100,13 +101,15 @@ export function MobileHome({ facilities }: Props) {
       </header>
 
       <main className="px-4 py-4">
-        <div className="mb-3 text-xs tabular-nums text-zinc-500">
-          {sorted.length.toLocaleString()} facilities
-          {country && ` in ${countryName(country) ?? country}`}
-          {query && ` matching “${query}”`}
-        </div>
+        {ready && (
+          <div className="mb-3 text-xs tabular-nums text-zinc-500">
+            {sorted.length.toLocaleString()} facilities
+            {country && ` in ${countryName(country) ?? country}`}
+            {query && ` matching “${query}”`}
+          </div>
+        )}
 
-        {showing.length === 0 ? (
+        {ready && showing.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-800">
             No facilities match.
           </div>

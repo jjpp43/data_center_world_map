@@ -24,14 +24,13 @@ const SITE = canonicalOrigin();
 export const revalidate = 86400;
 
 /**
- * Floor for sitemap lastmod. Live catalog `updated_at` is still 4 Jun 2026,
- * which is *before* f9e3832 noindexed ~91% of facility URLs (25 Jun) and
- * 16c7101 restored indexability (30 Jun). Google already fetched the sitemap
- * with those June-4 stamps, so it has no lastmod reason to recrawl. A module
- * constant (not `new Date()`) keeps sitemap bytes identical across daily
- * regenerations. Bump this when we need another catalog recrawl.
+ * Floor for sitemap lastmod. A module constant (not `new Date()`) keeps
+ * sitemap bytes identical across daily regenerations. Bump this when we
+ * need another catalog recrawl. 30 Jun 2026 was the noindex restore; Google
+ * recrawled hubs on 12 Sep and treated that floor as stale, so this is a
+ * one-time bump past that crawl.
  */
-const LASTMOD_FLOOR = new Date("2026-06-30T00:00:00.000Z");
+const LASTMOD_FLOOR = new Date("2026-09-24T00:00:00.000Z");
 
 function sitemapLastmod(updatedAt?: string | null): Date {
   const ts = updatedAt ? new Date(updatedAt).getTime() : 0;
@@ -95,8 +94,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // lastModified uses LASTMOD_FLOOR, never `new Date()`. Stamping request
   // time flipped sitemap bytes every daily revalidation and burned an ISR
-  // write per cycle. The floor is the noindex-restore day so Google sees a
-  // one-time lastmod bump vs the live 2026-06-04 stamps.
+  // write per cycle.
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${SITE}/`, lastModified: LASTMOD_FLOOR, changeFrequency: "daily", priority: 1 },
     { url: `${SITE}/about`, lastModified: LASTMOD_FLOOR, changeFrequency: "monthly", priority: 0.7 },
