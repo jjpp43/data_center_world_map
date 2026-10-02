@@ -6,6 +6,8 @@ import { loadOperatorIndex } from "@/lib/operators";
 import { loadCountryIndex } from "@/lib/countries-data";
 import { countrySlug } from "@/lib/countries";
 import { loadMetroSummaries } from "@/lib/metros-data";
+import { loadUsLocationIndex } from "@/lib/us-locations-data";
+import { loadWorldCityIndex } from "@/lib/city-locations-data";
 import { loadIxpIndex } from "@/lib/ixps-data";
 import { loadTopNetworksIndex } from "@/lib/networks-data";
 import { TIERS } from "@/lib/density";
@@ -23,18 +25,11 @@ const SITE = canonicalOrigin();
 
 export const revalidate = 86400;
 
-/**
- * Floor for sitemap lastmod. A module constant (not `new Date()`) keeps
- * sitemap bytes identical across daily regenerations. Bump this when we
- * need another catalog recrawl. 30 Jun 2026 was the noindex restore; Google
- * recrawled hubs on 12 Sep and treated that floor as stale, so this is a
- * one-time bump past that crawl.
- */
-const LASTMOD_FLOOR = new Date("2026-09-24T00:00:00.000Z");
-
-function sitemapLastmod(updatedAt?: string | null): Date {
-  const ts = updatedAt ? new Date(updatedAt).getTime() : 0;
-  return new Date(Math.max(ts, LASTMOD_FLOOR.getTime()));
+/** Real row timestamp only. Never `new Date()`, never a recrawl floor. */
+function sitemapLastmod(updatedAt?: string | null): Date | undefined {
+  if (!updatedAt) return undefined;
+  const d = new Date(updatedAt);
+  return Number.isNaN(d.getTime()) ? undefined : d;
 }
 
 type FacSlugRow = {
@@ -43,14 +38,9 @@ type FacSlugRow = {
 };
 
 // Every indexable facility page (coords present) is advertised in the sitemap,
-// not just a top-N slice — facility pages are the primary rankable content and
-// each is unique, so we want Google to discover and (re)crawl all of them. This
-// is also what pulls the ~5k long-tail pages out of the June noindex regression:
-// they're `index,follow` again but have no other signal prompting a re-crawl.
-// One paginated scan of (slug, updated_at, lat, lng) per 24h; timestamps are
-// read inline because a top-N `.in(slug, …)` lookup would exceed the request
-// URL limit at full-catalog size. The lat/lng filter mirrors isFacilityIndexable
-// so we never list a coord-less page that renders noindex.
+// not just a top-N slice. lastmod is the row's `updated_at` only — a freshness
+// floor made Google recrawl the whole catalog daily. The lat/lng filter mirrors
+// isFacilityIndexable so we never list a coord-less page that renders noindex.
 const loadIndexableFacilitiesWithStamps = unstable_cache(
   async (): Promise<FacSlugRow[]> => {
     const sb = supabaseServer();
@@ -83,52 +73,52 @@ const loadIndexableFacilitiesWithStamps = unstable_cache(
 );
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [facilities, operators, countries, metros, ixps, networks] = await Promise.all([
+  const [facilities, operators, countries, metros, ixps, networks, usLocations, worldCities] = await Promise.all([
     loadIndexableFacilitiesWithStamps(),
     loadOperatorIndex(),
     loadCountryIndex(),
     loadMetroSummaries(),
     loadIxpIndex(),
     loadTopNetworksIndex(INDEXABLE_CAPS.networks),
+    loadUsLocationIndex(),
+    loadWorldCityIndex(),
   ]);
 
-  // lastModified uses LASTMOD_FLOOR, never `new Date()`. Stamping request
-  // time flipped sitemap bytes every daily revalidation and burned an ISR
-  // write per cycle.
   const staticEntries: MetadataRoute.Sitemap = [
-    { url: `${SITE}/`, lastModified: LASTMOD_FLOOR, changeFrequency: "daily", priority: 1 },
-    { url: `${SITE}/about`, lastModified: LASTMOD_FLOOR, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE}/privacy`, lastModified: LASTMOD_FLOOR, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${SITE}/methodology`, lastModified: LASTMOD_FLOOR, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE}/api`, lastModified: LASTMOD_FLOOR, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE}/launch/mcp`, lastModified: LASTMOD_FLOOR, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE}/operators`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/countries`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/metros`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/ixps`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/networks`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE}/density`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.75 },
-    { url: `${SITE}/insights`, lastModified: LASTMOD_FLOOR, changeFrequency: "weekly", priority: 0.75 },
+    { url: `${SITE}/`, changeFrequency: "monthly", priority: 1 },
+    { url: `${SITE}/about`, changeFrequency: "yearly", priority: 0.7 },
+    { url: `${SITE}/privacy`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE}/methodology`, changeFrequency: "yearly", priority: 0.6 },
+    { url: `${SITE}/api`, changeFrequency: "yearly", priority: 0.7 },
+    { url: `${SITE}/launch/mcp`, changeFrequency: "yearly", priority: 0.6 },
+    { url: `${SITE}/operators`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE}/countries`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE}/metros`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE}/ixps`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE}/networks`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE}/density`, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${SITE}/insights`, changeFrequency: "monthly", priority: 0.75 },
     ...TIERS.map((t) => ({
       url: `${SITE}/density/${t.slug}`,
-      lastModified: LASTMOD_FLOOR,
-      changeFrequency: "weekly" as const,
+      changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
     ...INSIGHTS.map((i) => ({
       url: `${SITE}/insights/${i.slug}`,
-      lastModified: LASTMOD_FLOOR,
-      changeFrequency: "monthly" as const,
+      changeFrequency: "yearly" as const,
       priority: 0.8,
     })),
   ];
 
-  const facilityEntries: MetadataRoute.Sitemap = facilities.map((r) => ({
-    url: `${SITE}/facility/${r.slug}`,
-    lastModified: sitemapLastmod(r.updated_at),
-    changeFrequency: "monthly",
-    priority: 0.6,
-  }));
+  const facilityEntries: MetadataRoute.Sitemap = facilities.map((r) => {
+    const lastModified = sitemapLastmod(r.updated_at);
+    return {
+      url: `${SITE}/facility/${r.slug}`,
+      ...(lastModified ? { lastModified } : {}),
+      changeFrequency: "yearly" as const,
+      priority: 0.6,
+    };
+  });
 
   // Top operators only — long-tail operators (1-2 facilities) still render
   // on demand but stay out of the sitemap to focus Google's crawl budget on
@@ -138,23 +128,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .slice(0, INDEXABLE_CAPS.operators)
     .map((o) => ({
       url: `${SITE}/operators/${o.slug}`,
-      lastModified: LASTMOD_FLOOR,
-      changeFrequency: "monthly",
+      changeFrequency: "monthly" as const,
       priority: 0.7,
     }));
 
   const countryEntries: MetadataRoute.Sitemap = countries.map((c) => ({
     url: `${SITE}/countries/${countrySlug(c.code)}`,
-    lastModified: LASTMOD_FLOOR,
     changeFrequency: "monthly",
     priority: 0.7,
   }));
 
   const metroEntries: MetadataRoute.Sitemap = metros.map((m) => ({
     url: `${SITE}/metros/${m.slug}`,
-    lastModified: LASTMOD_FLOOR,
     changeFrequency: "monthly",
     priority: 0.75,
+  }));
+
+  const usStateEntries: MetadataRoute.Sitemap = usLocations.states.map((s) => ({
+    url: `${SITE}/countries/united-states/${s.slug}`,
+    changeFrequency: "monthly",
+    priority: 0.72,
+  }));
+
+  const usCityEntries: MetadataRoute.Sitemap = usLocations.cities.map((c) => ({
+    url: `${SITE}/countries/united-states/${c.state_slug}/${c.city_slug}`,
+    changeFrequency: "monthly",
+    priority: 0.68,
+  }));
+
+  const worldCityEntries: MetadataRoute.Sitemap = worldCities.map((c) => ({
+    url: `${SITE}/countries/${c.country_slug}/${c.city_slug}`,
+    changeFrequency: "monthly",
+    priority: 0.68,
   }));
 
   const ixpEntries: MetadataRoute.Sitemap = ixps
@@ -162,7 +167,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .slice(0, INDEXABLE_CAPS.ixps)
     .map((i) => ({
       url: `${SITE}/ixps/${i.slug}`,
-      lastModified: LASTMOD_FLOOR,
       changeFrequency: "monthly",
       priority: 0.65,
     }));
@@ -171,7 +175,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES)
     .map((n) => ({
       url: `${SITE}/networks/${n.asn}`,
-      lastModified: LASTMOD_FLOOR,
       changeFrequency: "monthly",
       priority: 0.6,
     }));
@@ -181,6 +184,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...facilityEntries,
     ...operatorEntries,
     ...countryEntries,
+    ...usStateEntries,
+    ...usCityEntries,
+    ...worldCityEntries,
     ...metroEntries,
     ...ixpEntries,
     ...networkEntries,

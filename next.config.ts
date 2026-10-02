@@ -99,6 +99,32 @@ const FACILITY_SLUG_REDIRECTS: Record<string, string> = (() => {
 
 const GEOJSON_CACHE = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800";
 
+// Next.js ISR sends `Cache-Control: public, max-age=0, must-revalidate` for
+// browsers. The Vercel PoP is ephemeral and treats that as "ask origin every
+// time", so CDN requests ≈ billed ISR reads. Pin catalog HTML on the PoP for
+// the same 30d as `revalidate`. Do not set this on `/api/v1/*` or `/api/mcp`
+// (`private` rate-limit headers) or auth pages.
+const CATALOG_CDN = "public, s-maxage=2592000, stale-while-revalidate=604800";
+const SITEMAP_CDN = "public, s-maxage=86400, stale-while-revalidate=604800";
+const CDN_HEADER = { key: "Vercel-CDN-Cache-Control", value: CATALOG_CDN };
+
+const CATALOG_CDN_SOURCES = [
+  "/",
+  "/about",
+  "/methodology",
+  "/privacy",
+  "/api",
+  "/facility/:path*",
+  "/operators/:path*",
+  "/countries/:path*",
+  "/metros/:path*",
+  "/ixps/:path*",
+  "/networks/:path*",
+  "/density/:path*",
+  "/insights/:path*",
+  "/launch/:path*",
+] as const;
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -109,6 +135,14 @@ const nextConfig: NextConfig = {
       {
         source: "/:asset(facilities.geojson|cloud-regions.geojson)",
         headers: [{ key: "Cache-Control", value: GEOJSON_CACHE }],
+      },
+      ...CATALOG_CDN_SOURCES.map((source) => ({
+        source,
+        headers: [CDN_HEADER],
+      })),
+      {
+        source: "/sitemap.xml",
+        headers: [{ key: "Vercel-CDN-Cache-Control", value: SITEMAP_CDN }],
       },
     ];
   },

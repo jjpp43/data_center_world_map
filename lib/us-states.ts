@@ -52,8 +52,20 @@ export const US_STATES: ReadonlyArray<{ code: string; name: string }> = [
   { code: "WY", name: "Wyoming" },
 ];
 
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 const BY_CODE = new Map(US_STATES.map((s) => [s.code, s.name]));
 const BY_NAME = new Map(US_STATES.map((s) => [s.name.toLowerCase(), s.code]));
+const BY_SLUG = new Map(
+  US_STATES.map((s) => [slugify(s.name), { code: s.code, name: s.name, slug: slugify(s.name) }]),
+);
 
 const DC_ALIASES = new Set([
   "dc",
@@ -69,6 +81,56 @@ export function isUsOnly(countries: string[]): boolean {
 
 export function usStateName(code: string): string {
   return BY_CODE.get(code.toUpperCase()) ?? code;
+}
+
+/** Canonical URL slug from a USPS code (`OH` → `ohio`). */
+export function usStateSlug(code: string): string {
+  return slugify(usStateName(code));
+}
+
+export function usCitySlug(city: string): string {
+  return slugify(city);
+}
+
+export type UsStateRef = {
+  code: string;
+  name: string;
+  slug: string;
+  isCanonical: boolean;
+};
+
+/** Resolve `/countries/united-states/[state]` — name slug (canonical) or USPS alias. */
+export function findUsStateByParam(param: string): UsStateRef | null {
+  if (!param || !/^[a-zA-Z0-9-]+$/.test(param)) return null;
+  const lower = param.toLowerCase();
+  const named = BY_SLUG.get(lower);
+  if (named) return { ...named, isCanonical: true };
+
+  const code = normalizeUsState(param.replace(/-/g, " "));
+  if (!code) return null;
+  const name = usStateName(code);
+  const slug = slugify(name);
+  return { code, name, slug, isCanonical: slug === lower };
+}
+
+export function usStateHref(code: string): string {
+  return `/countries/united-states/${usStateSlug(code)}`;
+}
+
+export function usCityHref(stateCode: string, citySlug: string): string {
+  return `${usStateHref(stateCode)}/${citySlug}`;
+}
+
+export function usStateMapHref(code: string): string {
+  return `/?country=US&state=${code.toUpperCase()}`;
+}
+
+/** Nested `/countries/[code]/[state]` is US-only. `us` 308s to `united-states`. */
+export function isUsCountryParam(code: string): { isCanonical: boolean } | null {
+  const lower = code.toLowerCase();
+  if (lower === "united-states") return { isCanonical: true };
+  if (lower === "us") return { isCanonical: false };
+  return null;
 }
 
 export function normalizeUsState(raw: string | null | undefined): string | null {

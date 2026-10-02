@@ -56,9 +56,9 @@ Full-bleed map (desktop). Below `md`: `<MobileHome>` search-first list (no inter
 
 **SEO — structured data + internal links**:
 - `WebSite`/`Organization`/`Dataset` JSON-LD in `app/layout.tsx`; `Place` + `FAQPage` on facility pages; `CollectionPage` on operator/country/metro.
-- `BreadcrumbList` JSON-LD on every per-slug page (facility/operator/country/metro). Absolute `item` URLs.
+- `BreadcrumbList` JSON-LD on every per-slug page (facility/operator/country/metro/US state/city/world city). Absolute `item` URLs.
 - Facility `Place` JSON-LD `@id`/`url` are **absolute** (`${SITE}/...`) — `metadataBase` does NOT apply to hand-injected JSON-LD, only to `alternates`/`openGraph`.
-- Facility pages link operator (`/operators/${operatorSlug}`) + country (`/countries/${countrySlug}`) inline — derived from the loaded payload, no extra query/ISR write. Keeps ~5.6k head pages feeding PageRank into hubs.
+- Facility pages link operator (`/operators/${operatorSlug}`) + country (`/countries/${countrySlug}`) inline — derived from the loaded payload, no extra query/ISR write. US facilities also link state (`/countries/united-states/${stateSlug}`) and city (when the city meets `CITY_MIN_FACILITIES`) via untagged `loadUsCityPageKeys`. Non-US facilities link city hubs (`/countries/${countrySlug}/${citySlug}`) via untagged `loadWorldCityPageKeys`. Keeps ~5.6k head pages feeding PageRank into hubs.
 - All `<script>` JSON-LD goes through `jsonForHtml()` (see Security).
 
 **Chrome**:
@@ -77,7 +77,7 @@ Full-bleed map (desktop). Below `md`: `<MobileHome>` search-first list (no inter
 
 ## URL state
 
-`lib/url-state.ts`: `?op=Equinix&country=US,GB&state=VA,TX&q=<slug>&theme=light&map=2d&clouds=0&focus=aws`. Default `country=US`, dark, globe, clouds on. State param only applies when country is US-only (`?state=VA` implies US). **Do not** add per-pan bbox queries.
+`lib/url-state.ts`: `?op=Equinix&country=US,GB&state=VA,TX&q=<slug>&theme=light&map=2d&clouds=0&focus=aws`. Default `country=US`, dark, globe, clouds on. State param only applies when country is US-only (`?state=VA` implies US). **Do not** add per-pan bbox queries. Indexable US hubs live at `/countries/united-states/{ohio}` and `/countries/united-states/{ohio}/{columbus}`; non-US city hubs at `/countries/{germany}/{frankfurt}` (city floor `CITY_MIN_FACILITIES` = 5). Map `?state=` stays a filter, not the canonical document.
 
 ## Public API (REST v1 + MCP)
 
@@ -107,8 +107,10 @@ app/
 ├── page.tsx                          map (client) + sr-only SEO H1/p + <MobileHome>
 ├── layout.tsx                        Geist + WebSite/Organization/Dataset JSON-LD + inline theme + SessionProvider + PostHog. <html suppressHydrationWarning>
 ├── icon.png                          512×512 favicon
-├── facility/[slug]/page.tsx          SSR detail (ISR 30d, per-slug unstable_cache); Place + FAQ + Breadcrumb JSON-LD; links operator+country
+├── facility/[slug]/page.tsx          SSR detail (ISR 30d, per-slug unstable_cache); Place + FAQ + Breadcrumb JSON-LD; links operator+country+state/city hubs
 ├── operators|countries|metros|ixps|networks|density|insights/...  ISR 30d per-slug; Breadcrumb JSON-LD on [slug]
+├── countries/[code]/[state]/page.tsx  US state OR non-US city hub (untagged 30d); USPS 308 to name slug
+├── countries/[code]/[state]/[city]/page.tsx  US city hubs (untagged 30d; floor CITY_MIN_FACILITIES)
 ├── about, methodology, api/...       editorial (ISR)
 ├── api/v1/{facilities,operators,countries,cloud-regions}/route.ts
 ├── api/[transport]/route.ts          MCP server (5 tools)
@@ -128,8 +130,8 @@ components/  Map, TopBar, SearchBox, FilterCard, MapToggle, Legend, FacilityPane
 lib/  supabase (server/admin/browser), supabase-server (cookie-aware), api-keys (TIER_LIMITS),
       polar, api (jsonResponse + internalError + CSV-safe csvResponse), api-data (shared loaders),
       cache-tags (catalog-indexes vs api-data vs untagged per-slug), json-ld (jsonForHtml),
-      indexable (sitemap caps + isFacilityIndexable/NOINDEX_ROBOTS),
-      types, url-state, countries, us-states, operators, *-data, density, insights-data
+      indexable (sitemap caps + isFacilityIndexable/NOINDEX_ROBOTS + CITY_MIN_FACILITIES),
+      types, url-state, countries, us-states, operators, *-data, us-locations-data, city-locations-data, density, insights-data
 scripts/  ingest, ingest-{ironmountain,google,meta,operator-buildings}, canonicalize-orphans,
           build-geojson (prebuild), _trigger-rebuild, audit-quality, audit-orphans, check-security.mjs
 .github/workflows/backup.yml          weekly pg_dump → GH artifact (Sun 04:00 UTC)
@@ -141,7 +143,7 @@ supabase/migrations/0001–0020.sql · scrapers/ (Node 22 subproject)
 Supabase egress is the dominant cost. Three layers:
 
 1. **Map data → static-baked.** `scripts/build-geojson.ts` (prebuild) writes `public/{facilities,cloud-regions}.geojson` (~1.9 MB + 41 KB); runtime never touches Supabase for map data. Headers `public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800`.
-2. **SSR pages → ISR.** Catalog pages (`/facility`, `/operators`, `/countries`, `/metros`, `/ixps`, `/networks`, `/density`, `/insights`, `/about`, indexes) `revalidate = 2_592_000` (30d). Sitemap 86400. **Invariant**: no `getTheme()`/`cookies()` in server pages — silently disables `revalidate`. Also no `new Date()` / unbound `toLocaleString()` in rendered output (module-load `YEAR` const; numbers via `toLocaleString("en-US")`; dates `en-US` + `timeZone: "UTC"`) — non-deterministic bytes force an ISR write every cycle. **Effective revalidate = min(segment `revalidate`, inner `unstable_cache` TTL)** — a 30d page reading a 24h loader regenerates every 24h. Verify with the Revalidate column in `next build` output, not the source constant.
+2. **SSR pages → ISR.** Catalog pages (`/facility`, `/operators`, `/countries`, `/metros`, `/ixps`, `/networks`, `/density`, `/insights`, `/about`, indexes) `revalidate = 2_592_000` (30d). Sitemap 86400. Catalog HTML also sends `Vercel-CDN-Cache-Control: s-maxage=2592000` so ephemeral PoPs keep a copy for 30d — without it Next's `max-age=0, must-revalidate` makes every crawler hit a billed ISR read. **Never** set that header on `/api/v1/*` or `/api/mcp` (`private` rate-limit headers). **Invariant**: no `getTheme()`/`cookies()` in server pages — silently disables `revalidate`. Also no `new Date()` / unbound `toLocaleString()` in rendered output (module-load `YEAR` const; numbers via `toLocaleString("en-US")`; dates `en-US` + `timeZone: "UTC"`) — non-deterministic bytes force an ISR write every cycle. **Effective revalidate = min(segment `revalidate`, inner `unstable_cache` TTL)** — a 30d page reading a 24h loader regenerates every 24h. Verify with the Revalidate column in `next build` output, not the source constant.
 3. **Data fetches → matviews + `unstable_cache`.** Aggregations read `country_summary`, `operator_summary`, `facility_density` (single-row, not paginated scans). Every loader in `lib/*-data.ts` + `operators.ts` + `density.ts` wrapped `unstable_cache(fn, key, { revalidate: 2_592_000 })` (30d — must match the segment `revalidate` above or it clamps it). **Per-slug pages are untagged** (30d time-based only). Index/aggregate loaders use tag `catalog-indexes` via a **separate cache key** (`loadXIndex` / `loadMetroSummaries`) — never the same `unstable_cache` entry a detail page calls during render (including `generateMetadata` / `isIndexable*`). `lib/api-data.ts` stays at 86400 with tag `api-data`: REST/MCP aren't ISR-billed. Ingest calls `POST /api/cron/revalidate` (`revalidateTag("catalog-indexes"|"api-data", "max")` plus `revalidatePath` for uncached `/about` and `/insights/peering-hub-metros`).
 
 Matviews refreshed by `refresh_summary_views()` RPC (concurrent); ingest calls it on `--apply`. **ISR cache is per-deployment** — a new deploy starts empty and the next crawl of every slug is a write. Geojson rebakes only on a Next.js build: git deploy, or ingest with `--rebuild` (deploy hook). Default ingest path is on-demand revalidate, not a deploy. No scheduled cron. Unset `VERCEL_DEPLOY_HOOK_URL` → `--rebuild` no-op. Unset `CRON_SECRET` → revalidate no-op.
@@ -150,7 +152,7 @@ Matviews refreshed by `refresh_summary_views()` RPC (concurrent); ingest calls i
 
 Breaking any of these increases writes:
 
-- **No shared tag on per-slug loaders.** `catalog-indexes` / `api-data` / any new tag must not be on a cache entry that `/facility/[slug]`, `/operators/[slug]`, `/countries/[code]`, `/metros/[slug]`, `/ixps/[slug]`, or `/networks/[asn]` read during render. If an index and a detail page need the same query, split keys (`loadOperatorIndex` vs `loadOperatorSummaries`). Tags live in `lib/cache-tags.ts`; cron tags are only those two.
+- **No shared tag on per-slug loaders.** `catalog-indexes` / `api-data` / any new tag must not be on a cache entry that `/facility/[slug]`, `/operators/[slug]`, `/countries/[code]`, `/countries/[code]/[state]` (US state or non-US city), `/countries/united-states/[state]/[city]`, `/metros/[slug]`, `/ixps/[slug]`, or `/networks/[asn]` read during render. If an index and a detail page need the same query, split keys (`loadUsLocationIndex` vs `loadUsFacilities`; `loadWorldCityIndex` vs `loadFacilitiesForCountry`). Tags live in `lib/cache-tags.ts`; cron tags are only those two.
 - **Do not shorten catalog `revalidate`.** Pages stay `2_592_000` (30d); sitemap `86400`; `api-data` `86400`. Inner `unstable_cache` TTL must be ≥ the segment or it clamps the page (a 30d page + 24h loader = 24h regen). Confirm in the `next build` Revalidate column, not the source constant.
 - **Ingest ≠ deploy, ingest ≠ catalog purge.** Cron may only `revalidateTag` `catalog-indexes` + `api-data` and `revalidatePath` the listed uncached index URLs. Never `revalidateTag` a tag per-slug pages carry; never `revalidatePath("/facility/[slug]")` (or any other dynamic `[slug]` pattern); never `revalidatePath("/", "layout")`. `--rebuild` / the deploy hook stays opt-in (geojson only).
 - **Do not prerender the full catalog** to "save" writes — that only moves them to deploy time. `generateStaticParams` stays a head slice (`PRERENDER_TOP_N = 500` facilities; operator/ixp/network caps in `lib/indexable.ts`).
@@ -159,7 +161,7 @@ Breaking any of these increases writes:
 - **Do not `noindex` facilities** to cut ISR (that tanked GSC). Operator/ixp/network **index-link + sitemap caps** stay — they limit crawl discovery of thin pages without deindexing facilities. Don't add uncapped sitemap dumps of 1k+ thin URLs.
 - Before merging changes to `revalidate`, cache tags, `revalidateTag`/`revalidatePath`, `generateStaticParams`, sitemap URL volume, or ingest `--rebuild`: ingest blast stays index-only, and `next build` still shows 30d (1d sitemap), not 1h/24h from a nested loader.
 
-**Indexable head vs long-tail** (`lib/indexable.ts`, single source of truth for caps + min-facility thresholds: facilities 500, operators 200, ixps 100, networks 100; `sitemap.ts` imports these): **Facilities are fully indexable** — every real facility page (coords present, `isFacilityIndexable(lat,lng)`) emits `index:true`; the `facilities:500` cap is a *sitemap crawl-budget hint only*, not an index gate. (Reverses commit f9e3832 which noindex'd ~91% of facilities and tanked GSC impressions; `noindex,follow` never saved ISR writes anyway.) `/operators`, `/ixps`, `/networks` still `noindex` genuinely thin pages outside caps via `isIndexable*()` in `generateMetadata`. Countries + metros uncapped. Dashboard + login `noindex,nofollow` (auth-gated).
+**Indexable head vs long-tail** (`lib/indexable.ts`, single source of truth for caps + min-facility thresholds: facilities 500, operators 200, ixps 100, networks 100, city hubs `CITY_MIN_FACILITIES` 5; `sitemap.ts` imports these): **Facilities are fully indexable** — every real facility page (coords present, `isFacilityIndexable(lat,lng)`) emits `index:true`; the `facilities:500` cap is a *sitemap crawl-budget hint only*, not an index gate. (Reverses commit f9e3832 which noindex'd ~91% of facilities and tanked GSC impressions; `noindex,follow` never saved ISR writes anyway.) `/operators`, `/ixps`, `/networks` still `noindex` genuinely thin pages outside caps via `isIndexable*()` in `generateMetadata`. Countries + metros + US states uncapped; city pages below 5 facilities `notFound()`. Dashboard + login `noindex,nofollow` (auth-gated).
 
 **Stranded-slug redirects** (`data/facility-slug-redirects.json` → `next.config.ts redirects()`): facility slugs historically baked in the volatile `city` token, so a re-scrape that changed/dropped a city could re-slug a page and strand its already-indexed URL as a 404 (a GSC "Not found (404)" bucket). The JSON maps dead slug → live slug; `next.config.ts` emits them as permanent 308s at the **routing layer** — no function/Supabase/ISR cost, same mechanism as `OPERATOR_ALIASES`. Populate from a GSC 404 export via `npm run reconcile:404 -- --csv <export> [--apply]` (`scripts/reconcile-404s.ts`: matches stranded→live by longest dash-segment prefix, refuses ambiguous guesses, leaves genuinely-deleted facilities as correct 404s). Ingest already preserves an existing facility's slug on match (never re-slugs in place), so this is a catch-up layer for historical strandings + a safety net.
 

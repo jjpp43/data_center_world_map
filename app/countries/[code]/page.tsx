@@ -1,17 +1,16 @@
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
-import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
-import { supabaseServer } from "@/lib/supabase";
 import { countryFlag, countryName, countrySlug } from "@/lib/countries";
 import {
-  findCountryByCode,
-  findCountryBySlug,
   loadCountrySummaries,
-  type CountrySummary,
+  resolveCountryParam,
 } from "@/lib/countries-data";
 import { operatorSlug } from "@/lib/operators";
 import { jsonForHtml } from "@/lib/json-ld";
+import { CITY_MIN_FACILITIES } from "@/lib/indexable";
+import { loadFacilitiesForCountry, type CountryFacilityRow, worldCityHref } from "@/lib/city-locations-data";
+import { normalizeUsState, usCitySlug, usStateHref, usStateName } from "@/lib/us-states";
 
 // 30d, matching /facility. Aggregate pages only change on ingest (which can
 // --rebuild), so a 7d cycle was spending 4x the ISR writes for no freshness.
@@ -27,40 +26,16 @@ type Props = {
   params: Promise<{ code: string }>;
 };
 
-type Facility = {
-  slug: string;
-  name: string;
-  operator: string | null;
-  code: string | null;
-  city: string | null;
-  region: string | null;
-  country: string;
-  status: string;
-  power_mw: number | null;
-  space_sqft: number | null;
-};
+type Facility = CountryFacilityRow;
 
 export async function generateStaticParams() {
   const all = await loadCountrySummaries();
   return all.map((c) => ({ code: countrySlug(c.code) }));
 }
 
-// Resolve param as name-slug first (canonical), fall back to ISO code (legacy
-// URLs Google has indexed). Page handler 308-redirects the ISO-code form to
-// the canonical slug.
-async function resolveCountry(
-  param: string,
-): Promise<{ country: CountrySummary; canonicalSlug: string; isCanonical: boolean } | null> {
-  const bySlug = await findCountryBySlug(param);
-  if (bySlug) return { country: bySlug, canonicalSlug: countrySlug(bySlug.code), isCanonical: true };
-  const byCode = await findCountryByCode(param);
-  if (byCode) return { country: byCode, canonicalSlug: countrySlug(byCode.code), isCanonical: false };
-  return null;
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { code } = await params;
-  const resolved = await resolveCountry(code);
+  const resolved = await resolveCountryParam(code);
   if (!resolved) return { title: "Country not found" };
   const { country: c, canonicalSlug } = resolved;
   const name = countryName(c.code);
@@ -80,35 +55,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-const loadFacilitiesForCountry = unstable_cache(
-  async (countryCode: string): Promise<Facility[]> => {
-    const sb = supabaseServer();
-    const facilities: Facility[] = [];
-    for (let from = 0; from < 100_000; from += 1000) {
-      const { data, error } = await sb
-        .from("data_centers")
-        .select("slug, name, operator, code, city, region, country, status, power_mw, space_sqft")
-        .eq("country", countryCode)
-        .neq("status", "decommissioned")
-        .order("city")
-        .order("operator")
-        .order("name")
-        .range(from, from + 999)
-        .returns<Facility[]>();
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-      facilities.push(...data);
-      if (data.length < 1000) break;
-    }
-    return facilities;
-  },
-  ["country-facilities-v1"],
-  { revalidate: 2_592_000 },
-);
-
 export default async function CountryPage({ params }: Props) {
   const { code } = await params;
-  const resolved = await resolveCountry(code);
+  const resolved = await resolveCountryParam(code);
   if (!resolved) notFound();
   if (!resolved.isCanonical) permanentRedirect(`/countries/${resolved.canonicalSlug}`);
   const c = resolved.country;
@@ -191,43 +140,55 @@ export default async function CountryPage({ params }: Props) {
           <StatBox label="Total power" value={totalMw > 0 ? `${Math.round(totalMw).toLocaleString("en-US")} MW` : "—"} />
         </div>
 
-        {cities.map(([city, list]) => (
-          <section key={city} className="mt-10">
-            <h2 className="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              <span>{city}</span>
-              <span className="text-xs text-zinc-500">({list.length})</span>
-            </h2>
-            <ul className="divide-y divide-zinc-200/70 rounded-2xl border border-zinc-200/70 bg-white/60 dark:divide-zinc-800/60 dark:border-zinc-800/60 dark:bg-zinc-900/40">
-              {list.map((f) => (
-                <li key={f.slug} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
-                  <div className="flex min-w-0 items-center gap-3">
-                    {f.code && (
-                      <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] uppercase text-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-300">
-                        {f.code}
-                      </span>
-                    )}
-                    <Link href={`/facility/${f.slug}`} className="truncate text-zinc-900 hover:underline dark:text-zinc-100">
-                      {f.name}
-                    </Link>
-                    {f.operator && (
-                      <Link
-                        href={`/operators/${operatorSlug(f.operator)}`}
-                        className="text-xs text-zinc-500 hover:underline"
-                      >
-                        {f.operator}
+        {upper === "US" && <UsStateGrid facilities={facilities} />}
+
+        {cities.map(([city, list]) => {
+          const slug = city === "(Unknown city)" ? "" : usCitySlug(city);
+          const cityLinked = upper !== "US" && slug.length > 0 && list.length >= CITY_MIN_FACILITIES;
+          return (
+            <section key={city} className="mt-10">
+              <h2 className="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                {cityLinked ? (
+                  <Link href={worldCityHref(upper, slug)} className="hover:underline">
+                    {city}
+                  </Link>
+                ) : (
+                  <span>{city}</span>
+                )}
+                <span className="text-xs text-zinc-500">({list.length})</span>
+              </h2>
+              <ul className="divide-y divide-zinc-200/70 rounded-2xl border border-zinc-200/70 bg-white/60 dark:divide-zinc-800/60 dark:border-zinc-800/60 dark:bg-zinc-900/40">
+                {list.map((f) => (
+                  <li key={f.slug} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
+                    <div className="flex min-w-0 items-center gap-3">
+                      {f.code && (
+                        <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] uppercase text-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-300">
+                          {f.code}
+                        </span>
+                      )}
+                      <Link href={`/facility/${f.slug}`} className="truncate text-zinc-900 hover:underline dark:text-zinc-100">
+                        {f.name}
                       </Link>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3 text-xs tabular-nums text-zinc-500">
-                    {f.power_mw != null && <span>{f.power_mw} MW</span>}
-                    {f.space_sqft != null && <span>{f.space_sqft.toLocaleString("en-US")} sqft</span>}
-                    {f.status !== "operational" && <span>{f.status}</span>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+                      {f.operator && (
+                        <Link
+                          href={`/operators/${operatorSlug(f.operator)}`}
+                          className="text-xs text-zinc-500 hover:underline"
+                        >
+                          {f.operator}
+                        </Link>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3 text-xs tabular-nums text-zinc-500">
+                      {f.power_mw != null && <span>{f.power_mw} MW</span>}
+                      {f.space_sqft != null && <span>{f.space_sqft.toLocaleString("en-US")} sqft</span>}
+                      {f.status !== "operational" && <span>{f.status}</span>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
 
         <div className="mt-12 text-xs text-zinc-500">
           <Link href="/countries" className="hover:underline">
@@ -236,6 +197,40 @@ export default async function CountryPage({ params }: Props) {
         </div>
       </main>
     </div>
+  );
+}
+
+function UsStateGrid({ facilities }: { facilities: Facility[] }) {
+  const counts = new Map<string, number>();
+  for (const f of facilities) {
+    const code = normalizeUsState(f.region);
+    if (!code) continue;
+    counts.set(code, (counts.get(code) ?? 0) + 1);
+  }
+  const states = [...counts.entries()]
+    .map(([code, n]) => ({ code, name: usStateName(code), n }))
+    .sort((a, b) => b.n - a.n);
+  if (states.length === 0) return null;
+
+  return (
+    <section className="mt-10">
+      <h2 className="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">By state</h2>
+      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {states.map((s) => (
+          <li key={s.code}>
+            <Link
+              href={usStateHref(s.code)}
+              className="flex items-center justify-between rounded-2xl border border-zinc-200/70 bg-white/60 px-4 py-3 text-sm hover:bg-white dark:border-zinc-800/60 dark:bg-zinc-900/40 dark:hover:bg-zinc-900"
+            >
+              <span className="text-zinc-900 dark:text-zinc-100">{s.name}</span>
+              <span className="font-mono text-xs tabular-nums text-zinc-500">
+                {s.n.toLocaleString("en-US")}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

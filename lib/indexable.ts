@@ -20,6 +20,8 @@ export const INDEXABLE_CAPS = {
 export const OPERATOR_MIN_FACILITIES = 2;
 export const IXP_MIN_FACILITIES = 1;
 export const NETWORK_MIN_FACILITIES = 2;
+/** City landing pages below this count stay on the country (or US state) page only. */
+export const CITY_MIN_FACILITIES = 5;
 
 // Process-local memoization. `generateMetadata` runs once per per-slug page,
 // so a naive call into the per-loader unstable_cache produces N hits where

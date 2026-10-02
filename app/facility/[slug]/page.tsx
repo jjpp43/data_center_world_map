@@ -9,6 +9,9 @@ import { InfoToggle } from "@/components/InfoToggle";
 import { jsonForHtml } from "@/lib/json-ld";
 import { loadTopFacilitySlugs } from "@/lib/facilities-data";
 import { isFacilityIndexable, NOINDEX_ROBOTS } from "@/lib/indexable";
+import { normalizeUsState, usCityHref, usCitySlug, usStateHref, usStateName } from "@/lib/us-states";
+import { loadUsCityPageKeys } from "@/lib/us-locations-data";
+import { loadWorldCityPageKeys, worldCityHref } from "@/lib/city-locations-data";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://datacenters.world";
 
@@ -314,7 +317,8 @@ export default async function FacilityPage({ params }: Props) {
 
   const jsonLd = buildPlaceJsonLd(dc, networks.length, ixes.length);
   const faqJsonLd = buildFaqJsonLd(dc, networks.length, ixes, sources ?? []);
-  const breadcrumbJsonLd = buildBreadcrumbJsonLd(dc);
+  const usPlace = await usPlaceLinks(dc);
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(dc, usPlace);
 
   return (
     <div
@@ -373,15 +377,7 @@ export default async function FacilityPage({ params }: Props) {
           <div className="flex items-center gap-2 text-sm text-zinc-400">
             <span className="text-base leading-none">{countryFlag(dc.country)}</span>
             <span>
-              {[dc.city, dc.region].filter(Boolean).length > 0 && (
-                <>{[dc.city, dc.region].filter(Boolean).join(", ")}, </>
-              )}
-              <Link
-                href={`/countries/${countrySlug(dc.country)}`}
-                className="hover:text-zinc-600 hover:underline dark:hover:text-zinc-300"
-              >
-                {countryName(dc.country)}
-              </Link>
+              <FacilityPlaceLine dc={dc} usPlace={usPlace} />
             </span>
           </div>
         </div>
@@ -686,13 +682,110 @@ function SecurityBlockView({ security }: { security: SecurityBlock }) {
   );
 }
 
-function buildBreadcrumbJsonLd(dc: DataCenter) {
+type UsPlaceLinks = {
+  stateHref: string | null;
+  stateName: string | null;
+  cityHref: string | null;
+};
+
+async function usPlaceLinks(dc: DataCenter): Promise<UsPlaceLinks> {
+  if (dc.country === "US") {
+    const code = normalizeUsState(dc.region);
+    if (!code) return { stateHref: null, stateName: null, cityHref: null };
+    let cityHref: string | null = null;
+    if (dc.city) {
+      const slug = usCitySlug(dc.city);
+      if (slug) {
+        const keys = await loadUsCityPageKeys();
+        if (keys.includes(`${code}:${slug}`)) cityHref = usCityHref(code, slug);
+      }
+    }
+    return { stateHref: usStateHref(code), stateName: usStateName(code), cityHref };
+  }
+
+  if (dc.city) {
+    const slug = usCitySlug(dc.city);
+    if (slug) {
+      const keys = await loadWorldCityPageKeys();
+      if (keys.includes(`${dc.country}:${slug}`)) {
+        return { stateHref: null, stateName: null, cityHref: worldCityHref(dc.country, slug) };
+      }
+    }
+  }
+  return { stateHref: null, stateName: null, cityHref: null };
+}
+
+function FacilityPlaceLine({ dc, usPlace }: { dc: DataCenter; usPlace: UsPlaceLinks }) {
+  const country = (
+    <Link
+      href={`/countries/${countrySlug(dc.country)}`}
+      className="hover:text-zinc-600 hover:underline dark:hover:text-zinc-300"
+    >
+      {countryName(dc.country)}
+    </Link>
+  );
+
+  if (!usPlace.stateHref) {
+    if (usPlace.cityHref && dc.city) {
+      return (
+        <>
+          <Link href={usPlace.cityHref} className="hover:text-zinc-600 hover:underline dark:hover:text-zinc-300">
+            {dc.city}
+          </Link>
+          {dc.region ? `, ${dc.region}` : null}
+          {", "}
+          {country}
+        </>
+      );
+    }
+    const locality = [dc.city, dc.region].filter(Boolean).join(", ");
+    return (
+      <>
+        {locality ? `${locality}, ` : null}
+        {country}
+      </>
+    );
+  }
+
+  const city = dc.city
+    ? usPlace.cityHref
+      ? (
+          <Link href={usPlace.cityHref} className="hover:text-zinc-600 hover:underline dark:hover:text-zinc-300">
+            {dc.city}
+          </Link>
+        )
+      : dc.city
+    : null;
+  const state = (
+    <Link href={usPlace.stateHref} className="hover:text-zinc-600 hover:underline dark:hover:text-zinc-300">
+      {usPlace.stateName}
+    </Link>
+  );
+
+  return (
+    <>
+      {city}
+      {city ? ", " : null}
+      {state}
+      {", "}
+      {country}
+    </>
+  );
+}
+
+function buildBreadcrumbJsonLd(dc: DataCenter, usPlace: UsPlaceLinks) {
   const items: Array<{ name: string; item: string }> = [
     { name: "Home", item: `${SITE}/` },
     { name: "Countries", item: `${SITE}/countries` },
     { name: countryName(dc.country), item: `${SITE}/countries/${countrySlug(dc.country)}` },
-    { name: dc.name, item: `${SITE}/facility/${dc.slug}` },
   ];
+  if (usPlace.stateHref && usPlace.stateName) {
+    items.push({ name: usPlace.stateName, item: `${SITE}${usPlace.stateHref}` });
+  }
+  if (usPlace.cityHref && dc.city) {
+    items.push({ name: dc.city, item: `${SITE}${usPlace.cityHref}` });
+  }
+  items.push({ name: dc.name, item: `${SITE}/facility/${dc.slug}` });
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",

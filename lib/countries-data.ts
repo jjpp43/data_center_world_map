@@ -59,3 +59,13 @@ export async function findCountryBySlug(slug: string): Promise<CountrySummary | 
   const all = await loadCountrySummaries();
   return all.find((c) => countrySlug(c.code) === slug) ?? null;
 }
+
+export async function resolveCountryParam(
+  param: string,
+): Promise<{ country: CountrySummary; canonicalSlug: string; isCanonical: boolean } | null> {
+  const bySlug = await findCountryBySlug(param);
+  if (bySlug) return { country: bySlug, canonicalSlug: countrySlug(bySlug.code), isCanonical: true };
+  const byCode = await findCountryByCode(param);
+  if (byCode) return { country: byCode, canonicalSlug: countrySlug(byCode.code), isCanonical: false };
+  return null;
+}

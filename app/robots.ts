@@ -29,11 +29,24 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Perplexity-User", ...baseRule },
       { userAgent: "Google-Extended", ...baseRule },
       { userAgent: "Applebot-Extended", ...baseRule },
-      // Blocked, not welcomed. Both walk thousands of unique URLs/day; every
-      // first fetch of a per-slug page is a full ISR render + write unit, and
-      // neither feeds a search or answer surface we can be cited in.
+      // Blocked, not welcomed. These walk the full sitemap (thousands of unique
+      // slugs/day). Each PoP miss is a billed ISR read; none of them are a
+      // search or answer surface we can be cited in. Google/Bing stay on `*`.
       { userAgent: "Bytespider", disallow: ["/"] },
       { userAgent: "Meta-ExternalAgent", disallow: ["/"] },
+      { userAgent: "Amazonbot", disallow: ["/"] },
+      { userAgent: "CCBot", disallow: ["/"] },
+      { userAgent: "AhrefsBot", disallow: ["/"] },
+      { userAgent: "AhrefsSiteAudit", disallow: ["/"] },
+      { userAgent: "SemrushBot", disallow: ["/"] },
+      { userAgent: "DotBot", disallow: ["/"] },
+      { userAgent: "MJ12bot", disallow: ["/"] },
+      { userAgent: "BLEXBot", disallow: ["/"] },
+      { userAgent: "DataForSeoBot", disallow: ["/"] },
+      { userAgent: "PetalBot", disallow: ["/"] },
+      { userAgent: "SeekportBot", disallow: ["/"] },
+      { userAgent: "ImagesiftBot", disallow: ["/"] },
+      { userAgent: "Scrapy", disallow: ["/"] },
     ],
     sitemap: `${SITE}/sitemap.xml`,
     host: SITE,
