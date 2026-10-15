@@ -17,21 +17,23 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       { userAgent: "*", ...baseRule },
-      // Explicitly welcome major answer-engine and AI training crawlers. By
-      // default `*` covers them, but naming them signals intent and unlocks
-      // crawlers (Google-Extended, ClaudeBot) that respect explicit allows.
-      { userAgent: "GPTBot", ...baseRule },
+      // Keep search/index and user-triggered answer crawlers. Training-only
+      // crawlers are denied below because they create cost without citations.
       { userAgent: "OAI-SearchBot", ...baseRule },
       { userAgent: "ChatGPT-User", ...baseRule },
-      { userAgent: "ClaudeBot", ...baseRule },
+      { userAgent: "Claude-SearchBot", ...baseRule },
+      { userAgent: "Claude-User", ...baseRule },
       { userAgent: "Claude-Web", ...baseRule },
       { userAgent: "PerplexityBot", ...baseRule },
       { userAgent: "Perplexity-User", ...baseRule },
-      { userAgent: "Google-Extended", ...baseRule },
-      { userAgent: "Applebot-Extended", ...baseRule },
       // Blocked, not welcomed. These walk the full sitemap (thousands of unique
       // slugs/day). Each PoP miss is a billed ISR read; none of them are a
       // search or answer surface we can be cited in. Google/Bing stay on `*`.
+      { userAgent: "GPTBot", disallow: ["/"] },
+      { userAgent: "ClaudeBot", disallow: ["/"] },
+      { userAgent: "anthropic-ai", disallow: ["/"] },
+      { userAgent: "Google-Extended", disallow: ["/"] },
+      { userAgent: "Applebot-Extended", disallow: ["/"] },
       { userAgent: "Bytespider", disallow: ["/"] },
       { userAgent: "Meta-ExternalAgent", disallow: ["/"] },
       { userAgent: "Amazonbot", disallow: ["/"] },
