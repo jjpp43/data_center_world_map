@@ -34,7 +34,7 @@ export default async function NetworksIndex() {
   const { total, top: ranked } = await loadTopNetworksIndex(TOP_N);
   const top = ranked.filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES);
 
-  const summary = `${total.toLocaleString("en-US")} networks have a tracked presence in at least one data-center facility. The full list is 34,000+ and addressable by ASN — this page shows the top ${TOP_N.toLocaleString("en-US")} by data-center footprint.`;
+  const summary = `${total.toLocaleString("en-US")} networks have a tracked presence in at least one data-center facility. This page lists the top ${TOP_N.toLocaleString("en-US")} by data-center footprint.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -115,7 +115,7 @@ export default async function NetworksIndex() {
         <p className="mt-6 text-xs text-zinc-500">
           Showing top {TOP_N.toLocaleString("en-US")} of {total.toLocaleString("en-US")} networks
           with facility presence. Every PeeringDB ASN with ≥2 facility presences is reachable at{" "}
-          <span className="font-mono">/networks/[asn]</span> directly — the sitemap and API expose
+          <span className="font-mono">/networks/[asn]</span> for the listed head. The API exposes
           the full set.
         </p>
       </main>

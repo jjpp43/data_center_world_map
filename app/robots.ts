@@ -1,5 +1,14 @@
 import type { MetadataRoute } from "next";
 import { canonicalOrigin } from "@/lib/census";
+import {
+  INDEXABLE_CAPS,
+  IXP_MIN_FACILITIES,
+  NETWORK_MIN_FACILITIES,
+} from "@/lib/indexable";
+import { loadIxpIndex } from "@/lib/ixps-data";
+import { loadTopNetworksIndex } from "@/lib/networks-data";
+
+export const revalidate = 86400;
 
 const SITE = canonicalOrigin();
 
@@ -8,17 +17,31 @@ const SITE = canonicalOrigin();
 // off-limits to avoid accidental indexing of internal handlers.
 const PUBLIC_API = ["/api/v1/", "/facilities.geojson", "/cloud-regions.geojson"];
 
-export default function robots(): MetadataRoute.Robots {
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const [networks, ixps] = await Promise.all([
+    loadTopNetworksIndex(INDEXABLE_CAPS.networks),
+    loadIxpIndex(),
+  ]);
+
+  // Longest-match wins. Disallow `/networks/` / `/ixps/` so Google stops
+  // walking the 34k/1k long-tail, then Allow the exact sitemap head so those
+  // URLs stay crawlable. `$` keeps the index URLs from acting as prefixes.
+  const allowedNetworks = networks.top
+    .filter((n) => n.facility_count >= NETWORK_MIN_FACILITIES)
+    .map((n) => `/networks/${n.asn}`);
+  const allowedIxps = ixps
+    .filter((i) => i.facility_count >= IXP_MIN_FACILITIES)
+    .slice(0, INDEXABLE_CAPS.ixps)
+    .map((i) => `/ixps/${i.slug}`);
+
   const baseRule = {
-    allow: ["/", ...PUBLIC_API],
-    disallow: ["/api/"],
+    allow: ["/", "/networks$", "/ixps$", ...PUBLIC_API, ...allowedNetworks, ...allowedIxps],
+    disallow: ["/api/", "/dashboard", "/login", "/networks/", "/ixps/", "/*?*"],
   };
 
   return {
     rules: [
       { userAgent: "*", ...baseRule },
-      // Keep search/index and user-triggered answer crawlers. Training-only
-      // crawlers are denied below because they create cost without citations.
       { userAgent: "OAI-SearchBot", ...baseRule },
       { userAgent: "ChatGPT-User", ...baseRule },
       { userAgent: "Claude-SearchBot", ...baseRule },
@@ -26,9 +49,6 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Claude-Web", ...baseRule },
       { userAgent: "PerplexityBot", ...baseRule },
       { userAgent: "Perplexity-User", ...baseRule },
-      // Blocked, not welcomed. These walk the full sitemap (thousands of unique
-      // slugs/day). Each PoP miss is a billed ISR read; none of them are a
-      // search or answer surface we can be cited in. Google/Bing stay on `*`.
       { userAgent: "GPTBot", disallow: ["/"] },
       { userAgent: "ClaudeBot", disallow: ["/"] },
       { userAgent: "anthropic-ai", disallow: ["/"] },

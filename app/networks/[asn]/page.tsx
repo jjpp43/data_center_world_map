@@ -11,6 +11,12 @@ import { jsonForHtml } from "@/lib/json-ld";
 // --rebuild), so a 7d cycle was spending 4x the ISR writes for no freshness.
 export const revalidate = 2_592_000;
 
+// Only the sitemap head (INDEXABLE_CAPS.networks) is a real page. Everything
+// else 404s at the routing layer — no Supabase, no per-ASN ISR entry. Google
+// had been walking ~34k noindex ASN URLs; each was a CDN MISS + billed ISR
+// read and none of them can rank.
+export const dynamicParams = false;
+
 // Captured once at module load so descriptions render byte-identically
 // across revalidations within a year — keeps ISR write-skip working.
 const YEAR = new Date().getFullYear();

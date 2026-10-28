@@ -144,6 +144,10 @@ const nextConfig: NextConfig = {
         source: "/sitemap.xml",
         headers: [{ key: "Vercel-CDN-Cache-Control", value: SITEMAP_CDN }],
       },
+      {
+        source: "/robots.txt",
+        headers: [{ key: "Vercel-CDN-Cache-Control", value: SITEMAP_CDN }],
+      },
     ];
   },
   async redirects() {

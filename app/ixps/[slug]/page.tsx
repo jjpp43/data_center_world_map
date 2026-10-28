@@ -11,6 +11,10 @@ import { jsonForHtml } from "@/lib/json-ld";
 // --rebuild), so a 7d cycle was spending 4x the ISR writes for no freshness.
 export const revalidate = 2_592_000;
 
+// Match the sitemap cap. Long-tail IXP slugs were noindex and still each cost
+// a CDN MISS + ISR read when Google enumerated them.
+export const dynamicParams = false;
+
 // Captured once at module load so descriptions render byte-identically
 // across revalidations within a year — keeps ISR write-skip working.
 const YEAR = new Date().getFullYear();

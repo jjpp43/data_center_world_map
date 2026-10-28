@@ -3,13 +3,12 @@ import { loadOperatorSummaries } from "./operators";
 import { loadIxpSummaries } from "./ixps-data";
 
 /**
- * Sitemap / crawl-budget caps. Must match `app/sitemap.ts` exactly — they
- * bound how many long-tail URLs we advertise in the sitemap so bots don't
- * prioritise walking 15k+ thin pages. Being outside a cap only lowers crawl
- * priority; it does NOT `noindex` the page (the sitemap is a hint, not a
- * gate). Facilities are the exception and are NOT capped here: every real
- * facility page (coords present, see `isFacilityIndexable`) is the primary
- * rankable content, so `app/sitemap.ts` lists the full indexable set.
+ * Sitemap / crawl-budget caps. Must match `app/sitemap.ts` exactly.
+ * Operators outside the cap still resolve with `noindex,follow`.
+ * Networks and IXPs outside the cap 404 (`dynamicParams = false`) and are
+ * robots-disallowed — they were ~34k unique CDN MISSes with no ranking
+ * upside. Facilities are NOT capped: every real facility page (coords
+ * present, see `isFacilityIndexable`) is the primary rankable content.
  */
 export const INDEXABLE_CAPS = {
   operators: 200,

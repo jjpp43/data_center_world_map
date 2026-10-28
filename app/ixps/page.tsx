@@ -114,8 +114,8 @@ export default async function IxpsIndex() {
 
         <p className="mt-6 text-xs text-zinc-500">
           Showing the top {INDEXABLE_CAPS.ixps} of {withMembers.length.toLocaleString("en-US")} tracked
-          IXPs by facility presence. Every IXP is reachable at{" "}
-          <span className="font-mono">/ixps/[slug]</span> directly — the API exposes the full set.
+          IXPs by facility presence. Detail pages exist for the listed head —
+          the API exposes the full set.
         </p>
       </main>
     </div>
